@@ -187,15 +187,8 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
 --start-date YYYYMMDD
     データ作成開始日。発売/貸出/配信開始日がこの指定日以降のものだけ作成する。
 
---pages-last ページ数
-    DMM上で一覧ページを、最新順にこのページ数分だけデータを取得し作成する。
-    1ページあたり120件。
-    --start-pid/--start-cid が指定された場合、該当する pid、cid を発見した
-    ページ+1ページで取得を停止する。
-
---row 行番号
-    表形式を作成する時の最初のデータのみなし行位置。10件毎のヘッダー挿入やページ
-    分割はこの値を基準に決定される。
+--existings-html Wiki一覧ページのURL/HTML [URL/HTML ...] (一覧ページのHTML)
+    Wikiの一覧ページを読み込み、まだWikiに追加されていない作品情報のみ作成する。
 
 --filter-pid フィルターパターン
     品番がフィルターパターン(Python正規表現)にマッチしたものだけ作成する。
@@ -220,6 +213,16 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
 
 --not-in-series
     シリーズに属していない作品のみ作成する(-F/-L/-M 指定時のみ)。
+
+--row 行番号
+    表形式を作成する時の最初のデータのみなし行位置。10件毎のヘッダー挿入やページ
+    分割はこの値を基準に決定される。
+
+--pages-last ページ数
+    DMM上で一覧ページを、最新順にこのページ数分だけデータを取得し作成する。
+    1ページあたり120件。
+    このオプションを指定せず、--start-pid/--start-cid が指定された場合、
+    該当する pid、cid を発見したページ+1ページで取得を停止する。
 
 --join-tsv ファイル [ファイル ...] (TSV)
     DMMから得た作品と(URLが)同じ作品がファイル内にあった場合、DMMからは取得できなかった
@@ -537,16 +540,10 @@ def get_args(argv):
     argparser.add_argument('--start-date',
                            help='データ作成対象開始リリース日',
                            metavar='YYYYMMDD')
-    argparser.add_argument('--pages-last',
-                           help='データ収集ページ数(最新からPAGEページ分を収集)',
-                           type=int,
-                           default=0,
-                           metavar='PAGE')
-
-    argparser.add_argument('--row',
-                           help='先頭行のみなし行開始位置 (-t/-tt 指定時のみ)',
-                           type=int,
-                           default=0)
+    argparser.add_argument('--existings-html',
+                           help='Wikiに既にある作品の情報は作成しない',
+                           nargs='+',
+                           metavar='URL/HTML')
 
     filters = argparser.add_mutually_exclusive_group()
     filters.add_argument('--filter-pid',
@@ -566,6 +563,17 @@ def get_args(argv):
                            help='シリーズに所属していないもののみ作成(-M/-L/-F 指定時)',
                            action='store_true',
                            dest='n_i_s')
+
+    argparser.add_argument('--row',
+                           help='先頭行のみなし行開始位置 (-t/-tt 指定時のみ)',
+                           type=int,
+                           default=0)
+
+    argparser.add_argument('--pages-last',
+                           help='データ収集ページ数(最新からPAGEページ分を収集)',
+                           type=int,
+                           default=0,
+                           metavar='PAGE')
 
     # 外部からデータ補完
     argparser.add_argument('--join-tsv',
@@ -876,6 +884,13 @@ def print_header(fd, article, header, page):
     return article_name
 
 
+def print_srchstr(titles):
+    '''検索用にDMM上のタイトルをコメントで残す(一覧ページ)'''
+    print('\n// 検索用', end='', file=fd)
+    for tdmm in titles:
+        print('\n//', tdmm, end='', file=fd)
+
+
 def main(argv=None):
 
     args = get_args(argv or sys.argv[1:])
@@ -931,8 +946,7 @@ def main(argv=None):
     if args.join_tsv:
         # join データ作成(tsv)
         verbose('join tsv')
-        for k, p in libssw.from_tsv(args.join_tsv):
-            join_d[k] = p
+        join_d.update((k, p) for k, p in libssw.from_tsv(args.join_tsv))
 
     if args.join_wiki:
         # join データ作成(wiki)
@@ -954,6 +968,16 @@ def main(argv=None):
 
     if (args.join_tsv or args.join_wiki or args.join_html) and not len(join_d):
         emsg('E', '--join-* オプションで読み込んだデータが0件でした。')
+
+    existings = set()
+
+    if args.existings_html:
+        # 既存の一覧ページから既出の作品情報の取得
+        verbose('existings html')
+        existings |= set(k for k, p in libssw.from_html(args.existings_html))
+
+        if not existings:
+            emsg('E', '--existings-* オプションで読み込んだデータが0件でした。')
 
     # 品番生成用パターンのコンパイル
     sp_pid = (re.compile(args.pid_regex[0], re.I),
@@ -1063,7 +1087,6 @@ def main(argv=None):
 
     for url in keyiter:
         props = products[url]
-        verbose('props: ', props.items())
 
         # 品番の生成
         if not props.pid:
@@ -1074,7 +1097,7 @@ def main(argv=None):
             # 指定された品番が見つかるまでスキップ
             if key_id != getattr(props, idattr):
                 emsg('I',
-                     'ページを除外しました: {}={} (start id not met yet)'.format(
+                     '作品を除外しました: {}={} (start id not met yet)'.format(
                          idattr, getattr(props, idattr)))
                 omitted += 1
                 rest -= 1
@@ -1089,7 +1112,7 @@ def main(argv=None):
 
         # 品番(pid)が指定されたパターンにマッチしないものはスキップ処理(--filter-pid)
         if args.filter_pid and not p_filter_pid.search(props.pid):
-            emsg('I', 'ページを除外しました: pid={} (filtered)'.format(
+            emsg('I', '作品を除外しました: pid={} (filtered)'.format(
                 props.pid))
             omitted += 1
             rest -= 1
@@ -1097,7 +1120,7 @@ def main(argv=None):
 
         # DMM上の品番(cid)が指定されたパターンにマッチしないものはスキップ処理(--filter-cid)
         if args.filter_cid and not p_filter_cid.search(props.cid):
-            emsg('I', 'ページを除外しました: cid={} (filtered)'.format(
+            emsg('I', '作品を除外しました: cid={} (filtered)'.format(
                 props.cid))
             omitted += 1
             rest -= 1
@@ -1105,15 +1128,23 @@ def main(argv=None):
 
         # 作品名が指定されたパターンにマッチしないものはスキップ処理(--filter-title)
         if args.filter_title and not p_filter_ttl.search(props.title):
-            emsg('I', 'ページを除外しました: title={} (filtered)'.format(
+            emsg('I', '作品を除外しました: title={} (filtered)'.format(
                 props.title))
             omitted += 1
             rest -= 1
             continue
 
+        # 一覧ページ内に既存の作品はスキップ(--existings-)
+        if props.url in existings:
+            emsg('I', '作品を除外しました: pid={} (already exist)'.format(
+                props.pid))
+            omitted += 1
+            rest -= 1
+            continue
+
         # 既知のシリーズ物のURLならスキップ (--not-in-series)
-        if args.n_i_s and props.url in series_urls:
-            emsg('I', 'ページを除外しました: title="{}" (series)'.format(
+        if props.url in series_urls:
+            emsg('I', '作品を除外しました: title="{}" (known series)'.format(
                 props.title))
             omitted += 1
             rest -= 1
@@ -1129,7 +1160,7 @@ def main(argv=None):
         if args.retrieval == 'series':
             # シリーズ一覧時のカスタムサブタイトル
             props.subtitle = libssw.sub(p_subtitle, props.title).strip() \
-                if args.subtitle_regex else ''
+                if args.subtitle_regex and any(args.subtitle_regex) else ''
 
         if args.wikitext:
             # ウィキテキストを作成
@@ -1146,7 +1177,7 @@ def main(argv=None):
             elif status == 404:
                 wikitexts.append(data)
             else:
-                emsg('I', 'ページを除外しました: '
+                emsg('I', '作品を除外しました: '
                      'cid={0}, reason=("{1[0]}", {1[1]})'.format(
                          props.cid, data))
                 if args.n_i_s and data[0] == 'series':
@@ -1255,9 +1286,7 @@ def main(argv=None):
 
                     # DMM上のタイトルを変更している作品のDMMタイトルをコメントで残す
                     if titles_dmm:
-                        print('\n// 検索用', end='', file=fd)
-                        for tdmm in titles_dmm:
-                            print('\n//', tdmm, end='', file=fd)
+                        print_srchstr(titles_dmm)
                         titles_dmm.clear()
 
                     if args.out:
@@ -1287,6 +1316,9 @@ def main(argv=None):
 
             print('\n■関連ページ', file=fd)
             print('-[[]]', file=fd)
+
+            if titles_dmm:
+                print_srchstr(titles_dmm)
 
             if args.out:
                 fd.close()
