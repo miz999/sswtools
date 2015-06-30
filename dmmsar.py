@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 dmm2ssw.pyのラッパー。
-指定されたキーワード等でDMMから一覧を取得し、ウィキテキストを作成する。
+指定されたIDやキーワード等でDMMから一覧を取得し、ウィキテキストを作成する。
 
 書式:
 dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
@@ -379,7 +379,7 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
  5)
     ・素人動画レーベル「恋する花嫁」のレーベル一覧ページ用ウィキテキストを作成する。(-Lt)
     ・cid(DMM上の品番)が khy070 から khy090 までの作品分を作成する。(--cid)
-    ・素人動画レーベルなのでサービス「ama」を指定する。(--service)
+    ・URL指定がなく素人動画レーベルなのでサービス「ama」を指定する。(--service)
 
     dmmsar.py -Lt --cid "khy{}" "070" "090" --service "ama"
 
@@ -541,7 +541,7 @@ def get_args(argv):
                            help='データ作成対象開始リリース日',
                            metavar='YYYYMMDD')
     argparser.add_argument('--existings-html',
-                           help='Wikiに既にある作品の情報は作成しない',
+                           help='Wikiの一覧ページに既にある作品の情報は作成しない',
                            nargs='+',
                            metavar='URL/HTML')
 
@@ -679,7 +679,7 @@ def get_args(argv):
                            action='store_false',
                            default=True)
     argparser.add_argument('--disable-longtitle',
-                           help='アパッチ、SCOOPの長いタイトルを補足しない',
+                           help='アパッチ、SCOOPの長いタイトルを補完しない',
                            dest='longtitle',
                            action='store_false',
                            default=True)
