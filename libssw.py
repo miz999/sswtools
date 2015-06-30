@@ -1055,17 +1055,18 @@ class _FromHtml:
         foretxt = (td.text or '').strip()
         verbose('foretxt: "{}"'.format(foretxt))
 
-        if not len(td.xpath('a')):
-            verbose('empty td')
-            if foretxt:
-                yield '', '', foretxt
-            return
-
         if foretxt:
-            fores = p_delim.split(foretxt)
-            for ph in fores:
-                if ph:
-                    yield '', '', self._enclose(ph)
+            # 先頭にリテラルあり
+            if not len(td.xpath('a')):
+                # リテラルのみでアンカー無し
+                yield '', '', foretxt
+                return
+            else:
+                # アンカーあり
+                fores = p_delim.split(foretxt)
+                for ph in fores:
+                    if ph:
+                        yield '', '', self._enclose(ph)
 
         if not len(td):
             # リテラルだけだったら終了
@@ -1090,7 +1091,6 @@ class _FromHtml:
             if not tailtxt:
                 yield shown, dest, ''
             else:
-                tailtxt = tailtxt
                 # 「~ ほか」チェック
                 splitetc = tailtxt.rsplit(maxsplit=1)
                 verbose('splitetc: ', splitetc)
@@ -1157,7 +1157,7 @@ class _FromHtml:
 
             userarea = he.find_class('user-area')[0]
 
-            numcols = len(userarea.find('.//tr[th]').getchildren())
+            numcols = len(userarea.find('.//tr[th]'))
 
             if numcols == 6:
                 hdr = 'NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE'
@@ -1178,12 +1178,12 @@ class _FromHtml:
                 except TypeError:
                     continue
 
-                anchor = md.NO.xpath('a')
-                if not len(anchor):
+                anchor = md.NO.find('a')
+                if anchor is None:
                     continue
 
-                pid = anchor[0].text.strip()
-                url = anchor[0].get('href')
+                pid = anchor.text.strip()
+                url = anchor.get('href')
                 # タイトルに改行があればスペースへ置き換え
                 title = ' '.join(md.TITLE.xpath('text()')) or '__' + pid
                 actress = [a for a in self._parse_performers(md.ACTRESS)
