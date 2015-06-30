@@ -1049,7 +1049,7 @@ class _FromHtml:
         return ph if ph.startswith('(') else '({})'.format(ph)
 
     def _parse_performers(self, td):
-        '''出演者カラムの解析(FromURL)'''
+        '''出演者カラムの解析(FromHtml)'''
 
         # 内部リンクの前にある文字列チェック
         foretxt = (td.text or '').strip()
