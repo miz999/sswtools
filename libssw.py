@@ -698,6 +698,7 @@ class DMMTitleListParser:
         self._patn_pid = patn_pid
         self._show_info = show_info
         self.omitted = 0
+        self.article = []
 
     def init(self):
         self.nexturl = None
@@ -783,6 +784,8 @@ class DMMTitleListParser:
     def __call__(self, he, priurl):
         '''解析実行'''
         verbose('Parse TitleList')
+
+        self.article.append((self._get_article(he), priurl))
 
         self.nexturl = self._ret_nextpage(he)
 

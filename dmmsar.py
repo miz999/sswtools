@@ -37,6 +37,7 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
     -F を指定した場合任意の検索文字列を指定する。
     -A/-S/-M/-L を指定した場合は取得するそれのIDか、その一覧ページのURLを
     指定する。
+    -U を指定した場合はDMM一覧ページのURLを指定する。
     --cid を指定した場合は cid の範囲を指定する(--cid オプションを参照)。
 
     IDはDMM上でそれぞれでの一覧を表示した時にそのURLからわかる(id=)。
@@ -56,12 +57,14 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
 -S, --series  (シリーズIDで一覧取得)
 -L, --label   (レーベルIDで一覧取得)
 -M, --maker   (メーカーIDで一覧取得)
+-U, --url     (指定したURLのページからそのまま取得)
     検索方法。どれか一つだけ指定できる。
     -F の場合は通常のキーワード検索を行う。
     -A/-S/-M/-L で女優/シリーズ/メーカー/あるいはレーベルのいずれかの
     DMM上のID(またはURL)指定で一覧を取得する。
     キーワードに女優/シリーズ/レーベル/メーカー一覧ページのURLを指定すると
     -A/-S/-L/-M を自動判定する。
+    -U では、指定されたURLのページにからそのまま取得する。
 
 -i, --from-tsv
     作品情報の一覧をインポートファイル(TSV)から取得する。
@@ -102,6 +105,7 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
     指定した品番の作品ページが見つからなかったら発売前の作品とみなしDMMへの
     リンクは作成する。
     --service が指定されていない場合DVDセル版(dvd)とみなす。
+    -F/-U 指定時は無視される。
 
 --cid-l
     --cid と同じだが、指定した品番の作品ページが見つからない場合は発売されなかった
@@ -136,7 +140,7 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
      video   動画-ビデオ
      ama     動画-素人
      all     すべてのサービス (-F のデフォルト)
-    -i/-w を指定した場合は無視される。
+    -U/-i/-w を指定した場合は無視される。
     キーワードにURLが与えられていれば指定不要。
 
 -m, --disable-omit
@@ -461,6 +465,11 @@ def get_args(argv):
                            action='store_const',
                            dest='retrieval',
                            const='maker')
+    retrieval.add_argument('-U', '--url',
+                           help='していたURLページからそのまま取得',
+                           action='store_const',
+                           dest='retrieval',
+                           const='url')
 
     # ファイル入力
     from_file = argparser.add_mutually_exclusive_group()
@@ -720,6 +729,9 @@ def get_args(argv):
 
     libssw.RECHECK = args.recheck
 
+    if args.retrieval in ('find', 'url') and (args.cid or args.cid_l):
+        emsg('E', '-F/-U 指定時に --cid/--cid-l は指定できません。')
+
     # サービス未指定の決定
     # 引数にURLが与えられていればそれから判定
     # そうでなければ -F ならすべて、TSVやウィキテキスト入力でなければそれ以外ならセル版
@@ -789,7 +801,7 @@ class ExtractIDs:
                     try:
                         self.retrieval = libssw.p_list_article.findall(k)[0]
                     except IndexError:
-                        self.retrieval = 'maker'
+                        self.retrieval = 'keyword'
                     verbose('retrieval(extracted): ', self.retrieval)
             else:
                 yield k
@@ -884,7 +896,7 @@ def print_header(fd, article, header, page):
     return article_name
 
 
-def print_srchstr(titles):
+def print_srchstr(titles, fd):
     '''検索用にDMM上のタイトルをコメントで残す(一覧ページ)'''
     print('\n// 検索用', end='', file=fd)
     for tdmm in titles:
@@ -1037,10 +1049,13 @@ def main(argv=None):
     else:
         # DMMから一覧を検索/取得
         verbose('Call from_dmm()')
-        priurls = libssw.join_priurls(args.retrieval,
-                                      *ids,
-                                      service=args.service,
-                                      no_omits=no_omits)
+        if args.retrieval == 'url' or 'keyword':
+            priurls = args.keyword
+        else:
+            priurls = libssw.join_priurls(args.retrieval,
+                                          *ids,
+                                          service=args.service,
+                                          no_omits=no_omits)
         p_gen = libssw.from_dmm(listparser, priurls,
                                 pages_last=args.pages_last,
                                 key_id=key_id,
@@ -1212,10 +1227,7 @@ def main(argv=None):
         verbose('Writing wikitext')
 
         # アーティクル名の決定
-        if args.retrieval == 'find':
-            # キーワード検索と品番入力
-            article_name = article_header = ''
-        elif args.retrieval == 'actress':
+        if args.retrieval == 'actress':
             # 女優ID指定:
             article_name, article_header = build_header_actress(ids)
         else:
@@ -1232,6 +1244,9 @@ def main(argv=None):
             elif args.retrieval == 'maker':
                 article_name, article_header = build_header_listpage(
                     args.retrieval, args.service, *wikitexts[0].maker)
+            elif listparser.article:
+                article_name, article_header = build_header(
+                    listparser.article)
             else:
                 article_name = article_header = ''
 
@@ -1256,6 +1271,8 @@ def main(argv=None):
         elif args.sort_key == 'release':
             # 第1キー:リリース日、第2キー:品番
             sortkeys = 'pid', 'release'
+        elif args.sort_key == 'pid':
+            sortkeys = 'release', 'pid'
         else:
             sortkeys = ()
 
@@ -1286,7 +1303,7 @@ def main(argv=None):
 
                     # DMM上のタイトルを変更している作品のDMMタイトルをコメントで残す
                     if titles_dmm:
-                        print_srchstr(titles_dmm)
+                        print_srchstr(titles_dmm, fd)
                         titles_dmm.clear()
 
                     if args.out:
@@ -1318,7 +1335,7 @@ def main(argv=None):
             print('-[[]]', file=fd)
 
             if titles_dmm:
-                print_srchstr(titles_dmm)
+                print_srchstr(titles_dmm, fd)
 
             if args.out:
                 fd.close()
