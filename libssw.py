@@ -577,7 +577,7 @@ class __OpenUrl:
     def _url_openerror(self, name, info, url):
         '''URLオープン時のエラーメッセージ'''
         emsg('E',
-             'URLを開く時にエラーが発生しました ({0})。詳細: {1}, url={2}'.format(
+             'URLを開く時にエラーが発生しました ({})。詳細: {}, url={}'.format(
                  name, info, url))
 
     def _resolve_charset(self, resp, html):
@@ -698,10 +698,8 @@ class DMMTitleListParser:
         self._patn_pid = patn_pid
         self._show_info = show_info
         self.omitted = 0
+        self.priurl = ''
         self.article = []
-
-    def init(self):
-        self.nexturl = None
 
     def _get_article(self, he):
         '''アーティクル名の取得'''
@@ -742,11 +740,6 @@ class DMMTitleListParser:
             hh, mmm = is_omnirookie(cid, title)
             if hh or mmm:
                 is_omit = '総集編', hh or mmm
-            # else:
-            #     # タイトルに20人以上の人数が書いてるときは総集編とみなす
-            #     nn = p_nn.findall(title)
-            #     if nn:
-            #         is_omit = '総集編', nn
 
         if 'イメージビデオ' not in self._no_omits:
             # 隠れIVチェック
@@ -759,9 +752,6 @@ class DMMTitleListParser:
                     cid, 'reason=("{}", "{}")'.format(*is_omit)))
             self.omitted += 1
             return False, False
-
-        # wiki構文と衝突する文字列の置き換え
-        # title = title.translate(t_wikisyntax)
 
         return url, Summary(url=url, title=title, pid=pid, cid=cid)
 
@@ -781,11 +771,11 @@ class DMMTitleListParser:
 
         return nextpath and _up.urljoin(BASEURL, nextpath)
 
-    def __call__(self, he, priurl):
+    def __call__(self, he):
         '''解析実行'''
-        verbose('Parse TitleList')
+        verbose('Parsing TitleList')
 
-        self.article.append((self._get_article(he), priurl))
+        self.article.append((self._get_article(he), self.priurl))
 
         self.nexturl = self._ret_nextpage(he)
 
@@ -797,11 +787,11 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
     '''DMMから作品一覧を取得'''
     verbose('Start parsing DMM list pages')
 
-    for listurl in priurls:
+    for purl in priurls:
 
-        listparser.init()
+        listparser.priurl = purl
 
-        searchurl = _up.urljoin(listurl, 'limit=120/view=text/')
+        searchurl = _up.urljoin(purl, 'limit=120/view=text/')
         pages = 1
 
         while searchurl:
@@ -826,7 +816,7 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
             # html = sub(sp_wikis, html)
 
             # HTMLの解析
-            for url, prop in listparser(he, listurl):
+            for url, prop in listparser(he):
                 if url:
 
                     yield url, prop
