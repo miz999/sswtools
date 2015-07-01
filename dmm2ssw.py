@@ -41,6 +41,8 @@ dmm2ssw.py [DMM作品ページのURL] [オプション...]
     ・Firefox上でSMMのCookieを受け入れる状態になっていること
     ・一度FirefoxからデフォルトプロファイルでSMMのアダルトページにアクセスして
       年齢認証を行っていること(Cookieの期限が24時間のようなので、1日に1回行えばよいはず)
+    SMM上でも仮の名前のときがあるため、SMM上ですべてひらがなの名前のときはその名前の
+    女優名が存在するかどうかDMM上で確認し、存在しなければ内部リンクにしない。
     --disable-check-smm オプションが与えられると出演者情報がなくてもSMMを見に
     行かない。
 
@@ -1044,7 +1046,7 @@ class DMMParser:
             data = _libssw.getnext_text(prop)
 
             # URL上とページ内の品番の相違チェック
-            if self._sm['cid'] and self._sm['cid'] != data:
+            if self._sm['cid'] and self._sm['cid'] != data.rsplit('so', 1)[0]:
                 emsg('I', '品番がURLと異なっています: url={}, page={}'.format(
                     self._sm['cid'], data))
 
