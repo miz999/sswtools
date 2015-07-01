@@ -1208,27 +1208,10 @@ class _FromHtml:
 from_html = _FromHtml()
 
 
-def join_priurls(retrieval, *keywords, service='dvd', no_omits=()):
+def join_priurls(retrieval, *keywords, service='dvd'):
     '''基底URLの作成'''
-    if retrieval == 'find':
-        # キーワード検索
-        searchstr = ' '.join(keywords)
-        omitstr = ''
-        omitstr = ''.join(' -{}'.format(OMITTYPE - set(no_omits)))
-        searchstr = searchstr + omitstr
-        verbose('searchstr: ', searchstr)
-        # httplib2がやってくれないらしいURL内のスペースのクオート
-        searchstr = searchstr.replace(' ', '%20')
-
-        priurls = ('{}/search/=/{}searchstr={}/sort=date/'.format(
-            BASEURL, SERVICEDIC[service][0], searchstr),)
-    else:
-        # ID指定
-        priurls = tuple('{}/{}/-/list/=/article={}/id={}/sort=date/'.format(
-            BASEURL, SERVICEDIC[service][1], retrieval, k) for k in keywords)
-
-    verbose('priurls: ', priurls)
-    return priurls
+    return tuple('{}/{}/-/list/=/article={}/id={}/sort=date/'.format(
+        BASEURL, SERVICEDIC[service][1], retrieval, k) for k in keywords)
 
 
 def getnext_text(elem, xpath=False):

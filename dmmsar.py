@@ -5,7 +5,7 @@ dmm2ssw.pyのラッパー。
 指定されたIDやキーワード等でDMMから一覧を取得し、ウィキテキストを作成する。
 
 書式:
-dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
+dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
 
 
 説明:
@@ -33,8 +33,7 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
 
 
 引数:
-キーワード(検索文字列/ID/URL/品番/ファイルパス)
-    -F を指定した場合任意の検索文字列を指定する。
+キーワード(ID/URL/品番/ファイルパス)
     -A/-S/-M/-L を指定した場合は取得するそれのIDか、その一覧ページのURLを
     指定する。
     -U を指定した場合はDMM一覧ページのURLを指定する。
@@ -47,24 +46,19 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
     IDを複数指定した場合、それらをまとめて1つの一覧を作成する。これは改名して
     いるがDMM上で統合されていない女優の作品一覧の作成を想定しているため。
 
-    -F で検索する場合、同じキーワード指定でもブラウザ上で直接検索する場合と
-    結果が異なる場合がある。
-
 
 オプション:
--F, --find    (キーワード検索)
 -A, --actress (女優IDで一覧取得)
 -S, --series  (シリーズIDで一覧取得)
 -L, --label   (レーベルIDで一覧取得)
 -M, --maker   (メーカーIDで一覧取得)
 -U, --url     (指定したURLのページからそのまま取得)
     検索方法。どれか一つだけ指定できる。
-    -F の場合は通常のキーワード検索を行う。
     -A/-S/-M/-L で女優/シリーズ/メーカー/あるいはレーベルのいずれかの
     DMM上のID(またはURL)指定で一覧を取得する。
     キーワードに女優/シリーズ/レーベル/メーカー一覧ページのURLを指定すると
     -A/-S/-L/-M を自動判定する。
-    -U では、指定されたURLのページにからそのまま取得する。
+    -U では、指定されたURLのページからそのまま取得する。
 
 -i, --from-tsv
     作品情報の一覧をインポートファイル(TSV)から取得する。
@@ -105,7 +99,7 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
     指定した品番の作品ページが見つからなかったら発売前の作品とみなしDMMへの
     リンクは作成する。
     --service が指定されていない場合DVDセル版(dvd)とみなす。
-    -F/-U 指定時は無視される。
+    -U 指定時はこのオプションは指定できない。
 
 --cid-l
     --cid と同じだが、指定した品番の作品ページが見つからない場合は発売されなかった
@@ -139,7 +133,6 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
      rental  DVDレンタル
      video   動画-ビデオ
      ama     動画-素人
-     all     すべてのサービス (-F のデフォルト)
     -U/-i/-w を指定した場合は無視される。
     キーワードにURLが与えられていれば指定不要。
 
@@ -216,7 +209,7 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
     大文字小文字は区別しない。
 
 --not-in-series
-    シリーズに属していない作品のみ作成する(-F/-L/-M 指定時のみ)。
+    シリーズに属していない作品のみ作成する(-L/-M/-U 指定時のみ)。
 
 --row 行番号
     表形式を作成する時の最初のデータのみなし行位置。10件毎のヘッダー挿入やページ
@@ -338,7 +331,7 @@ dmmsar.py (-F|-A|-S|-L|-M) [キーワード ...] [オプション...]
 
 -b, --browser
     ページ名が確定している場合その名前のWikiページを開く。
-    -F、--tsv、--cid(-l) 指定時はページ名を決定できないため無視される。
+    --tsv など、ページ名が解決できない場合は無視される。
 
 --clear-cache
     dmm2ssw.py の説明参照。
@@ -440,11 +433,6 @@ def get_args(argv):
 
     # 処理タイプ
     retrieval = argparser.add_mutually_exclusive_group()
-    retrieval.add_argument('-F', '--find',
-                           help='キーワード検索',
-                           action='store_const',
-                           dest='retrieval',
-                           const='find')
     retrieval.add_argument('-A', '--actress',
                            help='女優IDで一覧取得',
                            action='store_const',
@@ -515,8 +503,8 @@ def get_args(argv):
     # データ取得先
     argparser.add_argument('--service',
                            help='一覧を取得するサービスを指定する (デフォルト: '
-                           'KEYWORD にURLが与えられればそれから自動判定、それ以外なら'
-                           ' -F なら all それ以外は dvd)',
+                           'KEYWORD にURLが与えられればそれから自動判定、'
+                           'それ以外なら dvd)',
                            choices=('dvd', 'rental', 'video', 'ama', 'all'))
 
     # 作品データの除外基準
@@ -569,7 +557,7 @@ def get_args(argv):
                          metavar='PATTERN')
 
     argparser.add_argument('--not-in-series',
-                           help='シリーズに所属していないもののみ作成(-M/-L/-F 指定時)',
+                           help='シリーズに所属していないもののみ作成(-M/-L/-U 指定時)',
                            action='store_true',
                            dest='n_i_s')
 
@@ -729,19 +717,17 @@ def get_args(argv):
 
     libssw.RECHECK = args.recheck
 
-    if args.retrieval in ('find', 'url') and (args.cid or args.cid_l):
-        emsg('E', '-F/-U 指定時に --cid/--cid-l は指定できません。')
+    if args.retrieval == 'url' and (args.cid or args.cid_l):
+        emsg('E', '-U 指定時に --cid/--cid-l は指定できません。')
 
     # サービス未指定の決定
     # 引数にURLが与えられていればそれから判定
-    # そうでなければ -F ならすべて、TSVやウィキテキスト入力でなければそれ以外ならセル版
+    # TSVやウィキテキスト入力でなければそれ以外ならセル版
     # TSVやウィキテキスト入力ならあとで作品情報から判定
     if args.keyword:
         if not args.service:
             if args.keyword[0].startswith('http://'):
                 args.service = libssw.resolve_service(args.keyword[0])
-            elif args.retrieval == 'find':
-                args.service = 'all'
             elif not (args.from_tsv or args.from_wiki):
                 args.service = 'dvd'
 
@@ -764,8 +750,8 @@ def get_args(argv):
     args.last_pid = args.last_pid and args.last_pid.upper()
     args.last_cid = args.last_cid and args.last_cid.lower()
 
-    # -F, -L, -M 以外では --not-in-series は意味がない
-    if args.retrieval not in ('find', 'label', 'maker'):
+    # -L, -M , -U 以外では --not-in-series は意味がない
+    if args.retrieval not in ('label', 'maker', 'url'):
         args.n_i_s = False
 
     # 表形式のみの出力ならば実際の一覧ページを探す必要はない
@@ -1054,8 +1040,7 @@ def main(argv=None):
         else:
             priurls = libssw.join_priurls(args.retrieval,
                                           *ids,
-                                          service=args.service,
-                                          no_omits=no_omits)
+                                          service=args.service)
         p_gen = libssw.from_dmm(listparser, priurls,
                                 pages_last=args.pages_last,
                                 key_id=key_id,
@@ -1201,8 +1186,7 @@ def main(argv=None):
                     series_set.add(data[1])
                     priurls = libssw.join_priurls('series',
                                                   data[1][0],
-                                                  service=args.service,
-                                                  no_omits=no_omits)
+                                                  service=args.service)
                     series_urls.extend(
                         u for u, p in libssw.from_dmm(seriesparser, priurls))
                 omitted += 1
