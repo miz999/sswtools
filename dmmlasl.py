@@ -428,7 +428,7 @@ def main():
     if not total:
         emsg('E', '検索結果は0件でした。')
 
-    article_name = listparser.article_name
+    article_name = listparser.article[0][0]
 
     emsg('I', '{} (id={}, 新規{}/全{}作品)'.format(
         article_name, ROOTID, nc_num, total))

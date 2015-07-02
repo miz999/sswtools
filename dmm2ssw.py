@@ -1370,13 +1370,13 @@ class DMMParser:
                     else:
                         self._sm['others'].append('※レンタル版')
 
-            if service == 'video':
-                # 動画配信のみかどうかチェック
-                for o in ('dvd', 'rental'):
-                    if self._get_otherslink(o, firmly=False):
-                        break
-                else:
-                    self._sm['note'].append('動画配信のみ')
+            # if service == 'video':
+            #     # 動画配信のみかどうかチェック → できない
+            #     for o in ('dvd', 'rental'):
+            #         if self._get_otherslink(o, firmly=False):
+            #             break
+            #     else:
+            #         self._sm['note'].append('動画配信のみ')
 
             # Blu-ray版のときのDVD版の、またはその逆のチェック
             related = 'DVD' if self.bluray else 'Blu-ray'
@@ -1567,16 +1567,15 @@ def det_listpage(summ, args):
 
 
 def expansion(strings, summ):
+    '''予約変数の展開'''
     for st in strings:
         try:
             st = st.split(':')[1]
         except IndexError:
-            verbose('IndexError')
             yield ''
             continue
 
         for p, r in sp_expansion:
-            verbose('repl: ', r)
             st = p.sub(getattr(summ, r), st)
         yield st
 
@@ -1734,6 +1733,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     verbose('service resolved: ', service)
 
     add_column = expansion(args.add_column, summ) if args.add_column else ()
+    verbose('add column: ', add_column)
 
     if service == 'ama':
         # 動画(素人)の場合監督欄は出力しない。
