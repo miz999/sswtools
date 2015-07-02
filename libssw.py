@@ -278,7 +278,7 @@ p_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
 p_id = _re.compile(r'/id=([\d,]+?)/')
 p_base_url = _re.compile(r'(.*/)-/')
 p_charset = _re.compile(r'charset=([a-zA-Z0-9_-]+);?')
-p_splitid = _re.compile(r'([a-z]+)-?(\d+)', _re.I)
+p_splitid = _re.compile(r'([a-z]+)[+-]?(\d+)', _re.I)
 p_number = _re.compile(r'\d+')
 p_etc = _re.compile(r'ほか\w*?計(\d+)名')
 p_name = _re.compile(
@@ -314,7 +314,7 @@ sp_pid_indv = (
     (_re.compile(r'^ad1(\d+)'), r'ad1-\1'),              # ドグマのAD1 CLIMAXレーベル
     (_re.compile(r'^h_308aoz(\d+z?)'), r'aoz-\1'),       # 青空ソフト
     (_re.compile(r'^(?:h_102)?bnsps(\d+).*'), r'nsps-\1'),  # ながえスタイルのセル版の一部
-    (_re.compile(r'21psd(\d+)'), r'psd\+\1'),            # アウダースの一部
+    (_re.compile(r'21psd(\d+)'), r'psd+\1'),             # アウダースの一部
 )
 
 sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
