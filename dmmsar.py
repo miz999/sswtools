@@ -1160,7 +1160,7 @@ def main(argv=None):
         if args.retrieval == 'series':
             # シリーズ一覧時のカスタムサブタイトル
             props.subtitle = libssw.sub(p_subtitle, props.title).strip() \
-                if args.subtitle_regex and any(args.subtitle_regex) else ''
+                if args.subtitle_regex else ''
 
         if args.wikitext:
             # ウィキテキストを作成
@@ -1303,8 +1303,9 @@ def main(argv=None):
 
                 if not j % 10:
                     # 10件ごとの表ヘッダの出力
-                    print(table_header.format(j % args.split
-                                              if j % args.split and not j % 50
+                    remainder = j % args.split
+                    print(table_header.format(remainder
+                                              if remainder and not j % 50
                                               else 'NO'),
                           file=fd)
                     verbose('Header: ', j)
@@ -1362,7 +1363,6 @@ def main(argv=None):
             if args.out:
                 fd.close()
 
-        verbose('page names: ', page_names)
         if args.browser and page_names:
             # ブラウザで開く
             for p in page_names:
