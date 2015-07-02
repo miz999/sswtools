@@ -970,7 +970,7 @@ class DMMParser:
                 return
 
             self._sm['label'] = lb.text
-            self._sm['label_id'] = lbid = _libssw.get_id(lb.get('href'))[0]
+            lbid = _libssw.get_id(lb.get('href'))[0]
 
             # 隠れ総集編レーベルチェック
             if lbid in OMIT_LABEL:
@@ -979,6 +979,8 @@ class DMMParser:
             # レンタル先行レーベルチェック
             if lbid in RENTAL_PRECEDES:
                 self.rental_pcdr = True
+
+            self._sm['label_id'] = lbid
 
             verbose('label: ', self._sm['label'])
 
@@ -1010,6 +1012,8 @@ class DMMParser:
             # ・SOD女子社員
             if self._sm['series'] == 'SOD女子社員':
                 self._sm['series'] += 'シリーズ' + self._sm['release'].split('/', 1)[0]
+
+            self._sm['series_id'] = srid
 
             # 他のサービスを強制チェック
             if srid in FORCE_CHK_SALE_SR:
