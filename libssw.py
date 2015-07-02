@@ -324,7 +324,7 @@ sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
 
 t_wikisyntax = str.maketrans('[]~', '［］～')
 t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
-
+t_nl = str.maketrans('', '', '\r\n')
 
 DummyResp = _namedtuple('DummyResp', 'status,fromcache')
 
@@ -396,7 +396,9 @@ class OrderedDictWithHead(_OrderedDict):
 class Summary:
     '''作品情報格納用'''
     __slots__ = ('url',
+                 'media',
                  'release',
+                 'time',
                  'title',
                  'title_dmm',
                  'subtitle',
@@ -416,12 +418,15 @@ class Summary:
                  'image_sm',
                  'image_lg',
                  'number',
+                 'genre',
                  'note',
                  'others')
 
     def __init__(self,
                  url='',
+                 media='',
                  release='',
+                 time='',
                  title='',
                  title_dmm='',
                  subtitle='',
@@ -441,6 +446,7 @@ class Summary:
                  image_sm='',
                  image_lg='',
                  number=0,
+                 genre=[],
                  note=[],
                  others=[]):
         for key in self.__slots__:
@@ -526,6 +532,10 @@ def quote(string, safe='/', encoding='euc_jisx0213', errors=None):
 
 def unquote(string, encoding='euc_jisx0213', errors='replace'):
     return _up.unquote(string, encoding=encoding, errors=errors)
+
+
+def rm_nlcode(string):
+    return string.translate(t_nl)
 
 
 def files_exists(mode, *files):

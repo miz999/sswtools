@@ -250,9 +250,18 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
     DIRECTORカラムを出力する。
     -t/-tt オプションが与えられた時用。
 
---add-column [カラム名 [カラム名 ...]]
+--add-column [カラム名[:データ] [カラム名[:データ] ...]]
     表形式に任意のカラムを追加する。
     -t/-tt を指定しない場合は無視される。
+    書式はカラム名のあとに :とともに各カラム内に出力するデータを指定できる。
+    データは固定の文字列と以下の変数を指定できる。
+    これら変数はウィキテキスト作成時に対応する文字列に展開される。
+    @{media}  メディアの種類
+    @{time}   収録時間
+    @{series} シリーズ名
+    @{maker}  メーカー名
+    @{label}  レーベル名
+    @{cid}    品番
 
 -s, --series-link [シリーズ一覧ページ名]
     作成する女優ページ用ウィキテキストに同一のシリーズ一覧ページへのリンクを
@@ -603,9 +612,9 @@ def get_args(argv):
                            dest='dir_col',
                            action='store_true')
     argparser.add_argument('--add-column',
-                           help='表形式ヘッダに任意のカラムを追加する (-t/-tt 指定時のみ)',
-                           nargs='*',
-                           metavar='COLUMN',
+                           help='表に任意のカラムとデータを追加する (-t/-tt 指定時のみ)',
+                           nargs='+',
+                           metavar='COLUMN:DATA',
                            default=[])
 
     # 一覧ページへのリンク追加
@@ -1243,10 +1252,11 @@ def main(argv=None):
         # ヘッダ文字列の作成
         if args.header and args.table:
             table_header = \
-                '|~{{}}|PHOTO|{}|ACTRESS|{}RELEASE|{}NOTE|'.format(
+                '|~{{}}|PHOTO|{}|ACTRESS|{}{}RELEASE|NOTE|'.format(
                     'SUBTITLE' if args.retrieval == 'series' else 'TITLE',
                     'DIRECTOR|' if args.dir_col else '',
-                    '|'.join(args.add_column) + '|' if args.add_column else '')
+                    ('|'.join(c.split(':')[0] for c in args.add_column) + '|')
+                    if args.add_column else '')
 
         # ソート
         if args.sort_key == 'title':

@@ -215,6 +215,19 @@ DMM作品ページのURL
     DIRECTORカラムを出力する。
     -t/-tt オプションが与えられた時用。
 
+--add-column [カラム名[:データ] [カラム名[:データ] ...]]
+    表形式に任意のカラムを追加する。
+    -t/-tt を指定しない場合は無視される。
+    書式はカラム名のあとに :とともに各カラム内に出力するデータを指定できる。
+    データは固定の文字列と以下の変数を指定できる。
+    これら変数はウィキテキスト作成時に対応する文字列に展開される。
+    @{media}  メディアの種類
+    @{time}   収録時間
+    @{series} シリーズ名
+    @{maker}  メーカー名
+    @{label}  レーベル名
+    @{cid}    品番
+
 --join-tsv ファイル [ファイル ...] (TSV)
     DMMから得た作品と(URLが)同じ作品がファイル内にあった場合、DMMからは取得できなかった
     情報がファイル側にあればそれで補完する(NOTEも含む)。
@@ -343,6 +356,14 @@ sp_ltbracket_t = (_re.compile(r'(?:【.+?】)+?$'), '')
 # sp_href = (_re.compile(r'href=(/.*/)>'), r'href="\1">')
 sp_nowrdchr = (_re.compile(r'\W'), '')
 sp_pid = None  # dmmsar.py 側から更新
+
+sp_expansion = ((_re.compile('@{media}'), 'media'),
+                (_re.compile('@{time}'), 'time'),
+                (_re.compile('@{series}'), 'series'),
+                (_re.compile('@{maker}'), 'maker'),
+                (_re.compile('@{label}'), 'label'),
+                (_re.compile('@{cid}'), 'cid'))
+
 
 IMG_URL = {'dvd':    'http://pics.dmm.co.jp/mono/movie/adult/',
            'rental': 'http://pics.dmm.co.jp/mono/movie/',
@@ -478,6 +499,11 @@ def _get_args(argv, props, p_args):
                            dest='dir_col',
                            action='store_true',
                            default=getattr(p_args, 'dir_col', False))
+    argparser.add_argument('--add-column',
+                           help='表形式ヘッダに任意のカラムを追加する (-t/-tt 指定時のみ)',
+                           nargs='+',
+                           metavar='COLUMN:DATA',
+                           default=getattr(p_args, 'add_column', []))
 
     # 外部からデータ補完
     argparser.add_argument('--join-tsv',
@@ -926,14 +952,26 @@ class DMMParser:
 
         tag = prop.text.strip()
 
-        if tag in ('発売日：', '貸出開始日：', '配信開始日：'):
+        if tag == '種類：':
+
+            self._sm['media'] = _libssw.rm_nlcode(_libssw.getnext_text(prop))
+
+            verbose('media: ', self._sm['media'])
+
+        elif tag in ('発売日：', '貸出開始日：', '配信開始日：'):
 
             if self.start_date and data.replace('/', '') < self.start_date:
                 raise OmitTitleException('release', 'date')
 
-            self._sm['release'] = _libssw.getnext_text(prop)
+            self._sm['release'] = _libssw.rm_nlcode(_libssw.getnext_text(prop))
 
-            verbose('releas: ', self._sm['release'])
+            verbose('release: ', self._sm['release'])
+
+        elif tag == '収録時間：':
+
+            self._sm['time'] = _libssw.rm_nlcode(_libssw.getnext_text(prop))
+
+            verbose('time: ', self._sm['time'])
 
         elif tag == 'メーカー：':
             if not self._sm['maker']:
@@ -1045,6 +1083,8 @@ class DMMParser:
                 if gid == GENRE_BD:
                     self.bluray = True
                     verbose('media: Blu-ray')
+
+                self._sm['genre'].append(g.text)
 
         elif tag == '品番：':
             data = _libssw.getnext_text(prop)
@@ -1526,6 +1566,21 @@ def det_listpage(summ, args):
     return list_type, list_page
 
 
+def expansion(strings, summ):
+    for st in strings:
+        try:
+            st = st.split(':')[1]
+        except IndexError:
+            verbose('IndexError')
+            yield ''
+            continue
+
+        for p, r in sp_expansion:
+            verbose('repl: ', r)
+            st = p.sub(getattr(summ, r), st)
+        yield st
+
+
 def check_missings(summ):
     '''未取得情報のチェック'''
     missings = [m for m in ('release', 'title', 'maker', 'label', 'image_sm')
@@ -1567,7 +1622,7 @@ def format_wikitext_a(summ, anum, astr):
     return wtext
 
 
-def format_wikitext_t(summ, astr, dstr, dir_col, diff_page):
+def format_wikitext_t(summ, astr, dstr, dir_col, diff_page, add_column):
     '''ウィキテキストの作成 table形式'''
     wtext = ''
 
@@ -1590,6 +1645,10 @@ def format_wikitext_t(summ, astr, dstr, dir_col, diff_page):
     # 監督
     if dir_col:
         wtext += '|{0}'.format(dstr)
+
+    # 追加カラム
+    if add_column:
+        wtext += '|' + '|'.join(add_column)
 
     # 発売日
     wtext += '|{0[release]}'.format(summ).replace('/', '-')
@@ -1674,6 +1733,8 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
         service = _libssw.resolve_service(summ['url'])
     verbose('service resolved: ', service)
 
+    add_column = expansion(args.add_column, summ) if args.add_column else ()
+
     if service == 'ama':
         # 動画(素人)の場合監督欄は出力しない。
         args.dir_col = False
@@ -1723,7 +1784,9 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
         wktxt_t = format_wikitext_t(summ,
                                     '',
                                     '／'.join(summ['director']),
-                                    args.dir_col, False)
+                                    args.dir_col,
+                                    False,
+                                    add_column)
         verbose('wktxt_t: ', wktxt_t)
         return False, resp.status, ReturnVal(summ['release'],
                                              summ['pid'],
@@ -1834,8 +1897,12 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     # ウィキテキストの作成
     wikitext_a = format_wikitext_a(
         summ, pnum, pfmrsstr) if args.table != 1 else ()
-    wikitext_t = format_wikitext_t(
-        summ, pfmrsstr, dirstr, args.dir_col, diff_page) if args.table else ''
+    wikitext_t = format_wikitext_t(summ,
+                                   pfmrsstr,
+                                   dirstr,
+                                   args.dir_col,
+                                   diff_page,
+                                   add_column) if args.table else ''
 
     if __name__ != '__main__':
         # モジュール呼び出しならタプルで返す。
