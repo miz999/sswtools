@@ -293,9 +293,9 @@ p_interlink = _re.compile(r'(\[\[.+?\]\])')
 p_date = _re.compile(r'\d{4}-\d{2}-\d{2}')
 p_list_article = _re.compile(r'/article=(.+?)/')
 p_actname1 = _re.compile(r'[)）][(（]')
-p_actname11 = _re.compile(r'[(（]')
 p_actname2 = _re.compile(r'[（(、]')
-p_neghirag = _re.compile(r'[^ぁ-ゞ]')
+p_hiragana = _re.compile(r'[ぁ-ゞー]')
+p_neghirag = _re.compile(r'[^ぁ-ゞー]')
 
 sp_pid = (_re.compile(r'^(?:[hn]_)?\d*([a-z]+)(\d+).*', _re.I), r'\1-\2')
 sp_tsuffix = (_re.compile(r' - \S*( - DMM.R18)?$'), '')
@@ -1434,7 +1434,7 @@ class _GetActName:
 
         if len(named) == 1:
             # 分割されなかったら名前は1つのみなのでそのまま名前とよみに分割
-            named = p_actname11.split(data)
+            named = p_inbracket.split(data)
 
         # 名前を分割
         name = p_actname2.split(named[0])
