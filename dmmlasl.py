@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-DMMから指定したメーカーのレーベルおよびシリーズの一覧をウィキテキストで作成する
+指定したメーカーのレーベルおよびシリーズの一覧情報をDMMから取得しウィキテキストを作成する
 
 書式:
 dmmlasl.py [-t {maker | label}] ID [オプション ...]
 
 説明:
-    DMMから、指定したメーカーに所属する全レーベルおよびシリーズの情報を
-    取得しウィキテキスト形式で一覧を作成する。
+    DMMから、指定したメーカーに所属する全レーベルおよびシリーズの情報(名称、作品数、
+    品番のプレフィクス、最終リリース日)を取得しウィキテキスト形式で一覧を作成する。
     作成したウィキテキストは、デフォルトで
     {maker | label}.<ID>.{メーカー名 | レーベル名}.wiki
     というファイル名で保存する。
 
-    「AVGP」や「AV OPEN」など、広くメーカーにまたがる仮レーベルのシリーズは
+    「AVGP」や「AV OPEN」など、広くメーカーにまたがる仮レーベルのシリーズ情報は
     取得しない。
 
     限定商品とアウトレットは除外する(総集編は含む)。
@@ -61,20 +61,20 @@ IDまたはURL
 
 -l, --only-label
     レーベルの一覧だけ出力し、シリーズ一覧は出力しない。
-    (内部でデータの取得自体は行う)
+    (データの矛盾を避けるため、内部でシリーズ情報の取得自体は行う)
 
 -s, --only-series
     シリーズの一覧だけ出力し、レーベル情報は出力しない。
 
 -u, --unsuppress
-    「AVGP」や「AV OPEN」など、メーカーにまたがるめんどくさいレーベルの
-    シリーズも取得する。
+    「AVGP」や「AV OPEN」など、メーカーにまたがるめんどくさい仮レーベルの
+    シリーズ情報も取得する。
 
 -d, --without-dmm
-    DMMの一覧ページヘのリンクを追加しない。
+    DMMの一覧ページヘのリンクを出力しない。
 
 -a, --without-latest
-    各レーベル/シリーズの最終リリース日を追加しない。
+    各レーベル/シリーズの最終リリース日を出力しない。
 
 -e, --without-prefixes
     品番のプレフィクスの統計を出力しない
@@ -117,7 +117,7 @@ IGNORE_LABELS = ('AVGP',
                  'AV OPEN',
                  'AV30',
                  'AVopen',
-                 'Onafes（オナフェス）グランプリ2015')
+                 'Onafes')
 
 # 配下のシリーズを取得しないメーカーとレーベルの組み合わせ
 IGNORE_PARES = {'40004':      # アイエナジー
@@ -430,7 +430,18 @@ def main():
 
     article_name = listparser.article[0][0]
 
-    emsg('I', '{} (id={}, 新規{}/全{}作品)'.format(
+    # メーカー名が変わったところで出力ファイルのチェック
+    outstem = '{}.{}'.format(flprefix,
+                             article_name.translate(libssw.t_filename))
+
+    outfile = args.outfile or '{}.wiki'.format(outstem)
+    if args.replace:
+        writemode = 'w'
+    else:
+        libssw.files_exists('w', outfile)
+        writemode = 'x'
+
+    emsg('I', '{} [id={}, 新規{}/全{}作品]'.format(
         article_name, ROOTID, nc_num, total))
     verbose('newcomers count: {}'.format(nc_num))
 
@@ -448,7 +459,7 @@ def main():
             for u in reversed(lprods):
                 lb_prods[lid][u] = lprods[u]
         lb_newcomers[lid] = lprods
-        emsg('I', 'レーベル: {} (id={}, 新規{}作品)'.format(
+        emsg('I', 'レーベル: {} [id={}, 新規{}作品]'.format(
             lname, lid, len(lprods)))
 
         lb_latest[lid] = get_latest(lprods)
@@ -463,7 +474,7 @@ def main():
 
     ncmk_ophans = ret_members.ophans.copy()
     ncmk_ophans_prods = ret_members.ophans_prods.copy()
-    emsg('I', '{}その他: ({}作品)'.format(
+    emsg('I', '{}その他: {}作品'.format(
         article_name, len(ncmk_ophans_prods)))
 
     mk_ophans.extend(ncmk_ophans)
@@ -507,7 +518,7 @@ def main():
                 for u in reversed(sprods):
                     verbose('sid: {}, u: {}'.format(sid, u))
                     sr_prods[sid][u] = sprods[u]
-            emsg('I', 'シリーズ: {} (id={}, 新規{}作品)'.format(
+            emsg('I', 'シリーズ: {} [id={}, 新規{}作品]'.format(
                 sname, sid, len(sprods)))
 
             sr_latest[sid] = get_latest(sprods)
@@ -515,7 +526,7 @@ def main():
 
         nclb_ophans = ret_members.ophans.copy()
         nclb_ophans_prods = ret_members.ophans_prods.copy()
-        emsg('I', '{}その他: ({}作品)'.format(
+        emsg('I', '{}その他: {}作品'.format(
             lb_name[lid],  len(nclb_ophans_prods)))
         nclb_ophans_latest = ret_members.ophans_latest
 
@@ -554,11 +565,6 @@ def main():
 
     print('\n')
 
-    outstem = '{}.{}'.format(flprefix,
-                             article_name.translate(libssw.t_filename))
-
-    outfile = args.outfile or '{}.wiki'.format(outstem)
-    writemode = 'w' if args.replace else 'x'
     fd = open(outfile, writemode)
 
     if target == 'maker':
