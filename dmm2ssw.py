@@ -121,6 +121,7 @@ DMM作品ページのURL
 
 
 オプション:
+
 -a, --actress 出演者 [出演者 ...]
     クレジットされてない出演者を追加する場合用。
     出演者(のwikiページ名)を指定する。
@@ -133,6 +134,9 @@ DMM作品ページのURL
     (ただし出力では区切り文字はすべて"／"になる)。
     女優名ページ用ウィキテキストの場合、-n 指定も含め2名に満たない場合は出力
     されない。
+    出演者文字列の先頭に @@ をつけるとウィキテキストの構文で直接指定したとみなす
+    (@@を取り除いてそのままウィキテキストに出力する)。
+    ウィキテキストで直接指定時は引数は先頭の1個だけ取られ、2個目以降は無視される。
 
 -n, --number 出演者数
     未知の出演者がいる場合用。
@@ -140,6 +144,7 @@ DMM作品ページのURL
     指定されると出演者の最後に「… ほか計n名」を追加する。
     正数を与えても既知の出演者数以下の場合は無視される。
     -1 を指定すると「… ほか」と人数を明記しない曖昧表示になる。
+    -a をウィキテキストで直接指定したときは無視される。
 
 -s, --series [シリーズ一覧ページ名]
     シリーズ一覧ページへのリンクを追加する場合用。
@@ -910,6 +915,7 @@ class DMMParser:
                 self._sm['note'].append(key)
         else:
             # 除外対象なら処理中止
+            verbose('Omit exception ({}, {})'.format(key, hue))
             raise OmitTitleException(key, hue)
 
     def _ret_title(self, chk_longtitle):
@@ -1315,14 +1321,14 @@ class DMMParser:
                 return _up.urljoin(BASEURL, rlitem.getparent().get('href'))
 
     def __call__(self, he, service, sm=_libssw.Summary(),
-                 args=_argparse.Namespace):
+                 args=_argparse.Namespace, ignore_pfmrs=False):
         '''作品ページの解析'''
         self._he = he
         self._sm = sm
+        self.ignore_pfmrs = ignore_pfmrs
         self.data_replaced = False
         self.bluray = False
         self.omit_suss = False
-        self.ignore_pfmrs = False
         self.rental_pcdr = False
         self.force_chk_sale = False
 
@@ -1727,6 +1733,12 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     service = getattr(p_args, 'service', None)
     series_guide = getattr(p_args, 'series_guide', True)
 
+    if args.actress and args.actress[0].startswith('@@'):
+        # ウィキテキストで直接指定
+        rawpfmrs = args.actress[0].lstrip('@@')
+    else:
+        rawpfmrs = ''
+
     # サービス未指定時の自動決定
     if not service:
         service = _libssw.resolve_service(summ['url'])
@@ -1805,7 +1817,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
 
     # HTMLの解析
     try:
-        summ.update(dmmparser(he, service, summ, args))
+        summ.update(dmmparser(he, service, summ, args, ignore_pfmrs=rawpfmrs))
     except OmitTitleException as e:
         # 除外対象なので中止
         return False, 'Omitted', (e.key, e.word)
@@ -1853,8 +1865,13 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     verbose('summ[list_page]: ', summ['list_page'])
 
     # 出演者文字列の作成
-    # 女優ページ用のみ作成で出演者数が1人ならやらない
-    if len(summ['actress']) < 2 and not summ['number'] and args.table == 0:
+    pfmrslk = ()
+    if rawpfmrs:
+        # ウィキテキスト
+        pfmrslk = _libssw.p_linkpare.findall(rawpfmrs)
+        pfmrsstr, pnum = rawpfmrs, len(pfmrslk)
+    elif len(summ['actress']) < 2 and not summ['number'] and args.table == 0:
+        # 女優ページ用のみ作成で出演者数が1人ならやらない
         pfmrsstr, pnum = '', 0
     else:
         pfmrsstr, pnum = _libssw.stringize_performers(summ['actress'],
@@ -1933,7 +1950,8 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
         if args.browser:
             # wikiのページを開く
             if args.table != 1:
-                for a in summ['actress']:
+                pages = pfmrslk or summ['actress']
+                for a in pages:
                     _libssw.open_ssw(a[1] or a[0])
             if args.table:
                 _libssw.open_ssw(summ['list_page'])
