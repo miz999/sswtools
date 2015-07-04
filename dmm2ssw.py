@@ -785,6 +785,18 @@ class __TrySMM:
     返り値:
     女優情報があった場合はその人名のリスト、なければ空のタプル
     '''
+    _allhiraganas = ('あいみ', 'あいり', 'あおい', 'あきな', 'あずき', 'あみ',
+                     'あゆか', 'あゆみ', 'あゆむ', 'ありさ', 'いちご', 'えりりか',
+                     'かなこ', 'かれん', 'くらら', 'ここみ', 'このは', 'さおり',
+                     'さくら', 'さな', 'さなえ', 'さやか', 'しずか', 'しずく',
+                     'すみれ', 'つくし', 'つぐみ', 'なおみ', 'なごみ', 'なつみ',
+                     'なな', 'ななみ', 'なみ', 'のぞみ', 'ひかる', 'ほしそら',
+                     'まいら', 'まこと', 'まみ', 'まり', 'まりか', 'まりん',
+                     'みいな', 'みくり', 'みちる', 'みゅう', 'みゆ', 'めいん',
+                     'もえり', 'もな', 'ももは', 'ゆい', 'ゆいの', 'ゆう',
+                     'ゆうみ', 'ゆうゆう', 'りおん', 'りく', 'りな', 'りりあ',
+                     'りりか', 'りんか', 'れおな', 'れんか')
+
     def __init__(self):
         self.title_smm = ''
         # self._cookie = _libssw.get_cookie()
@@ -810,7 +822,8 @@ class __TrySMM:
 
     def _chk_anonym(self, pfmr):
         '''SMM出演者情報でひらがなのみの名前の場合代用名かどうかチェック'''
-        if _libssw.p_neghirag.search(pfmr) or self._is_existent(pfmr):
+        # if _libssw.p_neghirag.search(pfmr) or self._is_existent(pfmr):
+        if _libssw.p_neghirag.search(pfmr) or pfmr in self._allhiraganas:
             return (pfmr, '', '')
         else:
             return ('', '', '({})'.format(pfmr))
