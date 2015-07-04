@@ -42,7 +42,7 @@ dmm2ssw.py [DMM作品ページのURL] [オプション...]
     ・一度FirefoxからデフォルトプロファイルでSMMのアダルトページにアクセスして
       年齢認証を行っていること(Cookieの期限が24時間のようなので、1日に1回行えばよいはず)
     SMM上でも仮の名前のときがあるため、SMM上ですべてひらがなの名前のときはその名前の
-    女優名が存在するかどうかDMM上で確認し、存在しなければ内部リンクにしない。
+    女優名が存在しなければ内部リンクにしない。
     --disable-check-smm オプションが与えられると出演者情報がなくてもSMMを見に
     行かない。
 
@@ -348,7 +348,8 @@ BASEURL_SSW = _libssw.BASEURL_SSW
 REDIRECTS = _libssw.REDIRECTS
 
 ReturnVal = _namedtuple('ReturnVal',
-                        'release,pid,title,title_dmm,url,label,series,wktxt_a,wktxt_t')
+                        ('release', 'pid', 'title', 'title_dmm', 'url',
+                         'label', 'series', 'wktxt_a', 'wktxt_t'))
 
 p_more = _re.compile(r"url: '(.*?)'")
 p_related = _re.compile(r'var url = "(.*)"')
@@ -785,6 +786,7 @@ class __TrySMM:
     返り値:
     女優情報があった場合はその人名のリスト、なければ空のタプル
     '''
+    # 実在するひらがなのみの名前
     _allhiraganas = ('あいみ', 'あいり', 'あおい', 'あきな', 'あずき', 'あみ',
                      'あゆか', 'あゆみ', 'あゆむ', 'ありさ', 'いちご', 'えりりか',
                      'かなこ', 'かれん', 'くらら', 'ここみ', 'このは', 'さおり',
@@ -1525,7 +1527,7 @@ def check_actuallpage(url, lpage, ltype, pid):
 
     if result:
         REDIRECTS[url] = result
-        _libssw.save_redirects()
+        _libssw.save_cache(REDIRECTS, _libssw.RDRDFILE)
 
     return result
 

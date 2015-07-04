@@ -37,8 +37,7 @@ __version__ = 20150512
 VERBOSE = 0
 
 CACHEDIR = _Path(_gettempdir()) / 'dmm2ssw_cache'
-RDRDFILE = _Path(CACHEDIR) / 'redirects.pickle'
-LOCKFILE = _Path(CACHEDIR) / '.save_rdr'
+RDRDFILE = 'redirects'
 
 RECHECK = False
 
@@ -703,7 +702,7 @@ def is_omnirookie(cid, title):
 
 class DMMTitleListParser:
     '''一覧ページの解析'''
-    def __init__(self, no_omits=(), patn_pid=None, show_info=True):
+    def __init__(self, no_omits=OMITTYPE, patn_pid=None, show_info=True):
         self._no_omits = no_omits
         self._patn_pid = patn_pid
         self._show_info = show_info
@@ -1342,7 +1341,7 @@ def stringize_performers(pfmrs, number, follow):
     pfmrsstr = '／'.join(_build_performerslink(pfmrs, follow))
 
     if follow:
-        save_redirects()
+        save_cache(REDIRECTS, RDRDFILE)
 
     # 「～ほかn名」
     if number == -1:
@@ -1574,38 +1573,39 @@ def show_diff(flines, tlines, fdesc, tdesc, context=True):
 
 def save_cache(target, stem):
     '''キャッシュ情報の保存'''
-    verbose('Saving cache...')
+    def save():
+        lockfile = CACHEDIR / (stem + '.lock')
+        pkfile = CACHEDIR / (stem + '.pickle')
+        verbose('W', 'cache file: ', pkfile)
 
-    lockfile = CACHEDIR / (stem + '.lock')
-    pkfile = CACHEDIR / (stem + '.pickle')
-    verbose('W', 'cache file: ', pkfile)
+        if lockfile.exists():
+            now = _time.time()
+            mtime = lockfile.stat().st_mtime
+            if now - mtime > 180:
+                lockfile.unlink()
 
-    if lockfile.exists():
-        now = _time.time()
-        mtime = lockfile.stat().st_mtime
-        if now - mtime > 180:
-            lockfile.unlink()
-
-    for i in range(10):
-        try:
-            lockfile.touch(exist_ok=False)
-        except FileExistsError:
-            _time.sleep(1)
+        for i in range(10):
+            try:
+                lockfile.touch(exist_ok=False)
+            except FileExistsError:
+                _time.sleep(1)
+            else:
+                break
         else:
-            break
-    else:
-        emsg('E', 'キャッシュファイルが10秒以上ロック状態にあります: ', lockfile)
+            emsg('E', 'キャッシュファイルが10秒以上ロック状態にあります: ', lockfile)
 
-    with pkfile.open('wb') as f:
-        try:
+        with pkfile.open('wb') as f:
             _pickle.dump(target, f)
-        except KeyboardInterrupt:
-            ctrlc = True
-        else:
-            ctrlc = False
 
-    verbose('cache saved: ({})'.format(stem))
+        verbose('cache saved: ({})'.format(stem))
 
+    verbose('Saving cache...')
+    try:
+        save()
+    except KeyboardInterrupt:
+        ctrlc = True
+    else:
+        ctrlc = False
     lockfile.unlink()
     if ctrlc:
         raise SystemExit
@@ -1635,61 +1635,7 @@ def load_cache(stem, default=None, expire=7200):
             cache = _pickle.load(f)
         return cache
 
-
-def save_redirects():
-    '''リダイレクト情報辞書の保存'''
-    if LOCKFILE.exists():
-        now = _time.time()
-        mtime = LOCKFILE.stat().st_mtime
-        if now - mtime > 180:
-            LOCKFILE.unlink()
-
-    for i in range(10):
-        try:
-            LOCKFILE.touch(exist_ok=False)
-        except FileExistsError:
-            _time.sleep(1)
-        else:
-            break
-    else:
-        emsg('E', 'リダイレクト情報キャッシュファイルが10秒以上ロック状態にあります。')
-
-    with RDRDFILE.open('wb') as f:
-        try:
-            _pickle.dump(REDIRECTS, f)
-        except KeyboardInterrupt:
-            ctrlc = True
-        else:
-            ctrlc = False
-
-    verbose('redirects cache saved: ({})'.format(len(REDIRECTS)))
-
-    LOCKFILE.unlink()
-    if ctrlc:
-        raise SystemExit
-
-
-def load_redirects():
-    '''保存されたリダイレクト情報辞書の読み込み'''
-    verbose('redirects file path: ', RDRDFILE)
-    if not RDRDFILE.exists():
-        verbose('redirects cache not found, new one will be created')
-        return REDIRECTS
-
-    now = _time.time()
-    mtime = RDRDFILE.stat().st_mtime
-
-    if (now - mtime) > 7200:
-        # 最終更新から2時間以上経ってたら使わない。
-        verbose('saved redirects cache too old')
-        return REDIRECTS
-    else:
-        with RDRDFILE.open('rb') as f:
-            redirects = _pickle.load(f)
-        verbose('redirects cache loaded ({})'.format(len(redirects)))
-        return redirects
-
-REDIRECTS = load_redirects()
+REDIRECTS = load_cache(RDRDFILE, default=REDIRECTS)
 
 
 def clear_cache():
