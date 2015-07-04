@@ -86,7 +86,7 @@ OMITWORDS = {'総集編':      '総集編',
 #  '保存版'
 #  '全集'
 
-OMITTYPE = frozenset(OMITWORDS.values())
+OMITTYPE = ('イメージビデオ', '総集編', 'アウトレット', '限定盤', 'UMD')
 
 # 総集編・再収録専門そうなやつ
 # 品番プレフィクス(URL上のもの)
@@ -558,7 +558,7 @@ def inprogress(msg):
 
 
 def gen_no_omits(no_omit):
-    return ('イメージビデオ', '総集編', 'アウトレット', '限定盤', 'UMD')[:no_omit]
+    return OMITTYPE[:no_omit]
 
 
 def le80bytes(string, encoding='euc_jisx0213'):
