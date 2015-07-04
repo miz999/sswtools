@@ -759,10 +759,6 @@ def get_args(argv):
     args.last_pid = args.last_pid and args.last_pid.upper()
     args.last_cid = args.last_cid and args.last_cid.lower()
 
-    # -L, -M , -U 以外では --not-in-series は意味がない
-    if args.retrieval not in ('label', 'maker', 'url'):
-        args.n_i_s = False
-
     # 表形式のみの出力ならば実際の一覧ページを探す必要はない
     if args.table == 1:
         args.check_listpage = False
@@ -937,6 +933,11 @@ def main(argv=None):
         args.retrieval = extr_ids.retrieval
     emsg('I', '対象: {}'.format(args.retrieval))
 
+    # -L, -M , -U 以外では --not-in-series は意味がない
+    if args.retrieval not in ('label', 'maker', 'url'):
+        args.n_i_s = False
+        verbose('force disabled n_i_s')
+
     if args.retrieval == 'actress':
         for i in ids:
             if i in libssw.HIDE_NAMES:
@@ -1020,8 +1021,8 @@ def main(argv=None):
         key_type = None
         idattr = None
 
-    listparser = libssw.DMMTitleListParser(no_omits, sp_pid)
-    seriesparser = libssw.DMMTitleListParser(no_omits, sp_pid, show_info=False)
+    listparser = libssw.DMMTitleListParser(no_omits=no_omits, patn_pid=sp_pid)
+    seriesparser = libssw.DMMTitleListParser(patn_pid=sp_pid, show_info=False)
 
     # 作品情報取得用イテラブルの作成
     priurls = ''

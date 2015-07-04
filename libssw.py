@@ -1576,7 +1576,7 @@ def save_cache(target, stem):
     def save():
         lockfile = CACHEDIR / (stem + '.lock')
         pkfile = CACHEDIR / (stem + '.pickle')
-        verbose('W', 'cache file: ', pkfile)
+        verbose('cache file: ', pkfile)
 
         if lockfile.exists():
             now = _time.time()
@@ -1597,6 +1597,8 @@ def save_cache(target, stem):
         with pkfile.open('wb') as f:
             _pickle.dump(target, f)
 
+        lockfile.unlink()
+
         verbose('cache saved: ({})'.format(stem))
 
     verbose('Saving cache...')
@@ -1606,7 +1608,7 @@ def save_cache(target, stem):
         ctrlc = True
     else:
         ctrlc = False
-    lockfile.unlink()
+
     if ctrlc:
         raise SystemExit
 
