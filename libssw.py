@@ -715,7 +715,7 @@ class DMMTitleListParser:
         '''アーティクル名の取得'''
         try:
             article = he.find('head/title').text.strip()
-        except IndexError:
+        except AttributeError:
             article = ''
 
         # wiki構文と衝突する文字列の置き換え
