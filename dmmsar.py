@@ -1316,8 +1316,7 @@ def main(argv=None):
                     # 10件ごとの表ヘッダの出力
                     remainder = j % args.split
                     print(table_header.format(remainder
-                                              if remainder and not j % 50
-                                              else 'NO'),
+                                              if remainder else 'NO'),
                           file=fd)
                     verbose('Header: ', j)
 
