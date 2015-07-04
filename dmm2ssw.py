@@ -238,7 +238,7 @@ DMM作品ページのURL
     できなかった情報がウィキテキスト側にあればそれで補完する(NOTEも含む)。
     セルが結合されている表には未対応。
 
---join-url Wiki一覧ページのURL [Wiki一覧ページのURL ...] (一覧ページのHTML)
+--join-html Wiki一覧ページのURL/HTML [Wiki一覧ページのURL/HTML ...] (一覧ページのHTML)
     DMMから得た作品と(URLが)同じ作品が、Wikiの一覧ページにあった場合、DMMからは取得
     できなかった情報がWiki側にあればそれで補完する(NOTEも含む)。
     一覧ページを保存したHTMLのファイルでも可。
