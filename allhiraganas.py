@@ -51,9 +51,8 @@ def select_allhiragana(ids):
     cur = conn.cursor()
 
     if ids:
-        length = len(ids)
         sql = 'select id,current from main where id in({})'.format(
-            ','.join('?' * length))
+            ','.join('?' * len(ids)))
         cur.execute(sql, ids)
     else:
         cur.execute('select id,current from main '
@@ -75,6 +74,7 @@ def select_allhiragana(ids):
 
             for tr in info.getparent().getparent()[1:]:
                 verbose('title: ', tr.find('td/a').text)
+
                 if tr[4].text == '---' or tr[6].text == '---':
                     verbose('Not DVD or Rental')
                     continue
@@ -89,11 +89,15 @@ def select_allhiragana(ids):
 
                 lastrel = int(tr[7].text.strip().split('-', 1)[0])
                 if thisyr - lastrel < 2:
+
                     yield name
                     print('positive ({})'.format(lastrel))
+
                 else:
                     print('negative ({})'.format(lastrel))
+
                 break
+
             else:
                 print('negative')
 
