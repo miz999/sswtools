@@ -557,7 +557,8 @@ def _get_args(argv, props, p_args):
                            default=getattr(p_args, 'longtitle', True))
     argparser.add_argument('--fastest',
                            help='ウェブにアクセスするあらゆる補助処理を行わない',
-                           action='store_true')
+                           action='store_true',
+                           default=getattr(p_args, 'fastest', False))
 
     argparser.add_argument('--recheck',
                            help='キャッシュしているリダイレクト先を強制再チェック',
@@ -786,18 +787,13 @@ class __TrySMM:
     返り値:
     女優情報があった場合はその人名のリスト、なければ空のタプル
     '''
-    # 実在するひらがなのみの名前
-    _allhiraganas = ('あいみ', 'あいり', 'あおい', 'あきな', 'あずき', 'あみ',
-                     'あゆか', 'あゆみ', 'あゆむ', 'ありさ', 'いちご', 'えりりか',
-                     'かなこ', 'かれん', 'くらら', 'ここみ', 'このは', 'さおり',
-                     'さくら', 'さな', 'さなえ', 'さやか', 'しずか', 'しずく',
-                     'すみれ', 'つくし', 'つぐみ', 'なおみ', 'なごみ', 'なつみ',
-                     'なな', 'ななみ', 'なみ', 'のぞみ', 'ひかる', 'ほしそら',
-                     'まいら', 'まこと', 'まみ', 'まり', 'まりか', 'まりん',
-                     'みいな', 'みくり', 'みちる', 'みゅう', 'みゆ', 'めいん',
-                     'もえり', 'もな', 'ももは', 'ゆい', 'ゆいの', 'ゆう',
-                     'ゆうみ', 'ゆうゆう', 'りおん', 'りく', 'りな', 'りりあ',
-                     'りりか', 'りんか', 'れおな', 'れんか')
+    # 1年以内にリリース実績のある実在するひらがなのみの名前 (2015-07-05現在)
+    _allhiraganas = ('あいり', 'あづみ', 'あゆか', 'ありさ', 'くるみ',
+                     'ここあ', 'さな', 'さやか', 'しずく', 'すみれ', 'つくし',
+                     'つばさ', 'つぼみ', 'なおみ', 'なごみ', 'なつみ',
+                     'ののか', 'ひかる', 'まりか', 'みはる', 'めぐり',
+                     'もえり', 'ももか', 'ゆいの', 'ゆう', 'ゆうゆう', 'りん',
+                     'りんか', 'れんか')
 
     def __init__(self):
         self.title_smm = ''
@@ -1161,8 +1157,14 @@ class DMMParser:
             img_sm = img_lg.replace('jp.jpg', 'js.jpg')
         else:
             img_a = self._he.find('.//a[@name="package-image"]')
-            img_lg = img_a.get('href')
-            img_sm = img_a.find('img').get('src')
+            try:
+                img_lg = img_a.get('href')
+            except AttributeError:
+                img_lg = None
+            try:
+                img_sm = img_a.find('img').get('src')
+            except AttributeError:
+                img_sm = None
 
         return img_lg, img_sm
 
