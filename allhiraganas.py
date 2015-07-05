@@ -65,7 +65,9 @@ def select_allhiragana(ids):
             print(aid, name + ': ', end='')
             url = 'http://actress.dmm.co.jp/-/detail/=/actress_id={}/'.format(aid)
             verbose('url: ', url)
+
             resp, he = libssw.open_url(url)
+
             info = he.find('.//td[@class="info_works1"]')
             if info is None:
                 print('negative')
@@ -74,7 +76,7 @@ def select_allhiragana(ids):
             for tr in info.getparent().getparent()[1:]:
                 verbose('title: ', tr.find('td/a').text)
                 if tr[4].text == '---' or tr[6].text == '---':
-                    verbose('Not DVD and Rental')
+                    verbose('Not DVD or Rental')
                     continue
 
                 b, status, values = dmm2ssw.main(
