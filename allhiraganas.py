@@ -3,11 +3,13 @@
 '''
 ひらがなのみの女優名の採取
 
-名前がひらがなのみで5文字未満で、DVDセルおよびレンタル最新作のリリースが前年までの女優名をリストアップ
+名前がひらがなのみで5文字未満で、DVDセルおよびレンタル最新作のリリース(わかるかぎり総集編除く)が
+1年以内の女優名をリストアップ
 '''
 import sqlite3
-import time
 import argparse
+
+from datetime import date
 
 import libssw
 import dmm2ssw
@@ -44,8 +46,7 @@ def get_args():
     return args
 
 
-def select_allhiragana(ids):
-    thisyr = time.localtime().tm_year
+def select_allhiragana(ids, today):
     dmmparser = dmm2ssw.DMMParser(no_omits=(), deeper=False, pass_bd=True)
     conn = sqlite3.connect('dmm_actress.db')
     cur = conn.cursor()
@@ -87,14 +88,15 @@ def select_allhiragana(ids):
                     verbose('Omitted: status=', status, ', values=', values)
                     continue
 
-                lastrel = int(tr[7].text.strip().split('-', 1)[0])
-                if thisyr - lastrel < 2:
+                lastrel = date(*(int(d) for d in tr[7].text.split('-')))
+
+                if (today - lastrel).days < 366:
 
                     yield name
-                    print('positive ({})'.format(lastrel))
+                    print('positive ({})'.format(lastrel.year))
 
                 else:
-                    print('negative ({})'.format(lastrel))
+                    print('negative ({})'.format(lastrel.year))
 
                 break
 
@@ -108,9 +110,11 @@ def main():
 
     args = get_args()
 
-    positive = set(select_allhiragana(args.id))
-    print('# 1年以内にリリース実績のある実在するひらがなのみの名前 ({}現在)'.format(
-        time.strftime('%Y-%m-%d')))
+    today = date.today()
+
+    positive = set(select_allhiragana(args.id, today))
+    print('# 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 ({}現在)'.format(
+        str(today)))
     print('_allhiraganas = ', end='')
     print(sorted(positive))
 
