@@ -528,7 +528,8 @@ def sub(p_list, string, n=False):
 
 
 def quote(string, safe='/', encoding='euc_jisx0213', errors=None):
-    return _up.quote(string, safe=safe, encoding=encoding, errors=errors)
+    return _up.quote(string, safe=safe, encoding=encoding, errors=errors
+    ).replace('-', '%2d')
 
 
 def unquote(string, encoding='euc_jisx0213', errors='replace'):
