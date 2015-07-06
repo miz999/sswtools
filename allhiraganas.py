@@ -25,16 +25,18 @@ emsg = libssw.Emsg(OWNNAME)
 def get_args():
     global VERBOSE
 
-    argeparser = argparse.ArgumentParser()
-    argeparser.add_argument('-i', '--id',
-                            help='女優ID',
-                            nargs='+')
-    argeparser.add_argument('-v', '--verbose',
-                            help='デバッグ用情報を出力する',
-                            action='count',
-                            default=0)
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('-i', '--id',
+                           help='女優ID',
+                           nargs='+')
+    argparser.add_argument('-p', '--path',
+                           help='DBのパス')
+    argparser.add_argument('-v', '--verbose',
+                           help='デバッグ用情報を出力する',
+                           action='count',
+                           default=0)
 
-    args = argeparser.parse_args()
+    args = argparser.parse_args()
 
     verbose.verbose = VERBOSE = args.verbose
 
@@ -46,9 +48,9 @@ def get_args():
     return args
 
 
-def select_allhiragana(ids, today):
+def select_allhiragana(ids, today, path):
     dmmparser = dmm2ssw.DMMParser(no_omits=(), deeper=False, pass_bd=True)
-    conn = sqlite3.connect('dmm_actress.db')
+    conn = sqlite3.connect(path or 'dmm_actress.db')
     cur = conn.cursor()
 
     if ids:
@@ -61,47 +63,50 @@ def select_allhiragana(ids, today):
 
     for aid, name in cur:
         verbose('id: ', aid, ', name: ', name)
-        if not libssw.p_neghirag.search(name) and len(name) < 5:
-            print(aid, name + ': ', end='')
-            url = 'http://actress.dmm.co.jp/-/detail/=/actress_id={}/'.format(aid)
-            verbose('url: ', url)
 
-            resp, he = libssw.open_url(url)
+        if libssw.p_neghirag.search(name) or len(name) > 4:
+            continue
 
-            info = he.find('.//td[@class="info_works1"]')
-            if info is None:
-                print('negative')
+        print(aid, name + ': ', end='')
+        url = 'http://actress.dmm.co.jp/-/detail/=/actress_id={}/'.format(aid)
+        verbose('url: ', url)
+
+        resp, he = libssw.open_url(url)
+
+        info = he.find('.//td[@class="info_works1"]')
+        if info is None:
+            print('negative')
+            continue
+
+        for tr in info.getparent().getparent()[1:]:
+            verbose('title: ', tr.find('td/a').text)
+
+            if tr[4].text == '---' or tr[6].text == '---':
+                verbose('Not DVD or Rental')
                 continue
 
-            for tr in info.getparent().getparent()[1:]:
-                verbose('title: ', tr.find('td/a').text)
+            b, status, values = dmm2ssw.main(
+                props=libssw.Summary(url=tr[4].find('a').get('href')),
+                p_args=argparse.Namespace(fastest=True),
+                dmmparser=dmmparser)
+            if status in ('Omitted', 404):
+                verbose('Omitted: status=', status, ', values=', values)
+                continue
 
-                if tr[4].text == '---' or tr[6].text == '---':
-                    verbose('Not DVD or Rental')
-                    continue
+            lastrel = date(*(int(d) for d in tr[7].text.split('-')))
 
-                b, status, values = dmm2ssw.main(
-                    props=libssw.Summary(url=tr[4].find('a').get('href')),
-                    p_args=argparse.Namespace(fastest=True),
-                    dmmparser=dmmparser)
-                if status in ('Omitted', 404):
-                    verbose('Omitted: status=', status, ', values=', values)
-                    continue
+            if (today - lastrel).days < 366:
 
-                lastrel = date(*(int(d) for d in tr[7].text.split('-')))
-
-                if (today - lastrel).days < 366:
-
-                    yield name
-                    print('positive ({})'.format(lastrel.year))
-
-                else:
-                    print('negative ({})'.format(lastrel.year))
-
-                break
+                yield name
+                print('positive ({})'.format(lastrel.year))
 
             else:
-                print('negative')
+                print('negative ({})'.format(lastrel.year))
+
+            break
+
+        else:
+            print('negative')
 
     conn.close()
 
@@ -112,7 +117,7 @@ def main():
 
     today = date.today()
 
-    positive = set(select_allhiragana(args.id, today))
+    positive = set(select_allhiragana(args.id, today, args.path))
     print('# 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 ({}現在)'.format(
         str(today)))
     print('_allhiraganas = ', end='')
