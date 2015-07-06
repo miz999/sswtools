@@ -805,7 +805,7 @@ def makeproditem(cid, service, sp_pid):
     verbose('built cid: {}, pid: {}'.format(cid, pid))
     url = '{}/{}/-/detail/=/cid={}/'.format(
         BASEURL, SERVICEDIC[service][1], cid)
-    return url, libssw.Summary(url=url, cid=cid, pid=pid)
+    return url, libssw.Summary(url=url, title='__' + pid, cid=cid, pid=pid)
 
 
 def from_sequence(keywords, service, sp_pid):
