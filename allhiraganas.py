@@ -49,7 +49,8 @@ def get_args():
 
 
 def select_allhiragana(ids, today, path):
-    dmmparser = dmm2ssw.DMMParser(no_omits=(), deeper=False, pass_bd=True)
+    dmmparser = dmm2ssw.DMMParser(no_omits=(), deeper=False, pass_bd=True,
+                                  quiet=True)
     conn = sqlite3.connect(path or 'dmm_actress.db')
     cur = conn.cursor()
 
@@ -62,11 +63,11 @@ def select_allhiragana(ids, today, path):
                     'where retired is null and deleted is null')
 
     for aid, name in cur:
-        verbose('id: ', aid, ', name: ', name)
 
         if libssw.p_neghirag.search(name) or len(name) > 4:
             continue
 
+        verbose(aid, name)
         print(aid, name + ': ', end='')
         url = 'http://actress.dmm.co.jp/-/detail/=/actress_id={}/'.format(aid)
         verbose('url: ', url)
@@ -81,12 +82,17 @@ def select_allhiragana(ids, today, path):
         for tr in info.getparent().getparent()[1:]:
             verbose('title: ', tr.find('td/a').text)
 
-            if tr[4].text == '---' or tr[6].text == '---':
-                verbose('Not DVD or Rental')
+            if tr[4].text == '---' and tr[6].text == '---':
+                verbose('Not DVD and Rental')
                 continue
 
+            sale = tr[4].find('a')
+            rental = tr[6].find('a')
+            prod_url = sale.get('href') if sale is not None else rental.get('href')
+            verbose('prod url: ', prod_url)
+
             b, status, values = dmm2ssw.main(
-                props=libssw.Summary(url=tr[4].find('a').get('href')),
+                props=libssw.Summary(url=prod_url),
                 p_args=argparse.Namespace(fastest=True),
                 dmmparser=dmmparser)
             if status in ('Omitted', 404):
