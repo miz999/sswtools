@@ -433,6 +433,8 @@ SPLIT_DEFAULT = 200
 
 p_actdelim = re.compile(r'[（、]')
 
+t_pidsep = str.maketrans('', '', '+-')
+
 
 def get_args(argv):
     '''コマンドライン引数の解釈'''
@@ -529,19 +531,24 @@ def get_args(argv):
     id_type = argparser.add_mutually_exclusive_group()
     id_type.add_argument('--start-pid',
                          help='データ作成開始品番(例:JMD-112)',
-                         metavar='PID')
+                         metavar='PID',
+                         default='')
     id_type.add_argument('--start-pid-s',
                          help='データ作成開始品番(厳密にチェック)',
-                         metavar='PID')
+                         metavar='PID',
+                         default='')
     id_type.add_argument('--start-cid',
                          help='データ作成開始品番(DMM上の品番, 例:15jmd112so)',
-                         metavar='CID')
+                         metavar='CID',
+                         default='')
     id_type.add_argument('-e', '--last-pid',
                          help='作成済み作品情報の最後の品番',
-                         metavar='PID')
+                         metavar='PID',
+                         default='')
     id_type.add_argument('--last-cid',
                          help='作成済み作品情報の最後の品番(DMM上の品番)',
-                         metavar='CID')
+                         metavar='CID',
+                         default='')
 
     argparser.add_argument('--start-date',
                            help='データ作成対象開始リリース日',
@@ -753,11 +760,12 @@ def get_args(argv):
         args.row = 1
 
     # start-pidは大文字、start-cidは小文字固定
-    args.start_pid = args.start_pid and args.start_pid.upper()
-    args.start_pid_s = args.start_pid_s and args.start_pid_s.upper()
-    args.start_cid = args.start_cid and args.start_cid.lower()
-    args.last_pid = args.last_pid and args.last_pid.upper()
-    args.last_cid = args.last_cid and args.last_cid.lower()
+    args.start_pid = args.start_pid.translate(t_pidsep).upper()
+    args.start_pid_s = args.start_pid_s.upper()
+    args.start_cid = args.start_cid.lower()
+
+    args.last_pid = args.last_pid.translate(t_pidsep).upper()
+    args.last_cid = args.last_cid.lower()
 
     # 表形式のみの出力ならば実際の一覧ページを探す必要はない
     if args.table == 1:
@@ -1105,7 +1113,7 @@ def main(argv=None):
         # 開始ID指定処理(--{start,last}-{p,c}id)
         if before and key_id:
             # 指定された品番が見つかるまでスキップ
-            if key_id != getattr(props, idattr):
+            if key_id != getattr(props, idattr).translate(t_pidsep):
                 emsg('I',
                      '作品を除外しました: {}={} (start id not met yet)'.format(
                          idattr, getattr(props, idattr)))
