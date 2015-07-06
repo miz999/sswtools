@@ -787,7 +787,7 @@ class __TrySMM:
     返り値:
     女優情報があった場合はその人名のリスト、なければ空のタプル
     '''
-    # 1年以内にリリース実績のある実在するひらがなのみの名前 (2015-07-05現在)
+    # 1年以内にリリース実績のある実在するひらがなのみ(4文字以下)の名前 (2015-07-05現在)
     _allhiraganas = ('あいり', 'あづみ', 'あゆか', 'ありさ', 'くるみ',
                      'ここあ', 'さな', 'さやか', 'しずく', 'すみれ', 'つくし',
                      'つばさ', 'つぼみ', 'なおみ', 'なごみ', 'なつみ',
@@ -819,9 +819,12 @@ class __TrySMM:
                 break
 
     def _chk_anonym(self, pfmr):
-        '''SMM出演者情報でひらがなのみの名前の場合代用名かどうかチェック'''
+        '''SMM出演者情報でひらがなのみの名前の場合代用名かどうかチェック
+        名前がひらがなのみで5文字未満で既知のひらがな女優名でなければ仮名とみなす'''
         # if _libssw.p_neghirag.search(pfmr) or self._is_existent(pfmr):
-        if _libssw.p_neghirag.search(pfmr) or pfmr in self._allhiraganas:
+        if _libssw.p_neghirag.search(pfmr) or \
+           len(pfmr) > 4 or \
+           pfmr in self._allhiraganas:
             return (pfmr, '', '')
         else:
             return ('', '', '({})'.format(pfmr))
