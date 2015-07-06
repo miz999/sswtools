@@ -433,8 +433,6 @@ SPLIT_DEFAULT = 200
 
 p_actdelim = re.compile(r'[（、]')
 
-t_pidsep = str.maketrans('', '', '+-')
-
 
 def get_args(argv):
     '''コマンドライン引数の解釈'''
@@ -760,11 +758,11 @@ def get_args(argv):
         args.row = 1
 
     # start-pidは大文字、start-cidは小文字固定
-    args.start_pid = args.start_pid.translate(t_pidsep).upper()
+    args.start_pid = libssw.rm_hyphen(args.start_pid).upper()
     args.start_pid_s = args.start_pid_s.upper()
     args.start_cid = args.start_cid.lower()
 
-    args.last_pid = args.last_pid.translate(t_pidsep).upper()
+    args.last_pid = libssw.rm_hyphen(args.last_pid).upper()
     args.last_cid = args.last_cid.lower()
 
     # 表形式のみの出力ならば実際の一覧ページを探す必要はない
@@ -1113,7 +1111,7 @@ def main(argv=None):
         # 開始ID指定処理(--{start,last}-{p,c}id)
         if before and key_id:
             # 指定された品番が見つかるまでスキップ
-            if key_id != getattr(props, idattr).translate(t_pidsep):
+            if key_id != libssw.rm_hyphen(getattr(props, idattr)):
                 emsg('I',
                      '作品を除外しました: {}={} (start id not met yet)'.format(
                          idattr, getattr(props, idattr)))

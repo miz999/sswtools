@@ -324,6 +324,8 @@ sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
 t_wikisyntax = str.maketrans('[]~', '［］～')
 t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
 t_nl = str.maketrans('', '', '\r\n')
+t_pidsep = str.maketrans('', '', '+-')
+
 
 DummyResp = _namedtuple('DummyResp', 'status,fromcache')
 
@@ -535,6 +537,10 @@ def unquote(string, encoding='euc_jisx0213', errors='replace'):
 
 def rm_nlcode(string):
     return string.translate(t_nl)
+
+
+def rm_hyphen(string):
+    return string.translate(t_pidsep)
 
 
 def files_exists(mode, *files):
