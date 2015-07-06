@@ -120,7 +120,7 @@ def searchwiki_by_url(url):
     '''検索結果から記事名を返すジェネレータ'''
     resp, he = libssw.open_url(
         'http://sougouwiki.com/search?keywords={}'.format(libssw.quote(url),
-        cache=False)
+        cache=False))
 
     searesult = he.find_class('result-box')[0].xpath('p[1]/strong')[0].tail
 
