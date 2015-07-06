@@ -916,9 +916,10 @@ class DMMParser:
     '''
     def __init__(self, no_omits=_libssw.OMITTYPE,
                  start_date=None, start_pid_s=None, filter_pid_s=None,
-                 pass_bd=False, n_i_s=False, deeper=True):
+                 pass_bd=False, n_i_s=False, deeper=True, quiet=False):
         self._sm = _libssw.Summary()
         self.deeper = deeper
+        self.quiet = quiet
         self.no_omits = no_omits
         self.start_date = start_date
         self.start_pid_s = start_pid_s and _libssw.split_pid(start_pid_s)
@@ -1115,7 +1116,9 @@ class DMMParser:
             data = _libssw.getnext_text(prop)
 
             # URL上とページ内の品番の相違チェック
-            if self._sm['cid'] and self._sm['cid'] != data.rsplit('so', 1)[0]:
+            if not self.quiet and \
+               self._sm['cid'] and \
+               self._sm['cid'] != data.rsplit('so', 1)[0]:
                 emsg('I', '品番がURLと異なっています: url={}, page={}'.format(
                     self._sm['cid'], data))
 
