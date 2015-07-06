@@ -31,6 +31,9 @@ sswchkactp.py [一覧ページのURL/HTML/ウィキテキスト ...] [オプシ�
 -l, --list-name ページ名
     ウィキテキスト内から正しいページ名が得られないときに直接指定する。
 
+-s, --start-pid チェック開始品番
+    このオプションを使用すると指定された開始品番より後の作品だけチェックする。
+
 -g, --gen-wikitext
     女優ページにない作品の女優ページ用のウィキテキストを作成する。
 
@@ -86,6 +89,10 @@ def get_args():
     argparser.add_argument('-l', '--list-name',
                            help='一覧ページ名を直接指定')
 
+    argparser.add_argument('-s', '--start-pid',
+                           help='チェック開始PID',
+                           default='')
+
     argparser.add_argument('-g', '--gen-wikitext',
                            help='女優ページに作品がない女優がいる作品のウィキテキストを作成する',
                            action='store_true')
@@ -109,6 +116,8 @@ def get_args():
     if args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
     verbose('verbose mode on')
+
+    args.start_pid = libssw.rm_hyphen(args.start_pid).upper()
 
     if args.browser:
         args.gen_wikitext = True
@@ -194,16 +203,30 @@ def main():
 
     # listp_url = gen_sswurl(listname)
     listp = libssw.quote(listname)
+    verbose('quoted listp: ', listp)
 
     print('ページ名:', listname)
 
     shortfalls = set()
+
+    before = True if args.start_pid else False
 
     for prod_url in targets:
 
         # 作品情報
         props = targets[prod_url]
         verbose('props: ', props.items())
+
+        pid = libssw.rm_hyphen(libssw.gen_pid(prod_url)[0])
+        verbose('pid: ', pid)
+
+        if before and args.start_pid != pid:
+            continue
+        else:
+            before = False
+
+        if not props.actress:
+            continue
 
         print('\nTITLE: {}'.format(props.title))
         print('URL:   {}'.format(prod_url))
@@ -235,6 +258,9 @@ def main():
             present, link2list, linked = check_actrpage(actr_url,
                                                         listp,
                                                         prod_url)
+            verbose('present: {}, link2list: {}, linked: {}'.format(
+                present, link2list, linked))
+
             if not present:
 
                 if link2list == 404:
@@ -257,8 +283,6 @@ def main():
                     shortfalls.add(dest)
                     notfound = True
                     continue
-            verbose('present: {}, link2list: {}, linked: {}'.format(
-                present, link2list, linked))
 
             if linked:
                 result = '○'
@@ -281,14 +305,6 @@ def main():
             if b:
                 print()
                 print(data.wktxt_a)
-
-    # if args.gen_wikitext:
-    #     print()
-    #     print(*wikitexts, sep='\n')
-    #     print()
-    #     if args.browser:
-    #         for s in shortfalls:
-    #             libssw.open_ssw(s)
 
 
 if __name__ == '__main__':
