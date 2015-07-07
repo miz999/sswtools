@@ -90,7 +90,7 @@ def get_args():
                            help='一覧ページ名を直接指定')
 
     argparser.add_argument('-s', '--start-pid',
-                           help='チェック開始PID',
+                           help='チェック開始品番',
                            default='')
 
     argparser.add_argument('-g', '--gen-wikitext',
@@ -207,9 +207,8 @@ def main():
 
     print('ページ名:', listname)
 
-    shortfalls = set()
-
     before = True if args.start_pid else False
+    shortfalls = set()
 
     for prod_url in targets:
 
@@ -231,7 +230,7 @@ def main():
         print('\nTITLE: {}'.format(props.title))
         print('URL:   {}'.format(prod_url))
 
-        notfound = False
+        notfounds = []
 
         # 作品の出演者情報
         for actr in props.actress:
@@ -241,6 +240,8 @@ def main():
             else:
                 shown = actr[0]
                 dest = actr[1] or actr[0]
+
+            result = ''
 
             print('* {}({}):'.format(dest, shown) if shown != dest else
                   '* {}:'.format(shown),
@@ -263,48 +264,50 @@ def main():
 
             if not present:
 
+                if dest not in shortfalls:
+                    notfounds.append(dest)
+                    shortfalls.add(dest)
+
                 if link2list == 404:
-                    print('✕ (女優ページなし)'.format(shown))
-                    shortfalls.add(dest)
-                    notfound = True
-                    continue
-
-                # 女優ページになかったら作品URLで検索してヒットしたWikiページでチェック
-                for purl, label in searchwiki_by_url(prod_url):
-                    if label.startswith(dest):
-                        present, link2list, linked = check_actrpage(purl,
-                                                                    listp,
-                                                                    prod_url)
-                        if present:
-                            print(' ⇒ {}'.format(label), end='')
-                            break
+                    result += '✕ (女優ページなし)'.format(shown)
                 else:
-                    print('✕ (女優ページあり)'.format(shown))
-                    shortfalls.add(dest)
-                    notfound = True
-                    continue
-
-            if linked:
-                result = '○'
-            elif link2list:
-                result = '△ (他の一覧ページへのリンクあり: {})'.format(
-                    ','.join(
-                        '"{}"'.format(libssw.unquote(p))
-                        for p in link2list))
+                    # 女優ページになかったら作品URLで検索してヒットしたWikiページでチェック
+                    for purl, label in searchwiki_by_url(prod_url):
+                        if label.startswith(dest):
+                            present, link2list, linked = check_actrpage(
+                                purl, listp, prod_url)
+                            if present:
+                                result += ' ⇒ {}'.format(label)
+                                break
+                    else:
+                        result += '✕ (女優ページあり)'
             else:
-                result = '△ (一覧ページへのリンクなし)'
+
+                if linked:
+                    result += '○'
+                elif link2list:
+                    result += '△ (他の一覧ページへのリンクあり: {})'.format(
+                        ','.join(
+                            '"{}"'.format(libssw.unquote(p))
+                            for p in link2list))
+                else:
+                    result += '△ (一覧ページへのリンクなし)'
 
             print(result, actr_url)
 
         # ウィキテキストの作成
-        if notfound and args.gen_wikitext:
-            props['title'] = ''
+        if notfounds and args.gen_wikitext:
+            props['title'] = '' # 副題の時もあるので一旦リセット
             b, status, data = dmm2ssw.main(props=props)
             verbose('Return from dmm2ssw: {}, {}, {}'.format(
                 b, status, data))
             if b:
                 print()
                 print(data.wktxt_a)
+
+                if args.browser:
+                    for page in notfounds:
+                        libssw.open_ssw(page)
 
 
 if __name__ == '__main__':
