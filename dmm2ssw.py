@@ -349,7 +349,7 @@ REDIRECTS = _libssw.REDIRECTS
 
 ReturnVal = _namedtuple('ReturnVal',
                         ('release', 'pid', 'title', 'title_dmm', 'url',
-                         'label', 'series', 'wktxt_a', 'wktxt_t'))
+                         'maker', 'label', 'series', 'wktxt_a', 'wktxt_t'))
 
 p_more = _re.compile(r"url: '(.*?)'")
 p_related = _re.compile(r'var url = "(.*)"')
@@ -1833,6 +1833,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                              summ['title'],
                                              summ['title_dmm'],
                                              summ['url'],
+                                             summ.values('maker', 'maker_id'),
                                              summ.values('label', 'label_id'),
                                              summ.values('series', 'series_id'),
                                              wktxt_a=(),
@@ -1956,6 +1957,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                             summ['title'],
                                             summ['title_dmm'],
                                             summ['url'],
+                                            summ.values('maker', 'maker_id'),
                                             summ.values('label', 'label_id'),
                                             summ.values('series', 'series_id'),
                                             wikitext_a,
