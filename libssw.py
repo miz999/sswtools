@@ -528,8 +528,8 @@ def sub(p_list, string, n=False):
 
 
 def quote(string, safe='/', encoding='euc_jisx0213', errors=None):
-    return _up.quote(string, safe=safe, encoding=encoding, errors=errors
-    ).replace('-', '%2d')
+    return _up.quote(string, safe=safe, encoding=encoding,
+                     errors=errors).replace('-', '%2d')
 
 
 def unquote(string, encoding='euc_jisx0213', errors='replace'):
@@ -574,9 +574,9 @@ def le80bytes(string, encoding='euc_jisx0213'):
 
 def gen_ntfcols(tname, fsource):
     '''表形式ヘッダから名前付きタプルを作成'''
-    return _namedtuple(tname,
-                       (c for c in fsource.replace('~', '').split('|')),
-                       rename=True)
+    if isinstance(fsource, str):
+        fsource = (c for c in fsource.replace('~', '').split('|'))
+    return _namedtuple(tname, fsource, rename=True)
 
 
 class __OpenUrl:
@@ -1150,6 +1150,9 @@ class _FromHtml:
         return [result.replace('~~', '', 1)]
 
     def __call__(self, wikiurls):
+        def makeheader(iterth):
+            for th in iterth:
+                yield 'TITLE' if th.text == 'SUBTITLE' else th.text
 
         for wurl in wikiurls:
 
@@ -1166,16 +1169,8 @@ class _FromHtml:
 
             userarea = he.find_class('user-area')[0]
 
-            numcols = len(userarea.find('.//tr[th]'))
-
-            if numcols == 6:
-                hdr = 'NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE'
-            elif numcols == 7:
-                hdr = 'NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE'
-            else:
-                emsg('E', 'イレギュラーなカラム数の表です: ', numcols)
-
-            Cols = gen_ntfcols('Cols', hdr)
+            Cols = gen_ntfcols(
+                'Cols', makeheader(userarea.iterfind('.//tr[th][1]th')))
 
             for tr in userarea.iterfind('.//tr[td]'):
                 self.number = 0
