@@ -355,6 +355,7 @@ p_more = _re.compile(r"url: '(.*?)'")
 p_related = _re.compile(r'var url = "(.*)"')
 p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
 # p_genre = _re.compile(r'/article=keyword/id=(6003|6147|6561)/')
+p_age = _re.compile(r'(\(\d+?\))$')
 
 sp_heart = (_re.compile(r'（ハート）|◆'), r'♥')
 sp_ltbracket_h = (_re.compile(r'^(?:【.+?】)+?'), '')
@@ -1153,8 +1154,13 @@ class DMMParser:
 
         # 動画用
         elif tag == '名前：':
-            self._sm['subtitle'] = _libssw.getnext_text(prop)
-            verbose('ama name: ', self._sm['subtitle'])
+            # 素人動画のタイトルは後でページタイトルと年齢をくっつける
+            try:
+                age = p_age.findall(_libssw.getnext_text(prop))[0]
+            except IndexError:
+                age = ''
+            self._sm['subtitle'] = age
+            verbose('ama subtitle(age): ', self._sm['subtitle'])
 
         elif tag == 'サイズ：':
             self._sm['size'] = _libssw.getnext_text(prop)
@@ -1369,6 +1375,11 @@ class DMMParser:
         # タイトルの取得
         if not self._sm['title'] or self._sm['title'].startswith('__'):
             self._sm['title'], self._sm['title_dmm'] = self._ret_title(args.longtitle)
+
+        if service == 'ama':
+            # 素人動画の時のタイトル/副題の再作成
+            self._sm['title'] = self._sm['subtitle'] = \
+                                self._sm['title'] + self._sm['subtitle']
 
         sale_data = None
         # if self.deeper and service != 'ama' and __name__ != '__main__':
