@@ -809,8 +809,7 @@ extr_ids = ExtractIDs()
 def makeproditem(cid, service, sp_pid):
     pid = libssw.gen_pid(cid, sp_pid)[0]
     verbose('built cid: {}, pid: {}'.format(cid, pid))
-    url = '{}/{}/-/detail/=/cid={}/'.format(
-        BASEURL, SERVICEDIC[service][1], cid)
+    url = libssw.build_produrl(service, cid)
     return url, libssw.Summary(url=url, title='__' + pid, cid=cid, pid=pid)
 
 
@@ -955,44 +954,6 @@ def main(argv=None):
     no_omits = libssw.gen_no_omits(args.no_omit)
     verbose('non omit target: ', no_omits)
 
-    join_d = dict()
-
-    if args.join_tsv:
-        # join データ作成(tsv)
-        verbose('join tsv')
-        join_d.update((k, p) for k, p in libssw.from_tsv(args.join_tsv))
-
-    if args.join_wiki:
-        # join データ作成(wiki)
-        verbose('joinn wiki')
-        for k, p in libssw.from_wiki(args.join_wiki):
-            if k in join_d:
-                join_d[k].merge(p)
-            else:
-                join_d[k] = p
-
-    if args.join_html:
-        # jon データ作成(url)
-        verbose('joinn html')
-        for k, p in libssw.from_html(args.join_html):
-            if k in join_d:
-                join_d[k].merge(p)
-            else:
-                join_d[k] = p
-
-    if (args.join_tsv or args.join_wiki or args.join_html) and not len(join_d):
-        emsg('E', '--join-* オプションで読み込んだデータが0件でした。')
-
-    existings = set()
-
-    if args.existings_html:
-        # 既存の一覧ページから既出の作品情報の取得
-        verbose('existings html')
-        existings |= set(k for k, p in libssw.from_html(args.existings_html))
-
-        if not existings:
-            emsg('E', '--existings-* オプションで読み込んだデータが0件でした。')
-
     # 品番生成用パターンのコンパイル
     sp_pid = (re.compile(args.pid_regex[0], re.I),
               args.pid_regex[1]) if args.pid_regex else None
@@ -1074,6 +1035,46 @@ def main(argv=None):
     total = len(products)
     if not total:
         emsg('E', '検索結果は0件でした。')
+
+    join_d = dict()
+
+    if args.join_tsv:
+        # join データ作成(tsv)
+        verbose('join tsv')
+        join_d.update((k, p) for k, p in libssw.from_tsv(args.join_tsv))
+
+    if args.join_wiki:
+        # join データ作成(wiki)
+        verbose('join wiki')
+        for k, p in libssw.from_wiki(args.join_wiki):
+            if k in join_d:
+                join_d[k].merge(p)
+            else:
+                join_d[k] = p
+
+    if args.join_html:
+        # jon データ作成(url)
+        verbose('join html')
+        for k, p in libssw.from_html(args.join_html, service=args.service):
+            if k in join_d:
+                join_d[k].merge(p)
+            else:
+                join_d[k] = p
+
+    if (args.join_tsv or args.join_wiki or args.join_html) and not len(join_d):
+        emsg('E', '--join-* オプションで読み込んだデータが0件でした。')
+
+    if args.existings_html:
+        # 既存の一覧ページから既出の作品情報の取得
+        verbose('existings html')
+        existings = set(k for k, p in libssw.from_html(args.existings_html,
+                                                       service=args.service))
+
+        if not existings:
+            emsg('E', '--existings-* オプションで読み込んだデータが0件でした。')
+
+    else:
+        existings = set()
 
     # 作品情報の作成
     verbose('Start building product info')

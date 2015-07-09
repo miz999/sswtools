@@ -1149,8 +1149,9 @@ class _FromHtml:
 
         return [result.replace('~~', '', 1)]
 
-    def __call__(self, wikiurls):
-        def makeheader(iterth):
+    def __call__(self, wikiurls, service='dvd'):
+
+        def _makeheader(iterth):
             for th in iterth:
                 yield 'TITLE' if th.text == 'SUBTITLE' else th.text
 
@@ -1170,7 +1171,7 @@ class _FromHtml:
             userarea = he.find_class('user-area')[0]
 
             Cols = gen_ntfcols(
-                'Cols', makeheader(userarea.iterfind('.//tr[th][1]th')))
+                'Cols', _makeheader(userarea.iterfind('.//tr[th][1]th')))
 
             for tr in userarea.iterfind('.//tr[td]'):
                 self.number = 0
@@ -1183,16 +1184,29 @@ class _FromHtml:
                     continue
 
                 anchor = md.NO.find('a')
-                if anchor is None:
-                    continue
+                if anchor is not None:
+                    pid = anchor.text.strip()
+                    url = anchor.get('href')
+                else:
+                    pid = md.NO.text
+                    if not pid:
+                        continue
+                    altera = md.PHOTO.find('a')
+                    if altera is not None:
+                        url = altera.get('href')
+                        if url.endswith('jpg'):
+                            continue
+                    else:
+                        cid = rm_hyphen(pid).lower()
+                        url = build_produrl(service, cid)
 
-                pid = anchor.text.strip()
-                url = anchor.get('href')
                 # タイトルに改行があればスペースへ置き換え
                 title = ' '.join(md.TITLE.xpath('text()')) or '__' + pid
                 actress = [a for a in self._parse_performers(md.ACTRESS)
                            if a is not None]
                 note = self._parse_notes(md.NOTE)
+                if 'ORIGINAL' in md._fields:
+                    note.extend(self._parse_notes(md.ORIGINAL))
 
                 # verbose('md.title: ', title)
                 # verbose('md.pid: ', pid)
@@ -1213,6 +1227,11 @@ def join_priurls(retrieval, *keywords, service='dvd'):
     '''基底URLの作成'''
     return tuple('{}/{}/-/list/=/article={}/id={}/sort=date/'.format(
         BASEURL, SERVICEDIC[service][1], retrieval, k) for k in keywords)
+
+
+def build_produrl(service, cid):
+    return '{}/{}/-/detail/=/cid={}/'.format(
+        BASEURL, SERVICEDIC[service][1], cid)
 
 
 def getnext_text(elem, xpath=False):
