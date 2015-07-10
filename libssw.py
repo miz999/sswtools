@@ -133,6 +133,9 @@ OMNI_PREFIX = (
     '28wed',         # EIGHT MAN 総集編専門レーベル
     '29cxaz',        # ジャネス/ladiesの総集編
     '29cwaz',        # ジャネス/ladiesの総集編
+    '29djsh',        # ジャネスの総集編
+    '29djsj',        # ジャネスの総集編
+    '29hwaz',        # ジャネスの総集編
     '2bdclb',        # ワープエンタテインメントの総集編
     '2box',          # ワープエンタテインメントの総集編
     '2clb',          # ワープエンタテインメントの総集編
@@ -140,6 +143,7 @@ OMNI_PREFIX = (
     '2wpw',          # ワープエンタテインメントの総集編
     '2wsp',          # ワープエンタテインメントの総集編
     '2ycc',          # ワープエンタテインメントの総集編
+    '30dmbk',        # MAZO BOYS CLUB (未来フューチャー) の総集編
     '33awtb',        # AVS collector’sの総集編
     '33avsb',        # AVS collector’sの総集編
     '33avsw',        # AVS collector’sの総集編
@@ -179,6 +183,8 @@ OMNI_PREFIX = (
     'cnz',           # キャンディの総集編
     'crad',          # クロスの総集編
     'dazd',          # ダスッ！の総集編
+    'emac',          # DX（エマニエル）の総集編
+    'fabs',          # FAプロの総集編
     'h_066rabs',     # FAプロ 竜二ベスト
     'h_067nass',     # なでしこの総集編
     'h_068mxsps',    # マキシングの総集編
@@ -200,6 +206,8 @@ OMNI_PREFIX = (
     'h_175dbeb',     # BabyEntertainmentの総集編
     'h_175dxdb',     # BabyEntertainmentの総集編
     'h_179dmdv',     # ゲインコーポレーションの総集編
+    'h_254kanz',     # 完全盤 STAR PARADISEの総集編レーベル
+    'h_254mgdn',     # MEGADON STAR PARADISEの総集編レーベル
     'h_443hpr',      # 催眠研究所の総集編シリーズ
     'h_479gah',      # GO AHEAD 総集編レーベル (GALLOP)
     'h_479gfs',      # SPECIAL GIFT 総集編レーベル (GALLOP)
@@ -249,7 +257,10 @@ OMNI_PREFIX = (
     'h_746ssr051',   # SOSORUの総集編作品
 )
 # 品番正規表現
-# OMIT_PATTERN = (,)
+OMNI_PATTERN = (
+    _re.compile(r'^(?:[hn]_)?\d*aaj'),  # AV30
+    _re.compile(r'^(?:837?)?sbb'),      # コレクターズエディション (マルクス兄弟)
+)
 
 # イメージビデオ専門レーベル
 IV_PREFIX = (
@@ -691,9 +702,10 @@ def check_omitword(title):
             yield OMITWORDS[key], key
 
 
-def check_omitprfx(cid, prefix):
+def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
     '''隠れ総集編チェック'''
-    return any(cid.startswith(p) for p in prefix)
+    return any(cid.startswith(p) for p in prefix) or \
+        any(p.search(cid) for p in patn)
 
 
 def is_omnirookie(cid, title):
