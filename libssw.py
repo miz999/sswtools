@@ -1164,7 +1164,7 @@ class _FromHtml:
                 result += '[[{}{}]]'.format(
                     shown, '>{}'.format(dest) if dest else '')
 
-            if el.tail:
+            if el.tail is not None:
                 result += el.tail
 
         return [result.replace('~~', '', 1)]
