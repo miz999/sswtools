@@ -264,9 +264,8 @@ def main():
 
             if not present:
 
-                if dest not in shortfalls:
-                    notfounds.append(dest)
-                    shortfalls.add(dest)
+                notfounds.append(dest)
+                shortfalls.add(dest)
 
                 if link2list == 404:
                     result += '✕ (女優ページなし)'.format(shown)
