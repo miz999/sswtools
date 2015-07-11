@@ -1002,11 +1002,16 @@ class DMMParser:
             verbose('time: ', self._sm['time'])
 
         elif tag == 'メーカー：':
-            if not self._sm['maker']:
-                self._sm['maker'] = _libssw.getnext_text(prop, 'a')[0]
 
             mk = prop.getnext().find('a')
-            self._sm['maker_id'] = mkid = _libssw.get_id(mk.get('href'))[0]
+
+            try:
+                self._sm['maker_id'] = mkid = _libssw.get_id(mk.get('href'))[0]
+            except AttributeError:
+                return
+
+            if not self._sm['maker']:
+                self._sm['maker'] = _libssw.getnext_text(prop, 'a')[0]
 
             # ジュエル系なら出演者情報は無視
             if mkid in IGNORE_PERFORMERS:
@@ -1032,11 +1037,12 @@ class DMMParser:
 
             lb = prop.getnext().find('a')
 
-            if lb is None:
+            try:
+                lbid = _libssw.get_id(lb.get('href'))[0]
+            except AttributeError:
                 return
 
             self._sm['label'] = lb.text
-            lbid = _libssw.get_id(lb.get('href'))[0]
 
             # 隠れ総集編レーベルチェック
             if lbid in OMIT_LABEL:
