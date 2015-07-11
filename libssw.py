@@ -117,6 +117,7 @@ OMNI_PREFIX = (
     '164sbdd',       # サイドビーの総集編レーベル クスコ
     '164sbhe',       # サイドビーの総集編レーベル HEROINE
     '17dbr',         # ルビーの総集編シリーズ
+    '17hrd',         # ルビーの総集編
     '17kmk',         # ルビーの総集編シリーズ
     '187jame',       # スタイルアートjam/妄想族の総集編
     '187slba',       # スタイルアートLOVE BETES/妄想族の総集編
@@ -182,7 +183,9 @@ OMNI_PREFIX = (
     'bmw',           # ワンズファクトリーの総集編
     'cnz',           # キャンディの総集編
     'crad',          # クロスの総集編
+    'daid',          # ダイナマイトエンタープライズの総集編
     'dazd',          # ダスッ！の総集編
+    'dgtl',          # デジタルアークの総中編
     'emac',          # DX（エマニエル）の総集編
     'fabs',          # FAプロの総集編
     'h_066rabs',     # FAプロ 竜二ベスト
@@ -208,6 +211,7 @@ OMNI_PREFIX = (
     'h_179dmdv',     # ゲインコーポレーションの総集編
     'h_254kanz',     # 完全盤 STAR PARADISEの総集編レーベル
     'h_254mgdn',     # MEGADON STAR PARADISEの総集編レーベル
+    'h_254wnxg',     # VOLUME STAR PARADISEの総集編レーベル
     'h_443hpr',      # 催眠研究所の総集編シリーズ
     'h_479gah',      # GO AHEAD 総集編レーベル (GALLOP)
     'h_479gfs',      # SPECIAL GIFT 総集編レーベル (GALLOP)
@@ -243,7 +247,9 @@ OMNI_PREFIX = (
     'ppbd',          # OPPAIの総集編
     'ptko',          # パツキン/ABCの総集編
     'rabs',          # FAプロ 竜二ベスト
+    'slba',          # スタイルアート/妄想族の総集編
     'stol',          # 変態紳士倶楽部の総集編
+    'swac',          # 湘南/妄想族の総集編
     'tmbt',          # teamZEROの総集編
     'tywd',          # 乱丸の総集編
     'veq',           # VENUSの総集編
@@ -254,6 +260,7 @@ OMNI_PREFIX = (
     '15send167',     # 桃太郎映像出版の総集編作品
     'bf249',         # BeFreeの総集編作品
     'bf315',         # BeFreeの総集編作品
+    'bf392',         # BeFreeの総集編作品
     'h_746ssr051',   # SOSORUの総集編作品
 )
 # 品番正規表現
