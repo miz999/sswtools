@@ -95,7 +95,7 @@ def select_allhiragana(ids, today, path):
 
             b, status, values = dmm2ssw.main(
                 props=libssw.Summary(url=prod_url),
-                p_args=argparse.Namespace(fastest=True),
+                p_args=argparse.Namespace(fastest=True, hide_list=True),
                 dmmparser=dmmparser)
             if status in ('Omitted', 404):
                 verbose('Omitted: status=', status, ', values=', values)
