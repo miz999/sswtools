@@ -1071,6 +1071,9 @@ class _FromHtml:
     '''
     def _unquotename(self, el):
         '''URLからページ名を取得'''
+        url = el.get('href')
+        if not url.startswith(BASEURL_SSW):
+            return url
         return unquote(el.get('href').rsplit('/', 1)[-1])
 
     def _enclose(self, ph):
@@ -1144,9 +1147,6 @@ class _FromHtml:
         if note.text:
             result += note.text.strip()
 
-        if not result:
-            return []
-
         for el in note.iterchildren():
             if el.tag == 'br':
                 result += '~~'
@@ -1164,7 +1164,8 @@ class _FromHtml:
                 result += '[[{}{}]]'.format(
                     shown, '>{}'.format(dest) if dest else '')
 
-            result += el.tail or ''
+            if el.tail:
+                result += el.tail
 
         return [result.replace('~~', '', 1)]
 
