@@ -223,6 +223,7 @@ OMNI_PREFIX = (
     'h_544yuyg',     # ケンシロウプロジェクトの総集編
     'h_797impa',     # impact（サンワソフト）の総集編
     'h_838chao',     # CHAOS（Pandora）総集編レーベル (Pandra)
+    'h_865jkn',      # 総集編シリーズ 完熟肉汁つゆだく交尾集
     'hjbb',          # はじめ企画の総集編
     'hndb',          # 本中の総集編
     'hoob',          # AVS collector’sの総集編
