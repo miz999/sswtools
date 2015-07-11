@@ -173,6 +173,7 @@ OMNI_PREFIX = (
     '55id',          # TMAの総集編
     '83sbb',         # マルクス兄弟の総集編
     '83scf',         # マルクス兄弟の総集編
+    '84hyas',        # 100人 KMPの総集編レーベル
     'abcb',          # ABC/妄想族の総集編
     'anhd',          # アンナと花子の総集編
     'atkd',          # Attackers BEST 総集編専門レーベル
