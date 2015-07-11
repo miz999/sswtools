@@ -49,7 +49,9 @@ def get_args():
 
 
 def select_allhiragana(ids, today, path):
-    dmmparser = dmm2ssw.DMMParser(no_omits=(), deeper=False, pass_bd=True,
+    dmmparser = dmm2ssw.DMMParser(no_omits=libssw.gen_no_omits(1),
+                                  deeper=False,
+                                  pass_bd=True,
                                   quiet=True)
     conn = sqlite3.connect(path or 'dmm_actress.db')
     cur = conn.cursor()
