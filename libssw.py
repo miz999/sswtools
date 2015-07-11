@@ -1191,7 +1191,7 @@ class _FromHtml:
             userarea = he.find_class('user-area')[0]
 
             Cols = gen_ntfcols(
-                'Cols', _makeheader(userarea.iterfind('.//tr[th][1]th')))
+                'Cols', _makeheader(userarea.find('.//tr[th]').iterfind('th')))
 
             for tr in userarea.iterfind('.//tr[td]'):
                 self.number = 0
