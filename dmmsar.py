@@ -250,10 +250,9 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
     DIRECTORカラムを出力する。
     -t/-tt オプションが与えられた時用。
 
---add-column [カラム名[:データ] [カラム名[:データ] ...]]
-    表形式に任意のカラムを追加する。
-    -t/-tt を指定しない場合は無視される。
-    書式はカラム名のあとに :とともに各カラム内に出力するデータを指定できる。
+--note 文字列
+    女優ページ用なら最後に、一覧ページの表形式ならNOTEカラムに文字列を追加する。
+    全作品に同じ文字列
     データは固定の文字列と以下の変数を指定できる。
     これら変数はウィキテキスト作成時に対応する文字列に展開される。
     @{media}  メディアの種類
@@ -262,6 +261,12 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
     @{maker}  メーカー名
     @{label}  レーベル名
     @{cid}    品番
+
+--add-column [カラム名[:データ] [カラム名[:データ] ...]]
+    表形式に任意のカラムを追加する。
+    -t/-tt を指定しない場合は無視される。
+    書式はカラム名のあとに : とともに各カラム内に出力するデータを指定できる。
+    データの書式は --note オプションと同じ。
 
 -s, --series-link [シリーズ一覧ページ名]
     作成する女優ページ用ウィキテキストに同一のシリーズ一覧ページへのリンクを
@@ -611,9 +616,14 @@ def get_args(argv):
                            choices=('release', 'pid', 'title'),
                            default='pid')
 
+    argparser.add_argument('--note',
+                           help='エントリの最後かNOTEカラムにデータを追加する',
+                           nargs='+',
+                           metavar='DATA',
+                           default=[])
     # 表形式出力装飾
     argparser.add_argument('-d', '--add-dir-col',
-                           help='DIRECTORカラムを追加する (-t/-tt 指定時用)',
+                           help='DIRECTORカラムを追加する (-t/-tt 指定時のみ)',
                            dest='dir_col',
                            action='store_true')
     argparser.add_argument('--add-column',
@@ -882,6 +892,14 @@ def open_outfile(writemode, split, stem, num, suffix):
     return fd, pagen
 
 
+def truncate_th(cols):
+    for col in cols:
+        try:
+            yield col.split(':')[1]
+        except IndexError:
+            yield ''
+
+
 def print_header(fd, article, header, page):
     '''ページヘッダの出力'''
     article_name = article + (' {}'.format(page) if page > 1 else '')
@@ -987,6 +1005,12 @@ def main(argv=None):
         key_id = None
         key_type = None
         idattr = None
+
+    if args.add_column:
+        add_header = '|'.join(c.split(':')[0] for c in args.add_column) + '|'
+        args.add_column = truncate_th(args.add_column)
+    else:
+        add_header = ''
 
     listparser = libssw.DMMTitleListParser(no_omits=no_omits, patn_pid=sp_pid)
     seriesparser = libssw.DMMTitleListParser(patn_pid=sp_pid, show_info=False)
@@ -1263,8 +1287,7 @@ def main(argv=None):
                 '|~{{}}|PHOTO|{}|ACTRESS|{}{}RELEASE|NOTE|'.format(
                     'SUBTITLE' if args.retrieval == 'series' else 'TITLE',
                     'DIRECTOR|' if args.dir_col else '',
-                    ('|'.join(c.split(':')[0] for c in args.add_column) + '|')
-                    if args.add_column else '')
+                    add_header if add_header else '')
 
         # ソート
         if args.sort_key == 'title':

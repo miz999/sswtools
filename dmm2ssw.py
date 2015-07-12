@@ -215,6 +215,14 @@ DMM作品ページのURL
 --note 備考
     女優ページ形式ではウィキテキストの最後、一覧ページ形式では右端の「NOTE」
     カラムに指定された文字列を出力する。
+    データは固定の文字列と以下の変数を指定できる。
+    これら変数はウィキテキスト作成時に対応する文字列に展開される。
+    @{media}  メディアの種類
+    @{time}   収録時間
+    @{series} シリーズ名
+    @{maker}  メーカー名
+    @{label}  レーベル名
+    @{cid}    品番
 
 -d, --add-dir-col
     DIRECTORカラムを出力する。
@@ -224,14 +232,7 @@ DMM作品ページのURL
     表形式に任意のカラムを追加する。
     -t/-tt を指定しない場合は無視される。
     書式はカラム名のあとに :とともに各カラム内に出力するデータを指定できる。
-    データは固定の文字列と以下の変数を指定できる。
-    これら変数はウィキテキスト作成時に対応する文字列に展開される。
-    @{media}  メディアの種類
-    @{time}   収録時間
-    @{series} シリーズ名
-    @{maker}  メーカー名
-    @{label}  レーベル名
-    @{cid}    品番
+    データの書式は --note オプションと同じ。
 
 --join-tsv ファイル [ファイル ...] (TSV)
     DMMから得た作品と(URLが)同じ作品がファイル内にあった場合、DMMからは取得できなかった
@@ -450,7 +451,7 @@ class OmitTitleException(Exception):
         return repr(self.word)
 
 
-def _get_args(argv, props, p_args):
+def _get_args(argv, p_args):
     '''
     コマンドライン引数の解釈
     '''
@@ -471,8 +472,7 @@ def _get_args(argv, props, p_args):
                            default=[])
     argparser.add_argument('-n', '--number',
                            help='未知の出演者がいる場合の総出演者数 (… ほか計NUMBER名)',
-                           type=int,
-                           default=getattr(props, 'number', 0))
+                           type=int)
 
     list_page = argparser.add_mutually_exclusive_group()
     list_page.add_argument('-s', '--series',
@@ -492,21 +492,19 @@ def _get_args(argv, props, p_args):
                            default=getattr(p_args, 'table', 0))
 
     argparser.add_argument('--pid',
-                           help='作品の品番を直接指定(-t/-tt 指定時用)',
-                           default=getattr(props, 'pid', None))
+                           help='作品の品番を直接指定(-t/-tt 指定時用)')
 
     argparser.add_argument('--subtitle',
-                           help='タイトルの副題を直接指定(-t/-tt 指定時用)',
-                           default=getattr(props, 'subtitle', ''))
+                           help='タイトルの副題を直接指定(-t/-tt 指定時用)')
     argparser.add_argument('--as-series',
                            help='タイトルではなく副題で作成(-t/-tt 指定時用)',
                            action='store_true')
 
     argparser.add_argument('--note',
                            help='備考(表形式ではNOTEカラム)として出力する文字列',
-                           nargs='*',
-                           metavar='STRING',
-                           default=getattr(props, 'note', []))
+                           nargs='+',
+                           metavar='DATA',
+                           default=getattr(p_args, 'note', []))
     argparser.add_argument('-d', '--add-dir-col',
                            help='DIRECTORカラムを出力する (-t/-tt 指定時用)',
                            dest='dir_col',
@@ -1618,18 +1616,14 @@ def det_listpage(summ, args):
     return list_type, list_page
 
 
-def expansion(strings, summ):
+def expansion(phrase, summ):
     '''予約変数の展開'''
-    for st in strings:
-        try:
-            st = st.split(':')[1]
-        except IndexError:
-            yield ''
-            continue
-
+    for ph in phrase:
         for p, r in sp_expansion:
-            st = p.sub(getattr(summ, r), st)
-        yield st
+            ph, m = p.subn(getattr(summ, r), ph)
+            if m:
+                break
+        yield ph
 
 
 def check_missings(summ):
@@ -1715,7 +1709,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
 
     # モジュール呼び出しの場合継承したコマンドライン引数は無視
     argv = [props.url] if __name__ != '__main__' else _sys.argv[1:]
-    args = _get_args(argv, props, p_args)
+    args = _get_args(argv, p_args)
 
     # 作品情報
     summ = _libssw.Summary()
@@ -1750,7 +1744,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
 
             verbose('summ from stdin: ', summ.items())
 
-        for attr in ('url', 'number', 'pid', 'subtitle', 'note'):
+        for attr in ('url', 'number', 'pid', 'subtitle'):
             if not summ[attr]:
                 summ[attr] = getattr(args, attr)
 
@@ -1790,12 +1784,12 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
         service = _libssw.resolve_service(summ['url'])
     verbose('service resolved: ', service)
 
-    add_column = expansion(args.add_column, summ) if args.add_column else ()
-    verbose('add column: ', add_column)
-
     if service == 'ama':
         # 動画(素人)の場合監督欄は出力しない。
         args.dir_col = False
+
+    add_column = expansion(args.add_column, summ) if args.add_column else ()
+    verbose('add column: ', add_column)
 
     join_d = dict()
 
@@ -1910,6 +1904,10 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     if not (args.hide_list or summ['list_type']):
         summ['list_type'], summ['list_page'] = det_listpage(summ, args)
     verbose('summ[list_page]: ', summ['list_page'])
+
+    if args.note:
+        summ['note'] = list(expansion(args.note, summ)) + summ['note']
+    verbose('note: ', summ['note'])
 
     # 出演者文字列の作成
     pfmrslk = ()
