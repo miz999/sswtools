@@ -47,6 +47,10 @@ IDまたはURL
     ID指定の場合にメーカーかレーベルかを指定する。
     URL渡しのときは指定する必要なし(指定しても無視される)。
 
+--service {dvd,rental,video,ama,all}
+    取得するサービスを指定する。
+    引数をURLで渡していれば指定不要。
+
 -o, --outfile ファイル名
     一覧ウィキテキストを出力するファイル名を指定する。
     オプション未指定時は自動設定される。
@@ -146,6 +150,10 @@ def get_args():
                            help='IDがメーカーかレーベルかを指定する',
                            choices=('maker', 'label'))
 
+    argparser.add_argument('--service',
+                           help='取得するサービスを指定する',
+                           choices=('dvd', 'rental', 'video', 'ama', 'all'),
+                           default='dvd')
     argparser.add_argument('-o', '--outfile',
                            help='出力ファイル名を指定する(デフォルト名を変更する)',
                            metavar='FILE')
@@ -233,8 +241,9 @@ def ret_idname(el):
 
 
 class RetrieveMembers:
-    def __init__(self, listparser):
+    def __init__(self, listparser, service):
         self.listparser = listparser
+        self.service = service
         self.ophans_prods = OrderedDict()
         self.ophans_prefix = Counter()
 
@@ -287,7 +296,7 @@ class RetrieveMembers:
                 verbose('ignore label: {}'.format(mname))
                 continue
 
-            priurls = libssw.join_priurls(tier, mid)
+            priurls = libssw.join_priurls(tier, mid, service=self.service)
 
             mprods = libssw.OrderedDictWithHead()
             for murl, mprops in libssw.from_dmm(self.listparser,
@@ -345,13 +354,6 @@ def main():
     global ROOTID
     global PREFIXES
 
-    args = get_args()
-    PREFIXES = args.prefixes
-
-    listparser = libssw.DMMTitleListParser(
-        no_omits=('イメージビデオ', '総集編'), show_info=False)
-    ret_members = RetrieveMembers(listparser)
-
     existings = OrderedDict()
     newcomers = OrderedDict()
 
@@ -382,15 +384,25 @@ def main():
     lb_ophans_prefix = Counter()
     lb_ophans_latest = dict()
 
+    args = get_args()
+    PREFIXES = args.prefixes
+
     if args.root.startswith('http://'):
         # IDがURL渡しだったときの対処
         ROOTID = libssw.get_id(args.root)[0]
         target = libssw.p_list_article.findall(args.root)[0]
+        service = libssw.resolve_service(args.root)
     else:
         ROOTID = args.root
         target = args.target
+        service = args.service
     verbose('root id: {}'.format(ROOTID))
     verbose('target: {}'.format(target))
+    verbose('service: {}'.format(service))
+
+    listparser = libssw.DMMTitleListParser(
+        no_omits=('イメージビデオ', '総集編'), show_info=False)
+    ret_members = RetrieveMembers(listparser, service)
 
     flprefix = '{}.{}'.format(target, ROOTID)
     pkfile = tuple(
@@ -416,7 +428,7 @@ def main():
              mk_ophans_latest) = pickle.load(f)
 
     # 新規追加分を取得
-    priurls = libssw.join_priurls(target, ROOTID)
+    priurls = libssw.join_priurls(target, ROOTID, service=service)
     for nurl, nprops in libssw.from_dmm(listparser, priurls, ignore=True):
         if nurl in existings:
             break
@@ -443,7 +455,6 @@ def main():
 
     emsg('I', '{} [id={}, 新規{}/全{}作品]'.format(
         article_name, ROOTID, nc_num, total))
-    verbose('newcomers count: {}'.format(nc_num))
 
     # まずレーベル毎にまとめ
     ophans = mk_ophans or None
