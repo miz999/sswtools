@@ -192,7 +192,7 @@ def main():
         targets = OrderedDict(libssw.from_wiki((args.target,)))
         listname = libssw.from_wiki.article
     else:
-        targets = OrderedDict(libssw.from_html((args.target,)))
+        targets = OrderedDict(libssw.from_html((args.target,), cache=False))
         listname = libssw.from_html.article
 
     # 一覧ページ名の取得

@@ -1171,7 +1171,7 @@ class _FromHtml:
 
         return [result.replace('~~', '', 1)]
 
-    def __call__(self, wikiurls, service='dvd'):
+    def __call__(self, wikiurls, service='dvd', cache=True):
 
         def _makeheader(iterth):
             for th in iterth:
@@ -1180,7 +1180,7 @@ class _FromHtml:
         for wurl in wikiurls:
 
             if wurl.startswith('http://'):
-                resp, he = open_url(wurl)
+                resp, he = open_url(wurl, cache=cache)
                 if resp.status == 404:
                     emsg('E', 'ページが見つかりません: ', wurl)
             else:
