@@ -1169,7 +1169,7 @@ class _FromHtml:
             if el.tail is not None:
                 result += el.tail
 
-        return [result.replace('~~', '', 1)]
+        return [result.replace('~~', '', 1)] if result else []
 
     def __call__(self, wikiurls, service='dvd', cache=True):
 
