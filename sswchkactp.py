@@ -37,6 +37,9 @@ sswchkactp.py [一覧ページのURL/HTML/ウィキテキスト ...] [オプシ�
 -g, --gen-wikitext
     女優ページにない作品の女優ページ用のウィキテキストを作成する。
 
+--note 備考
+    dmm2ssw.py の --note オプションに相当。
+
 -b, --browser
     ウィキテキストを作成後、wikiの女優ページをウェブブラウザで開く。
     このオプションが指定された場合、-g オプションの指定も自動的に指定される。
@@ -96,6 +99,10 @@ def get_args():
     argparser.add_argument('-g', '--gen-wikitext',
                            help='女優ページに作品がない女優がいる作品のウィキテキストを作成する',
                            action='store_true')
+    argparser.add_argument('--note',
+                           help='作成したウィキテキストに備考として出力',
+                           nargs='+',
+                           default=[])
 
     argparser.add_argument('-b', '--browser',
                            help='生成後、wikiのページをブラウザで開く',
@@ -114,7 +121,8 @@ def get_args():
 
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
     if args.verbose > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
+        libssw.VERBOSE = libssw.verbose.verbose = \
+            dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = args.verbose - 1
     verbose('verbose mode on')
 
     args.start_pid = libssw.rm_hyphen(args.start_pid).upper()
@@ -186,6 +194,7 @@ def check_actrpage(actr_url, listp, prod_url):
 
 def main():
     args = get_args()
+    verbose('args: ', args)
 
     # 一覧ページからチェックする作品情報を取得
     if args.from_wikitext:
@@ -297,7 +306,9 @@ def main():
         # ウィキテキストの作成
         if notfounds and args.gen_wikitext:
             props['title'] = '' # 副題の時もあるので一旦リセット
-            b, status, data = dmm2ssw.main(props=props)
+            b, status, data = dmm2ssw.main(
+                props=props,
+                p_args=argparse.Namespace(note=args.note))
             verbose('Return from dmm2ssw: {}, {}, {}'.format(
                 b, status, data))
             if b:
