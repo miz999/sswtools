@@ -472,7 +472,8 @@ def _get_args(argv, p_args):
                            default=[])
     argparser.add_argument('-n', '--number',
                            help='未知の出演者がいる場合の総出演者数 (… ほか計NUMBER名)',
-                           type=int)
+                           type=int,
+                           default=0)
 
     list_page = argparser.add_mutually_exclusive_group()
     list_page.add_argument('-s', '--series',
@@ -1620,9 +1621,7 @@ def expansion(phrase, summ):
     '''予約変数の展開'''
     for ph in phrase:
         for p, r in sp_expansion:
-            ph, m = p.subn(getattr(summ, r), ph)
-            if m:
-                break
+            ph, m = p.sub(getattr(summ, r), ph)
         yield ph
 
 
