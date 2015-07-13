@@ -11,6 +11,7 @@ sswchkactp.py [一覧ページのURL/HTML/ウィキテキスト ...] [オプシ�
     Wikiのレーベル/シリーズ一覧ページを読み込み、そこにある作品と出演者から、それらが
     出演女優のページにあるかどうか、あったとき逆のリンクもちゃんとあるかどうかをチェック
     する。
+    作品エントリがないときは女優ページ用ウィキテキストを作成する。
 
 注意:
     ・セルが結合されている表には未対応。
@@ -34,9 +35,6 @@ sswchkactp.py [一覧ページのURL/HTML/ウィキテキスト ...] [オプシ�
 -s, --start-pid チェック開始品番
     このオプションを使用すると指定された開始品番より後の作品だけチェックする。
 
--g, --gen-wikitext
-    女優ページにない作品の女優ページ用のウィキテキストを作成する。
-
 --note 備考
     dmm2ssw.py の --note オプションと同じ。
 
@@ -51,6 +49,9 @@ sswchkactp.py [一覧ページのURL/HTML/ウィキテキスト ...] [オプシ�
 
 --hide-list
     dmm2ssw.py の --hide-list オプションと同じ。
+
+--disable-wikitext
+    女優ページにない作品の女優ページ用のウィキテキストを作成しない。
 
 -b, --browser
     ウィキテキストを作成後、wikiの女優ページをウェブブラウザで開く。
@@ -108,10 +109,6 @@ def get_args():
                            help='チェック開始品番',
                            default='')
 
-    argparser.add_argument('-g', '--gen-wikitext',
-                           help='女優ページに作品がない女優がいる作品のウィキテキストを作成する',
-                           action='store_true')
-
     argparser.add_argument('--note',
                            help='作成したウィキテキストに備考として出力',
                            nargs='+',
@@ -128,6 +125,12 @@ def get_args():
 
     argparser.add_argument('--linklabel',
                            help='一覧ページへのリンクの表示名を置き換える')
+
+    argparser.add_argument('--disable-wikitext',
+                           help='女優ページに作品がない女優がいる作品のウィキテキストを作成しない',
+                           action='store_false',
+                           dest='gen_wikitext',
+                           default=True)
 
     argparser.add_argument('-b', '--browser',
                            help='生成後、wikiのページをブラウザで開く',
