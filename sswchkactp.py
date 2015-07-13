@@ -38,7 +38,19 @@ sswchkactp.py [一覧ページのURL/HTML/ウィキテキスト ...] [オプシ�
     女優ページにない作品の女優ページ用のウィキテキストを作成する。
 
 --note 備考
-    dmm2ssw.py の --note オプションに相当。
+    dmm2ssw.py の --note オプションと同じ。
+
+--series [シリーズ一覧ページ名]
+    dmm2ssw.py の --series オプションと同じ。
+
+--label [レーベル一覧ページ名]
+    dmm2ssw.py の --label オプションと同じ。
+
+--linklabel 一覧ページへのリンクのラベル名
+    dmm2ssw.py の --linklabel オプションと同じ。
+
+--hide-list
+    dmm2ssw.py の --hide-list オプションと同じ。
 
 -b, --browser
     ウィキテキストを作成後、wikiの女優ページをウェブブラウザで開く。
@@ -99,10 +111,23 @@ def get_args():
     argparser.add_argument('-g', '--gen-wikitext',
                            help='女優ページに作品がない女優がいる作品のウィキテキストを作成する',
                            action='store_true')
+
     argparser.add_argument('--note',
                            help='作成したウィキテキストに備考として出力',
                            nargs='+',
                            default=[])
+
+    list_page = argparser.add_mutually_exclusive_group()
+    list_page.add_argument('--series',
+                           help='シリーズ一覧へのリンクを追加(DMM上のものを置き換え)')
+    list_page.add_argument('--label',
+                           help='レーベル一覧へのリンクを追加(DMM上のものを置き換え)')
+    list_page.add_argument('--hide-list',
+                           help='一覧ページへのリンクを追加しない',
+                           action='store_true')
+
+    argparser.add_argument('--linklabel',
+                           help='一覧ページへのリンクの表示名を置き換える')
 
     argparser.add_argument('-b', '--browser',
                            help='生成後、wikiのページをブラウザで開く',
@@ -137,7 +162,7 @@ def searchwiki_by_url(url):
     '''検索結果から記事名を返すジェネレータ'''
     resp, he = libssw.open_url(
         'http://sougouwiki.com/search?keywords={}'.format(libssw.quote(url),
-        cache=False))
+                                                          cache=False))
 
     searesult = he.find_class('result-box')[0].xpath('p[1]/strong')[0].tail
 
@@ -305,10 +330,14 @@ def main():
 
         # ウィキテキストの作成
         if notfounds and args.gen_wikitext:
-            props['title'] = '' # 副題の時もあるので一旦リセット
+            props['title'] = ''  # 副題の時もあるので一旦リセット
             b, status, data = dmm2ssw.main(
                 props=props,
-                p_args=argparse.Namespace(note=args.note))
+                p_args=argparse.Namespace(note=args.note,
+                                          series=args.series,
+                                          label=args.label,
+                                          linklabel=args.linklabel,
+                                          hide_list=args.hide_list))
             verbose('Return from dmm2ssw: {}, {}, {}'.format(
                 b, status, data))
             if b:

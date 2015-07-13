@@ -278,6 +278,10 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
     強制的に追加・変更する。
     既存のDMMの作品ページ上のものがあっても置き換える。
 
+--linklabel 一覧ページへのリンクのラベル名
+    作品一覧ページへのリンクに表示するラベル(「レーベル一覧」「シリーズ一覧」など)を
+    ここで指定した文字列に置き換える。
+
 --hide-list
     女優ページ用ウィキテキストにシリーズ/レーベル一覧へのリンクを追加しない。
 
@@ -645,6 +649,9 @@ def get_args(argv):
                            action='store_true',
                            default=False)
 
+    argparser.add_argument('--linklabel',
+                           help='一覧ページへのリンクの表示名を置き換える')
+
     # 品番・副題など自動調整設定
     argparser.add_argument('--pid-regex',
                            help='品番自動生成のカスタム正規表現 (-t/-tt/-w 指定時のみ)',
@@ -1008,9 +1015,11 @@ def main(argv=None):
 
     if args.add_column:
         add_header = '|'.join(c.split(':')[0] for c in args.add_column) + '|'
-        args.add_column = truncate_th(args.add_column)
+        args.add_column = tuple(truncate_th(args.add_column))
     else:
         add_header = ''
+    verbose('add header: ', add_header)
+    verbose('add column: ', args.add_column)
 
     listparser = libssw.DMMTitleListParser(no_omits=no_omits, patn_pid=sp_pid)
     seriesparser = libssw.DMMTitleListParser(patn_pid=sp_pid, show_info=False)

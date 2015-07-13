@@ -155,6 +155,10 @@ DMM作品ページのURL
 -l, --label [レーベル一覧ページ名]
     -s 同様だが、シリーズ一覧ではなくレーベル一覧へのリンクとして追加する。
 
+--linklabel 一覧ページへのリンクのラベル名
+    作品一覧ページへのリンクに表示するラベル(「レーベル一覧」「シリーズ一覧」など)を
+    ここで指定した文字列に置き換える。
+
 --hide-list
      一覧ページへのリンクを追加しない。
 
@@ -203,6 +207,8 @@ DMM作品ページのURL
         h_102bnsps001 ⇒ NSPS-001
     ・アウダースの一部
         21psd001 ⇒ PSD+001
+    ・D1グランプリ
+        36d1clymax00004 ⇒ D1CLYMAX-004
 
 --subtitle 副題
     -t/-tt オプションが与えられた時用。
@@ -212,7 +218,7 @@ DMM作品ページのURL
     -t/-tt オプションが与えられた時用。
     シリーズ一覧用にタイトルではなく副題を出力する。
 
---note 備考
+--note 備考 [備考 ...]
     女優ページ形式ではウィキテキストの最後、一覧ページ形式では右端の「NOTE」
     カラムに指定された文字列を出力する。
     データは固定の文字列と以下の変数を指定できる。
@@ -486,6 +492,10 @@ def _get_args(argv, p_args):
                            help='一覧ページへのリンクを追加しない',
                            action='store_true',
                            default=getattr(p_args, 'hide_list', False))
+
+    argparser.add_argument('--linklabel',
+                           help='一覧ページへのリンクの表示名を置き換える',
+                           default=getattr(p_args, 'linklabel', None))
 
     argparser.add_argument('-t', '--table',
                            help='一覧ページ用の表形式ウィキテキストを作成する, 2個以上指定すると両方作成する',
@@ -1617,11 +1627,11 @@ def det_listpage(summ, args):
     return list_type, list_page
 
 
-def expansion(phrase, summ):
+def expansion(phrases, summ):
     '''予約変数の展開'''
-    for ph in phrase:
+    for ph in phrases:
         for p, r in sp_expansion:
-            ph, m = p.sub(getattr(summ, r), ph)
+            ph = p.sub(getattr(summ, r), ph)
         yield ph
 
 
@@ -1787,9 +1797,6 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
         # 動画(素人)の場合監督欄は出力しない。
         args.dir_col = False
 
-    add_column = expansion(args.add_column, summ) if args.add_column else ()
-    verbose('add column: ', add_column)
-
     join_d = dict()
 
     if args.join_tsv:
@@ -1902,11 +1909,16 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     # 一覧ページの直接指定があればそれを、なければ シリーズ > レーベル で決定
     if not (args.hide_list or summ['list_type']):
         summ['list_type'], summ['list_page'] = det_listpage(summ, args)
+    if args.linklabel:
+        summ['list_type'] = args.linklabel
     verbose('summ[list_page]: ', summ['list_page'])
 
     if args.note:
         summ['note'] = list(expansion(args.note, summ)) + summ['note']
     verbose('note: ', summ['note'])
+
+    add_column = tuple(expansion(args.add_column, summ)) if args.add_column else ()
+    verbose('add column: ', add_column)
 
     # 出演者文字列の作成
     pfmrslk = ()
@@ -1932,7 +1944,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
         # list_page に値がなければタイトルをそのまま入れる。
         if not summ['subtitle']:
             summ['subtitle'] = _re.sub(
-                r'^{}[、。！？・…♥]*'.format(summ['series']),
+                r'^{}[、。！？・…♥]* '.format(summ['series']),
                 '',
                 summ['title'],
                 flags=_re.I).strip()

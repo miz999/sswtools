@@ -333,7 +333,8 @@ sp_pid_indv = (
     (_re.compile(r'^ad1(\d+)'), r'ad1-\1'),              # ドグマのAD1 CLIMAXレーベル
     (_re.compile(r'^h_308aoz(\d+z?)'), r'aoz-\1'),       # 青空ソフト
     (_re.compile(r'^(?:h_102)?bnsps(\d+).*'), r'nsps-\1'),  # ながえスタイルのセル版の一部
-    (_re.compile(r'21psd(\d+)'), r'psd+\1'),             # アウダースの一部
+    (_re.compile(r'^21psd(\d+)'), r'psd+\1'),             # アウダースの一部
+    (_re.compile(r'^\d*d1clymax00(\d+)'), r'd1clymax-\1'),  # D1グランプリ
 )
 
 sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
