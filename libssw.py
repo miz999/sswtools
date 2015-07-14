@@ -754,7 +754,7 @@ class DMMTitleListParser:
 
     def _ret_titles(self, ttl):
         '''作品タイトルとURLの取得'''
-        verbose('retrieving titles info')
+
         t_el = ttl.find('a')
         title = t_el.text
         path = t_el.get('href')
@@ -859,9 +859,10 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
 
                     yield url, prop
 
-                    if not pages_last and key_id and \
-                       getattr(prop, idattr) == key_id:
+                    if key_id and \
+                       rm_hyphen(getattr(prop, idattr)) == key_id:
                         pages_last = pages + 1
+                        verbose('set pages last: ', pages_last)
 
             pages += 1
             verbose('Pages : {} > {}'.format(pages, pages_last))
@@ -870,6 +871,7 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
             verbose('nexturl: ', searchurl)
 
             if pages_last and pages > pages_last:
+                verbose('reached pages_last')
                 break
 
     verbose('Parsing list pages finished')
@@ -1617,41 +1619,42 @@ def show_diff(flines, tlines, fdesc, tdesc, context=True):
 
 def save_cache(target, stem):
     '''キャッシュ情報の保存'''
-    def save():
-        lockfile = CACHEDIR / (stem + '.lock')
-        pkfile = CACHEDIR / (stem + '.pickle')
-        verbose('cache file: ', pkfile)
-
-        if lockfile.exists():
-            now = _time.time()
-            mtime = lockfile.stat().st_mtime
-            if now - mtime > 180:
-                lockfile.unlink()
-
-        for i in range(10):
-            try:
-                lockfile.touch(exist_ok=False)
-            except FileExistsError:
-                _time.sleep(1)
-            else:
-                break
-        else:
-            emsg('E', 'キャッシュファイルが10秒以上ロック状態にあります: ', lockfile)
-
-        with pkfile.open('wb') as f:
-            _pickle.dump(target, f)
-
-        lockfile.unlink()
-
-        verbose('cache saved: ({})'.format(stem))
 
     verbose('Saving cache...')
-    try:
-        save()
-    except KeyboardInterrupt:
-        ctrlc = True
+
+    lockfile = CACHEDIR / (stem + '.lock')
+    pkfile = CACHEDIR / (stem + '.pickle')
+    verbose('cache file: ', pkfile)
+
+    if lockfile.exists():
+        now = _time.time()
+        mtime = lockfile.stat().st_mtime
+        if now - mtime > 180:
+            lockfile.unlink()
+
+    for i in range(10):
+        try:
+            lockfile.touch(exist_ok=False)
+        except FileExistsError:
+            _time.sleep(1)
+        else:
+            break
     else:
-        ctrlc = False
+        emsg('E', 'キャッシュファイルが10秒以上ロック状態にあります: ', lockfile)
+
+    ctrlc = False
+
+    while True:
+        try:
+            with pkfile.open('wb') as f:
+                _pickle.dump(target, f)
+            verbose('cache saved: ({})'.format(stem))
+        except KeyboardInterrupt:
+            ctrlc = True
+        else:
+            break
+
+    lockfile.unlink()
 
     if ctrlc:
         raise SystemExit
