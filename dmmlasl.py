@@ -442,7 +442,7 @@ def main():
 
     article_name = listparser.article[0][0]
 
-    # メーカー名が変わったところで出力ファイルのチェック
+    # メーカー名がわかったところで出力ファイルのチェック
     outstem = '{}.{}'.format(flprefix,
                              article_name.translate(libssw.t_filename))
 
@@ -629,6 +629,8 @@ def main():
                       args.dmm, args.latest, fd)
 
     fd.close()
+
+    print('出力ファイル:', outfile)
 
     if newcomers or args.regen_pid:
         pkpath = Path(args.pickle_path or '.') / '{}.pickle'.format(outstem)
