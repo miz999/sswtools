@@ -1396,6 +1396,10 @@ class DMMParser:
             # 素人動画の時のタイトル/副題の再作成
             self._sm['title'] = self._sm['subtitle'] = \
                                 self._sm['title'] + self._sm['subtitle']
+            # メディア情報はないのでここで
+            self._sm['media'] = '素人動画'
+        elif service == 'video':
+            self._sm['media'] = 'ビデオ動画'
 
         sale_data = None
         # if self.deeper and service != 'ama' and __name__ != '__main__':
@@ -1944,7 +1948,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
         # list_page に値がなければタイトルをそのまま入れる。
         if not summ['subtitle']:
             summ['subtitle'] = _re.sub(
-                r'^{}[、。！？・…♥]* '.format(summ['series']),
+                r'^{}[、。！？・…♥]*'.format(summ['series']),
                 '',
                 summ['title'],
                 flags=_re.I).strip()
