@@ -861,7 +861,8 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
 
                     if key_id and \
                        rm_hyphen(getattr(prop, idattr)) == key_id:
-                        pages_last = pages + 1
+                        p = pages + 1
+                        pages_last = min((pages_last, p)) if pages_last else p
                         verbose('set pages last: ', pages_last)
 
             pages += 1
@@ -1469,10 +1470,17 @@ def sort_by_id(products, reverse=False):
                                        reverse=reverse))
 
 
+class InvalidPage(Exception):
+    pass
+
+
 class _GetActName:
     '''名前の取得'''
     def __call__(self, elems):
-        data = elems.find('.//h1').text.strip()
+        try:
+            data = elems.find('.//h1').text.strip()
+        except AttributeError:
+            raise InvalidPage
 
         # 複数の女優名チェク ('）（' で分割を試みる)
         named = p_actname1.split(data)

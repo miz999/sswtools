@@ -218,8 +218,8 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
 --pages-last ページ数
     DMM上で一覧ページを、最新順にこのページ数分だけデータを取得し作成する。
     1ページあたり120件。
-    このオプションを指定せず、--start-pid/--start-cid が指定された場合、
-    該当する pid、cid を発見したページ+1ページで取得を停止する。
+    --start-pid/--start-cid が指定された場合、該当する pid、cid を
+    発見したページ+1ページがこの値を下回った場合はそこで取得を停止する。
 
 --join-tsv ファイル [ファイル ...] (TSV)
     DMMから得た作品と(URLが)同じ作品がファイル内にあった場合、DMMからは取得できなかった
@@ -775,11 +775,11 @@ def get_args(argv):
         args.row = 1
 
     # start-pidは大文字、start-cidは小文字固定
-    args.start_pid = libssw.rm_hyphen(args.start_pid).upper()
+    args.start_pid = args.start_pid.upper()
     args.start_pid_s = args.start_pid_s.upper()
     args.start_cid = args.start_cid.lower()
 
-    args.last_pid = libssw.rm_hyphen(args.last_pid).upper()
+    args.last_pid = args.last_pid.upper()
     args.last_cid = args.last_cid.lower()
 
     # 表形式のみの出力ならば実際の一覧ページを探す必要はない
@@ -993,7 +993,7 @@ def main(argv=None):
     p_filter_ttl = args.filter_title and re.compile(args.filter_title, re.I)
 
     if args.start_pid:
-        key_id = args.start_pid
+        key_id = libssw.rm_hyphen(args.start_pid)
         key_type = 'start'
         idattr = 'pid'
     elif args.start_cid:
@@ -1001,7 +1001,7 @@ def main(argv=None):
         key_type = 'start'
         idattr = 'cid'
     elif args.last_pid:
-        key_id = args.last_pid
+        key_id = libssw.rm_hyphen(args.last_pid)
         key_type = 'last'
         idattr = 'pid'
     elif args.last_cid:
@@ -1155,9 +1155,11 @@ def main(argv=None):
             else:
                 before = False
                 if key_type == 'start':
-                    emsg('I', '開始IDが見つかりました: {}'.format(key_id))
+                    emsg('I', '開始IDが見つかりました: {}'.format(
+                        getattr(props, idattr)))
                 else:
-                    emsg('I', '最終IDが見つかりました: {}'.format(key_id))
+                    emsg('I', '最終IDが見つかりました: {}'.format(
+                        getattr(props, idattr)))
                     continue
 
         # 品番(pid)が指定されたパターンにマッチしないものはスキップ処理(--filter-pid)
