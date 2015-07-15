@@ -62,7 +62,8 @@ def select_allhiragana(ids, today, path):
         cur.execute(sql, ids)
     else:
         cur.execute('select id,current from main '
-                    'where retired is null and deleted is null')
+                    'where last_release is not null and '
+                    'retired is null and deleted is null')
 
     for aid, name in cur:
 
