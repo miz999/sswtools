@@ -1614,8 +1614,9 @@ def det_listpage(summ, args):
     # wiki構文と衝突する文字列の置き換え
     list_page = list_page.translate(_libssw.t_wikisyntax)
 
-    if not args.check_listpage:
-        verbose('not check_listpage')
+    if not args.check_listpage or (list_type == 'シリーズ' and
+                                   args.table == 1):
+        verbose('pass checking listpage')
         return list_type, list_page
 
     # Wiki上の実際の一覧ページを探し、見つかったらそれにする。
