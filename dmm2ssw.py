@@ -430,6 +430,7 @@ OMIT_SERIES = {
     '211184': 'The○○ 美熟女スペシャル',
     '211414': '母乳厳選集',
     '213087': 'おませなJKの制服でオクチえっち！',
+    '213295': '麗しき若妻',
     '213420': 'キレイなお姉さんのパンモロ○○コレクション',
     '213840': '癒しのじゅるじゅぽフェラCOLLECTION',
 }
@@ -803,13 +804,13 @@ class __TrySMM:
     返り値:
     女優情報があった場合はその人名のリスト、なければ空のタプル
     '''
-    # 1年以内にリリース実績のある実在するひらがなのみ(4文字以下)の名前 (2015-07-05現在)
-    _allhiraganas = ('あいり', 'あづみ', 'あゆか', 'ありさ', 'くるみ',
-                     'ここあ', 'さな', 'さやか', 'しずく', 'すみれ', 'つくし',
-                     'つばさ', 'つぼみ', 'なおみ', 'なごみ', 'なつみ',
-                     'ののか', 'ひかる', 'まりか', 'みはる', 'めぐり',
-                     'もえり', 'ももか', 'ゆいの', 'ゆう', 'ゆうゆう', 'りん',
-                     'りんか', 'れんか')
+    # 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 (2015-07-17現在)
+    _allhiraganas = ('あいら', 'あさみ', 'ありさ', 'くるみ', 'ここあ', 'さな',
+                     'さやか', 'しずく', 'すみれ', 'つくし', 'つばさ',
+                     'つぼみ', 'なおみ', 'なごみ', 'なつみ', 'ひなぎく',
+                     'まいら', 'まなか', 'まりか', 'みはる', 'みひろ',
+                     'めぐり', 'ももか', 'ゆいの', 'ゆう', 'ゆうみ',
+                     'ゆうゆう', 'りん', 'りんか', 'れんか')
 
     def __init__(self):
         self.title_smm = ''
@@ -1390,7 +1391,8 @@ class DMMParser:
 
         # タイトルの取得
         if not self._sm['title'] or self._sm['title'].startswith('__'):
-            self._sm['title'], self._sm['title_dmm'] = self._ret_title(args.longtitle)
+            self._sm['title'], self._sm['title_dmm'] = self._ret_title(
+                getattr(args, 'longtitle', True))
 
         if service == 'ama':
             # 素人動画の時のタイトル/副題の再作成
@@ -1468,7 +1470,7 @@ class DMMParser:
             # レンタル版で出演者情報がなかったとき他のサービスで調べてみる
             if (service == 'rental' or self.data_replaced == 'rental') \
                and (not self._sm['actress'] or self.force_chk_sale) \
-               and args.check_rltd:
+               and getattr(args, 'check_rltd'):
 
                 verbose('possibility missing performers, checking others...')
                 other_data = self._get_otherscontent('videoa', 'dvd')
