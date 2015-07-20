@@ -1196,55 +1196,57 @@ class _FromHtml:
 
             userarea = he.find_class('user-area')[0]
 
-            Cols = gen_ntfcols(
-                'Cols', _makeheader(userarea.find('.//tr[th]').iterfind('th')))
+            for tbl in userarea.iterfind('.//table'):
 
-            for tr in userarea.iterfind('.//tr[td]'):
-                self.number = 0
+                Cols = gen_ntfcols(
+                    'Cols', _makeheader(tbl.find('.//tr[th]').iterfind('th')))
 
-                tds = tr.xpath('td')
+                for tr in tbl.iterfind('.//tr[td]'):
+                    self.number = 0
 
-                try:
-                    md = Cols(*tds)
-                except TypeError:
-                    continue
+                    tds = tr.xpath('td')
 
-                anchor = md.NO.find('a')
-                if anchor is not None:
-                    pid = anchor.text.strip()
-                    url = anchor.get('href')
-                else:
-                    pid = md.NO.text
-                    if not pid:
+                    try:
+                        md = Cols(*tds)
+                    except TypeError:
                         continue
-                    altera = md.PHOTO.find('a')
-                    if altera is not None:
-                        url = altera.get('href')
-                        if url.endswith('jpg'):
-                            continue
+
+                    anchor = md.NO.find('a')
+                    if anchor is not None:
+                        pid = anchor.text.strip()
+                        url = anchor.get('href')
                     else:
-                        cid = rm_hyphen(pid).lower()
-                        url = build_produrl(service, cid)
+                        pid = md.NO.text
+                        if not pid:
+                            continue
+                        altera = md.PHOTO.find('a')
+                        if altera is not None:
+                            url = altera.get('href')
+                            if url.endswith('jpg'):
+                                continue
+                        else:
+                            cid = rm_hyphen(pid).lower()
+                            url = build_produrl(service, cid)
 
-                # タイトルに改行があればスペースへ置き換え
-                title = ' '.join(md.TITLE.xpath('text()')) or '__' + pid
-                actress = [a for a in self._parse_performers(md.ACTRESS)
-                           if a is not None]
-                note = self._parse_notes(md.NOTE)
-                if 'ORIGINAL' in md._fields:
-                    note.extend(self._parse_notes(md.ORIGINAL))
+                    # タイトルに改行があればスペースへ置き換え
+                    title = ' '.join(md.TITLE.xpath('text()')) or '__' + pid
+                    actress = [a for a in self._parse_performers(md.ACTRESS)
+                               if a is not None]
+                    note = self._parse_notes(md.NOTE)
+                    if 'ORIGINAL' in md._fields:
+                        note.extend(self._parse_notes(md.ORIGINAL))
 
-                # verbose('md.title: ', title)
-                # verbose('md.pid: ', pid)
-                # verbose('md.url: ', url)
-                verbose('md.actress: ', actress)
-                # verbose('md.note: ', note)
-                yield url, Summary(url=url,
-                                   title=title,
-                                   pid=pid,
-                                   actress=actress.copy(),
-                                   number=self.number,
-                                   note=note)
+                    # verbose('md.title: ', title)
+                    # verbose('md.pid: ', pid)
+                    # verbose('md.url: ', url)
+                    verbose('md.actress: ', actress)
+                    # verbose('md.note: ', note)
+                    yield url, Summary(url=url,
+                                       title=title,
+                                       pid=pid,
+                                       actress=actress.copy(),
+                                       number=self.number,
+                                       note=note)
 
 from_html = _FromHtml()
 
@@ -1437,7 +1439,6 @@ def gen_pid(cid, pattern=None):
         for sp in sp_pid_indv:
             pid, m = sub(sp, cid, True)
             if m:
-                verbose('indv sub pattern')
                 break
         else:
             pid, m = sub(sp_pid, cid, True)
