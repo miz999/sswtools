@@ -617,8 +617,7 @@ def get_args(argv):
     # ソート基準
     argparser.add_argument('--sort-key',
                            help='並び替えキー項目',
-                           choices=('release', 'pid', 'title'),
-                           default='pid')
+                           choices=('release', 'pid', 'title'))
 
     argparser.add_argument('--note',
                            help='エントリの最後かNOTEカラムにデータを追加する',
@@ -1188,7 +1187,7 @@ def main(argv=None):
 
         # 一覧ページ内に既存の作品はスキップ(--existings-)
         if props.url in existings:
-            emsg('I', '作品を除外しました: pid={} (already exist)'.format(
+            emsg('I', '作品を除外しました: pid={} (already existent)'.format(
                 props.pid))
             omitted += 1
             rest -= 1
@@ -1387,7 +1386,7 @@ def main(argv=None):
             else:
                 fd = io.IOBase()  # Dummy
 
-            for j, item in enumerate(reversed(wikitexts), start=args.row - 1):
+            for j, item in enumerate(wikitexts, start=args.row - 1):
                 verbose('Item #', j)
 
                 if not item.url:
