@@ -8,6 +8,7 @@
 '''
 import sqlite3
 import argparse
+import os
 
 from datetime import date
 
@@ -53,7 +54,7 @@ def select_allhiragana(ids, today, path):
                                   deeper=False,
                                   pass_bd=True,
                                   quiet=True)
-    conn = sqlite3.connect(path or 'dmm_actress.db')
+    conn = sqlite3.connect(path)
     cur = conn.cursor()
 
     if ids:
@@ -124,9 +125,13 @@ def main():
 
     args = get_args()
 
+    dbpath = args.path or 'dmm_actress.db'
+    if not os.path.exists(dbpath):
+        emsg('DB file not found')
+
     today = date.today()
 
-    positive = set(select_allhiragana(args.id, today, args.path))
+    positive = set(select_allhiragana(args.id, today, dbpath))
     print('# 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 ({}現在)'.format(
         str(today)))
     print('_allhiraganas = ', end='')
