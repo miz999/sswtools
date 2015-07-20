@@ -596,7 +596,8 @@ def le80bytes(string, encoding='euc_jisx0213'):
 def gen_ntfcols(tname, fsource):
     '''表形式ヘッダから名前付きタプルを作成'''
     if isinstance(fsource, str):
-        fsource = (c for c in fsource.replace('~', '').split('|'))
+        fsource = ('TITLE' if c == 'SUBTITLE' else c
+                   for c in fsource.replace('~', '').split('|'))
     return _namedtuple(tname, fsource, rename=True)
 
 
@@ -1007,25 +1008,12 @@ class _FromWiki:
                     self.article = p_linkpare.findall(row)
                     verbose('article from wiki: ', self.article)
 
-                if not row.startswith('|[['):
+                if row.startswith('|~'):
+                    Cols = gen_ntfcols('Cols', row)
+                elif not row.startswith('|[['):
                     continue
 
-                split = tuple(c.strip() for c in row.split('|'))
-
-                try:
-                    md = Cols(*split)
-                except TypeError:
-                    # カラム情報の取得
-                    length = len(split)
-                    if length == 8:
-                        hdr = '|NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|'
-                    elif length == 9:
-                        hdr = '|NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|'
-                    else:
-                        emsg('E', 'イレギュラーなカラム数の表です: ', row)
-
-                    Cols = gen_ntfcols('Cols', hdr)
-                    md = Cols(*split)
+                md = Cols(*(c.strip() for c in row.split('|')))
 
                 try:
                     pid, url = p_linkpare.findall(md.NO)[0]

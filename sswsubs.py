@@ -104,7 +104,7 @@ def complement(target, from_d, args):
     for row in target:
         row = row.strip()
 
-        if not TarCols and row.startswith('|~NO|'):
+        if not TarCols and row.startswith('|~'):
             # カラム情報の取得
             TarCols = libssw.gen_ntfcols('TarCols', row)
 
