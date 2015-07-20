@@ -8,12 +8,18 @@ sswactcomp.py [女優ページのファイル [ファイル ...]] [オプショ�
 
 
 説明:
-    ファイルはWiki女優ページのウィキテキストを保存したものを与える。
-    ファイル名を与えないと標準入力から読み込む。
-    複数のウィキテキストを読み込むことができるが、出力ファイルはそれらを順に繋げた
-    一つにまとめられる。
-    元のウィキテキストのレイアウトを必ず維持するとは限らないので、入力ファイルと
+    Wiki女優ページのウィキテキストとDMM上の女優の作品一覧とを比較し、Wiki側に
+    足りない作品情報を補完する。
+    総集編と書かれていない総集編が紛れ込んでしまうので注意。
+    また、元のウィキテキストのレイアウトを必ず維持するとは限らないので、入力ファイルと
     出力ファイルの比較を忘れないこと。
+
+
+引数:
+Wiki女優ページのウィキテキストのファイル名
+    ファイル名を指定しないと標準入力から読み込む。
+    複数のウィキテキストを読み込むことができるが、出力ファイルではそれらは一つに
+    まとめられる。
 
 
 オプション:
@@ -30,7 +36,8 @@ sswactcomp.py [女優ページのファイル [ファイル ...]] [オプショ�
 
 -m, --disable-omit
     イメージビデオを除外しない。
-    m を2個指定すると総集編作品も、3個指定するとアウトレットも、
+    m を2個指定すると総集編作品も、
+    3個指定するとアウトレットも、
     4個指定すると限定盤も除外しない。
     除外もれが発生する場合もある。
 
@@ -61,7 +68,7 @@ sswactcomp.py [女優ページのファイル [ファイル ...]] [オプショ�
     作品情報単位での差分。
 
 -c, --clear-cache
-    HTTPキャッシュを終了時に削除する(「説明」参照)。
+    HTTPキャッシュを終了時に削除する。
 
 -v, --verbose
     デバッグ用情報を出力する。
@@ -95,11 +102,10 @@ SPLIT_DEFAULT = 200
 verbose = libssw.Verbose(OWNNAME, VERBOSE)
 emsg = libssw.Emsg(OWNNAME)
 
-g_actid = set()
-
 p_cstart = re.compile(r'^// *(\d+.?\d+.?\d+)')
 p_product = re.compile(r'>(http://www.dmm.co.jp/.*/cid=.*?)]]')
-p_actid = re.compile(r'/article=actress/id=(.+?)/')
+p_actid = re.compile(r'/article=actress/id=([\d,]+?)/')
+p_linkurl = re.compile(r'>(http://.+?)\]\]')
 
 sp_datedelim = (re.compile(r'-/'), '.')
 
@@ -187,7 +193,8 @@ def get_args():
     # dmmsar.py 側からVERBOSEが変更される場合があるため
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
     if args.verbose > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
+        libssw.VERBOSE = libssw.verbose.verbose = \
+            dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = args.verbose - 1
 
     if args.fastest:
         for a in ('follow_rdr', 'check_rental', 'pass_bd', 'check_listpage'):
@@ -198,13 +205,26 @@ def get_args():
     return args
 
 
-def get_existing(files):
+def add_actid(g_actid, actids):
+
+    def append_id(aid):
+        if aid and aid not in g_actid:
+            g_actid.append(aid)
+
+    for ai in actids:
+        if ai.startswith('http://'):
+            for a in chain.from_iterable(i.split(',')
+                                         for i in p_actid.findall(ai)):
+                append_id(a)
+        else:
+            append_id(ai)
+
+
+def get_existing(g_actid, files):
     '''
     Wikiテキストをファイルから読み込んで作品ごとの情報を返すジェネレータ
     ついでに引数で女優IDが与えられていないときに自動取得を試みる。
     '''
-    global g_actid
-
     item = []
     key = None
     url = None
@@ -223,12 +243,9 @@ def get_existing(files):
             # urlがまだ見つかってないときにurlがあるか探す
             url = p_product.findall(row)
 
-        if not g_actid:
-            # 女優IDがまだわからないときにIDがあるか探す
-            a = p_actid.findall(row)
-            # ,区切りで複数指定してあったとき用に分割してフラット化した集合にする
-            g_actid = a and frozenset(
-                chain.from_iterable(i.split(',') for i in a))
+        if row.startswith('*[['):
+            # 必要であれば女優IDを追加
+            add_actid(g_actid, p_linkurl.findall(row))
 
         if m_rd or not row:
             # 空行かリリース日の行だったら作品情報1個分完了
@@ -260,7 +277,6 @@ def get_existing(files):
 
 
 def main():
-    global g_actid
 
     args = get_args()
 
@@ -274,13 +290,13 @@ def main():
     else:
         writemode = None
 
+    g_actid = []
     seq = []
     contents = dict()
     release = dict()
 
     # 女優IDがURL渡しだったときの対処
-    g_actid = frozenset(libssw.get_id(a)[0] if a.startswith('http://') else a
-                        for a in args.actress_id)
+    add_actid(g_actid, args.actress_id)
 
     # 除外対象
     no_omits = libssw.gen_no_omits(args.no_omit)
@@ -288,7 +304,7 @@ def main():
 
     # ウィキテキストの読み込み
     # 女優IDも取得
-    for key, rdate, item in get_existing(args.wikifiles):
+    for key, rdate, item in get_existing(g_actid, args.wikifiles):
         seq.append(key)
         contents[key] = item
         release[key] = rdate
@@ -335,7 +351,9 @@ def main():
         libssw.inprogress('(残り {} 件/全 {} 件: 除外 {} 件)  '.format(
             rest, total, omitted))
 
-        b, status, data = dmm2ssw.main(props, args, dmmparser)
+        b, status, data = dmm2ssw.main(props=props,
+                                       p_args=args,
+                                       dmmparser=dmmparser)
         verbose('Return from dmm2ssw: {}, {}, {}'.format(
             b, status, data))
 
