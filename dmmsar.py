@@ -781,10 +781,6 @@ def get_args(argv):
     args.last_pid = args.last_pid.upper()
     args.last_cid = args.last_cid.lower()
 
-    # 表形式のみの出力ならば実際の一覧ページを探す必要はない
-    if args.table == 1:
-        args.check_listpage = False
-
     # ヘッダを抑止するときはページ分割もしない
     if not args.header:
         args.split = 0

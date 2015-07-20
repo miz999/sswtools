@@ -1543,6 +1543,8 @@ def check_actuallpage(url, lpage, ltype, pid):
     '''
     global REDIRECTS
 
+    verbose('check actual list page on ssw...')
+
     if not _libssw.RECHECK \
        and url in REDIRECTS \
        and REDIRECTS[url] != '__NOT_FOUND__':
@@ -1550,7 +1552,6 @@ def check_actuallpage(url, lpage, ltype, pid):
         verbose('list page found on REDIRECTS: ', REDIRECTS[url])
         return lpage if REDIRECTS[url] == '__NON__' else REDIRECTS[url]
 
-    verbose('check actual list page on ssw...')
     pages = tuple(search_listpage(url, lpage, ltype, pid))
     verbose('list page found: ', pages)
 
@@ -1580,7 +1581,7 @@ def check_actuallpage(url, lpage, ltype, pid):
 
 def det_listpage(summ, args):
     '''一覧ページへのリンク情報の決定'''
-    verbose('List link processed')
+    verbose('Processing list link')
 
     list_type = ''
 
@@ -1614,6 +1615,7 @@ def det_listpage(summ, args):
     list_page = list_page.translate(_libssw.t_wikisyntax)
 
     if not args.check_listpage:
+        verbose('not check_listpage')
         return list_type, list_page
 
     # Wiki上の実際の一覧ページを探し、見つかったらそれにする。
