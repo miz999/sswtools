@@ -1582,7 +1582,7 @@ def check_actuallpage(url, lpage, ltype, pid):
     return result
 
 
-def det_listpage(summ, args):
+def det_listpage(summ, retrieval, args):
     '''一覧ページへのリンク情報の決定'''
     verbose('Processing list link')
 
@@ -1598,6 +1598,7 @@ def det_listpage(summ, args):
             if list_page == '__HIDE__':
                 continue
             elif _libssw.le80bytes(list_page):
+                list_attr = attr
                 list_type = typ
                 break
             else:
@@ -1617,8 +1618,8 @@ def det_listpage(summ, args):
     # wiki構文と衝突する文字列の置き換え
     list_page = list_page.translate(_libssw.t_wikisyntax)
 
-    if not args.check_listpage or (list_type == 'シリーズ' and
-                                   args.table == 1):
+    if not args.check_listpage or \
+       (list_attr == retrieval and args.table == 1):
         verbose('pass checking listpage')
         return list_type, list_page
 
@@ -1920,7 +1921,8 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     # シリーズ/レーベル一覧へのリンク情報の設定
     # 一覧ページの直接指定があればそれを、なければ シリーズ > レーベル で決定
     if not (args.hide_list or summ['list_type']):
-        summ['list_type'], summ['list_page'] = det_listpage(summ, args)
+        summ['list_type'], summ['list_page'] = det_listpage(summ, retrieval,
+                                                            args)
     if args.linklabel:
         summ['list_type'] = args.linklabel
     verbose('summ[list_page]: ', summ['list_page'])
