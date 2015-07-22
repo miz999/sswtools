@@ -227,7 +227,8 @@ def main():
     # 一覧ページからチェックする作品情報を取得
     if args.from_wikitext:
         targets = OrderedDict(libssw.from_wiki((args.target,)))
-        listname = libssw.from_wiki.article[0][0]
+        listname = libssw.from_wiki.article[0][0] if libssw.from_wiki.article \
+                   else None
     else:
         targets = OrderedDict(libssw.from_html((args.target,), cache=False))
         listname = libssw.from_html.article
