@@ -71,6 +71,7 @@ OMITWORDS = {'総集編':      '総集編',
              'COMPLETE':   '総集編',
              'コンプリート': '総集編',
              '総編版':      '総集編',
+             '大全集':      '総集編',
 
              'DMM初回限定':  '限定盤',
              'DMM限定':     '限定盤',
@@ -168,7 +169,6 @@ OMNI_PREFIX = (
     '434kcda',       # デジタルアークの総集編
     '49cadv',        # クリスタル映像の総集編
     '51cma',         # シネマジックの総集編
-    '55hitma',       # TMAの総集編
     '55hsrm',        # SCREAM 総集編専門レーベル
     '55id',          # TMAの総集編
     '83sbb',         # マルクス兄弟の総集編
@@ -309,7 +309,6 @@ p_delim = _re.compile(r'[/／,、]')
 p_inbracket = _re.compile(r'[(（]')
 p_linkpare = _re.compile(r'\[\[(.+?)(?:>(.+?))?\]\]')
 p_interlink = _re.compile(r'(\[\[.+?\]\])')
-p_date = _re.compile(r'\d{4}-\d{2}-\d{2}')
 p_list_article = _re.compile(r'/article=(.+?)/')
 p_actname1 = _re.compile(r'[)）][(（]')
 p_actname2 = _re.compile(r'[（(、]')
@@ -1008,7 +1007,7 @@ class _FromWiki:
                     self.article = p_linkpare.findall(row)
                     verbose('article from wiki: ', self.article)
 
-                if row.startswith('|~'):
+                if row.startswith('|~NO'):
                     Cols = gen_ntfcols('Cols', row)
                 elif not row.startswith('|[['):
                     continue

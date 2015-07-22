@@ -121,7 +121,8 @@ IGNORE_LABELS = ('AVGP',
                  'AV OPEN',
                  'AV30',
                  'AVopen',
-                 'Onafes')
+                 'Onafes',
+                 'D1グランプリ')
 
 # 配下のシリーズを取得しないメーカーとレーベルの組み合わせ
 IGNORE_PARES = {'40004':      # アイエナジー
