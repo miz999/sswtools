@@ -1216,7 +1216,10 @@ class _FromHtml:
                             url = build_produrl(service, cid)
 
                     # タイトルに改行があればスペースへ置き換え
-                    title = ' '.join(md.TITLE.xpath('text()')) or '__' + pid
+                    if 'TITLE' in md._fields:
+                        title = ' '.join(md.TITLE.xpath('text()')) or '__' + pid
+                    else:
+                        title = '__' + pid
                     actress = [a for a in self._parse_performers(md.ACTRESS)
                                if a is not None]
                     note = self._parse_notes(md.NOTE)
