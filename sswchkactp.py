@@ -227,13 +227,14 @@ def main():
     # 一覧ページからチェックする作品情報を取得
     if args.from_wikitext:
         targets = OrderedDict(libssw.from_wiki((args.target,)))
-        listname = libssw.from_wiki.article
+        listname = libssw.from_wiki.article[0][0]
     else:
         targets = OrderedDict(libssw.from_html((args.target,), cache=False))
         listname = libssw.from_html.article
 
     # 一覧ページ名の取得
     listname = args.list_name or listname
+    verbose('listname: ', listname)
 
     if not listname:
         emsg('E', '一覧ページ名を取得できませんでした。-l オプションで指定してください。')
