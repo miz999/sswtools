@@ -125,6 +125,7 @@ OMNI_PREFIX = (
     '18alsp',        # タカラ映像の総集編
     '18mbox',        # タカラ映像の総集編
     '18mght',        # タカラ映像の総集編
+    '1svomn',        # サディスティックビレッジの総集編
     '21issd',        # アウダースジャパンの総集編
     '21pssd',        # アウダースジャパンの総集編
     '23aukb',        # U＆Kの総集編
@@ -174,21 +175,26 @@ OMNI_PREFIX = (
     '83sbb',         # マルクス兄弟の総集編
     '83scf',         # マルクス兄弟の総集編
     '84hyas',        # 100人 KMPの総集編レーベル
+    '9onsd',         # S1の総集編(BD)
     'abcb',          # ABC/妄想族の総集編
     'anhd',          # アンナと花子の総集編
     'atkd',          # Attackers BEST 総集編専門レーベル
     'apao',          # オーロラプロジェクト・アネックスの総集編
+    'avsw',          # AVS collector’s の総集編
     'bcdp',          # 総集編メーカー BACK DROP
     'bijc',          # 美人魔女の総集編
     'bomn',          # BoinBB/ABCの総集編
     'bmw',           # ワンズファクトリーの総集編
     'cnz',           # キャンディの総集編
+    'corb',          # たぶんCOREの総集編
     'crad',          # クロスの総集編
+    'crmn',          # 痴ロモン/妄想族 総集編レーベル
     'daid',          # ダイナマイトエンタープライズの総集編
     'dazd',          # ダスッ！の総集編
     'dgtl',          # デジタルアークの総中編
     'emac',          # DX（エマニエル）の総集編
     'fabs',          # FAプロの総集編
+    'h_066fabs',     # FAプロの総集編
     'h_066rabs',     # FAプロ 竜二ベスト
     'h_067nass',     # なでしこの総集編
     'h_068mxsps',    # マキシングの総集編
@@ -221,6 +227,11 @@ OMNI_PREFIX = (
     'h_479gne',      # NEO GIFT 総集編レーベル (GALLOP)
     'h_537odfg',     # ワンダフルの総集編
     'h_540exta',     # エクストラ 総集編専門レーベル
+    'h_543rlod',     # 乱熟 総集編メーカー
+    'h_543rloh',     # 乱熟 総集編メーカー
+    'h_543rloj',     # 乱熟 総集編メーカー
+    'h_543rlok',     # 乱熟 総集編メーカー
+    'h_543rloi',     # 乱熟 総集編メーカー
     'h_544yuyg',     # ケンシロウプロジェクトの総集編
     'h_797impa',     # impact（サンワソフト）の総集編
     'h_838chao',     # CHAOS（Pandora）総集編レーベル (Pandra)
@@ -242,7 +253,9 @@ OMNI_PREFIX = (
     'mkck',          # E-BODYの総集編
     'mmb',           # 桃太郎ベスト
     'mvbd',          # エムズビデオグループの総集編
+    'n_1155dslb',    # グラッソの復刻版(?)
     'obe',           # マドンナ/Obasanの総集編
+    'onsd',          # S1の総集編
     'oomn',          # お母さん.com/ABCの総集編
     'rbb',           # ROOKIEの総集編
     'pbd',           # プレミアムの総集編
@@ -253,10 +266,12 @@ OMNI_PREFIX = (
     'stol',          # 変態紳士倶楽部の総集編
     'swac',          # 湘南/妄想族の総集編
     'tmbt',          # teamZEROの総集編
+    'tomn',          # TEPPANの総集編
     'tywd',          # 乱丸の総集編
     'veq',           # VENUSの総集編
     'vero',          # VENUSの総集編
     'veve',          # VENUSの総集編
+    'vvvd',          # ヴィの総集編
 
     '15awad12',      # 桃太郎映像出版の総集編作品
     '15send167',     # 桃太郎映像出版の総集編作品
@@ -286,7 +301,7 @@ REDIRECTS = {'黒木麻衣':  '花野真衣',
              'すみれ':    '東尾真子',
              'EMIRI':    '丘咲エミリ',
              '松嶋葵':    '松嶋葵（2014）',
-             '和久井ナナ': 'ふわりゆうき',}
+             '和久井ナナ': 'ふわりゆうき'}
 
 # 事務所から送信防止措置依頼されている女優
 HIDE_NAMES = {'1023995': '立花恭子',
@@ -294,31 +309,15 @@ HIDE_NAMES = {'1023995': '立花恭子',
               '1026305': '北野ひな'}
 
 
-p_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
-p_id = _re.compile(r'/id=([\d,]+?)/')
-p_base_url = _re.compile(r'(.*/)-/')
-p_charset = _re.compile(r'charset=([a-zA-Z0-9_-]+);?')
-p_splitid = _re.compile(r'([a-z]+)[+-]?(\d+)', _re.I)
 p_number = _re.compile(r'\d+')
-p_etc = _re.compile(r'ほか\w*?計(\d+)名')
-p_name = _re.compile(
-    r'(?P<fore>[\w>]*)?(?P<paren>[(（][\w>]*[）)])?(?P<back>[\w>]*)?')
-p_nn = _re.compile(r'(?:\d{3,}|[2-9]\d)人')
-p_hh = _re.compile(r'\d{2,}時間')
-p_mmm = _re.compile(r'(?:[2-9]\d{2}|\d{3,})分')
 p_delim = _re.compile(r'[/／,、]')
 p_inbracket = _re.compile(r'[(（]')
 p_linkpare = _re.compile(r'\[\[(.+?)(?:>(.+?))?\]\]')
-p_interlink = _re.compile(r'(\[\[.+?\]\])')
 p_list_article = _re.compile(r'/article=(.+?)/')
-p_actname1 = _re.compile(r'[)）][(（]')
-p_actname2 = _re.compile(r'[（(、]')
 p_hiragana = _re.compile(r'[ぁ-ゞー]')
 p_neghirag = _re.compile(r'[^ぁ-ゞー]')
 
 sp_pid = (_re.compile(r'^(?:[hn]_)?\d*([a-z]+)(\d+).*', _re.I), r'\1-\2')
-sp_tsuffix = (_re.compile(r' - \S*( - DMM.R18)?$'), '')
-sp_wikis = (_re.compile(r' "target="_blank"'), r'" target="_blank"')
 
 # 品番変換個別対応
 sp_pid_indv = (
@@ -336,10 +335,6 @@ sp_pid_indv = (
     (_re.compile(r'^21psd(\d+)'), r'psd+\1'),             # アウダースの一部
     (_re.compile(r'^\d*d1clymax00(\d+)'), r'd1clymax-\1'),  # D1グランプリ
 )
-
-sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
-           (_re.compile(r'Courier'), 'Sans'),
-           (_re.compile(r'nowrap="nowrap"'), ''))
 
 
 t_wikisyntax = str.maketrans('[]~', '［］～')
@@ -603,6 +598,8 @@ def gen_ntfcols(tname, fsource):
 
 class __OpenUrl:
     '''URLを開いて読み込む'''
+    _p_charset = _re.compile(r'charset=([a-zA-Z0-9_-]+);?')
+
     def __init__(self):
         if VERBOSE > 1:
             _httplib2.debuglevel = 1
@@ -621,13 +618,13 @@ class __OpenUrl:
     def _resolve_charset(self, resp, html):
         '''文字エンコーディングの解決'''
         # HTTPレスポンスから取得
-        c_type = p_charset.findall(resp['content-type'])
+        c_type = self._p_charset.findall(resp['content-type'])
         if c_type:
             verbose('charset from resp.')
             return c_type[0]
 
         # HTMLヘッダから取得
-        c_type = p_charset.findall(_fromstring(html).xpath(
+        c_type = self._p_charset.findall(_fromstring(html).xpath(
             '//meta[@http-equiv="Content-Type"]')[0].get('content', False))
         if c_type:
             verbose('charset from meta.')
@@ -714,17 +711,39 @@ def check_omitword(title):
 
 
 def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
-    '''隠れ総集編チェック'''
+    '''隠れ総集編チェック(プレフィクス版)'''
     return any(cid.startswith(p) for p in prefix) or \
         any(p.search(cid) for p in patn)
+
+
+p_omnivals = (_re.compile(r'(?:[2-9]\d|\d{3,})[人名]'),
+              _re.compile(r'(?:[5-9]\d|\d{3,})連?発'),
+              _re.compile(r'(?:[6-9]|\d{2,})時間'),
+              _re.compile(r'(?:3[6-9]\d|[4-9]\d{2}|\d{4,})分'))
+
+
+def check_omnivals(title):
+    '''隠れ総集編チェック(関連数値編)'''
+    def pick():
+        for p in p_omnivals:
+            m = p.findall(title)
+            if m:
+                yield m[0]
+    hit = tuple(pick())
+    if len(hit) > 1:
+        return hit
+
+
+p_ge4h = _re.compile(r'(?:[4-9]|\d{2,})時間')
+p_ge200m = _re.compile(r'(?:[2-9]\d{2}|\d{4,})分')
 
 
 def is_omnirookie(cid, title):
     '''ROOKIE隠れ総集編チェック'''
     if check_omitprfx(cid, ROOKIE):
         # ROOKIEチェック
-        hh = p_hh.findall(title)
-        mmm = p_mmm.findall(title)
+        hh = p_ge4h.findall(title)
+        mmm = p_ge200m.findall(title)
         return hh, mmm
     else:
         return None, None
@@ -732,6 +751,8 @@ def is_omnirookie(cid, title):
 
 class DMMTitleListParser:
     '''一覧ページの解析'''
+    _sp_tsuffix = (_re.compile(r' - \S*( - DMM.R18)?$'), '')
+
     def __init__(self, no_omits=OMITTYPE, patn_pid=None, show_info=True):
         self._no_omits = no_omits
         self._patn_pid = patn_pid
@@ -749,12 +770,17 @@ class DMMTitleListParser:
 
         # wiki構文と衝突する文字列の置き換え
         article = article.translate(t_wikisyntax)
-        article = sub(sp_tsuffix, article)
+        article = sub(self._sp_tsuffix, article)
 
         return article
 
     def _ret_titles(self, ttl):
         '''作品タイトルとURLの取得'''
+        def omit(key, word):
+            if self._show_info or VERBOSE:
+                emsg('I', 'ページを除外しました: cid={}, {:<20}'.format(
+                    cid, 'reason=("{}", "{}")'.format(key, word)))
+            self.omitted += 1
 
         t_el = ttl.find('a')
         title = t_el.text
@@ -768,29 +794,30 @@ class DMMTitleListParser:
         # 除外作品チェック (タイトルから)
         for key, word in check_omitword(title):
             if key not in self._no_omits:
-                is_omit = key, word
-                break
+                omit(key, word)
+                return False, False
 
         if '総集編' not in self._no_omits:
             # 隠れ総集編チェック
             if check_omitprfx(cid, OMNI_PREFIX):
-                is_omit = '総集編', cid
+                omit('総集編', cid)
+                return False, False
+
+            omnival = check_omnivals(title)
+            if omnival:
+                omit('総集編', omnival)
+                return False, False
 
             hh, mmm = is_omnirookie(cid, title)
             if hh or mmm:
-                is_omit = '総集編', hh or mmm
+                omit('ROOKIE', hh or mmm)
+                return False, False
 
         if 'イメージビデオ' not in self._no_omits:
             # 隠れIVチェック
             if check_omitprfx(cid, IV_PREFIX):
-                is_omit = 'イメージビデオ', cid
-
-        if is_omit:
-            if self._show_info or VERBOSE:
-                emsg('I', 'ページを除外しました: cid={}, {:<20}'.format(
-                    cid, 'reason=("{}", "{}")'.format(*is_omit)))
-            self.omitted += 1
-            return False, False
+                omit('イメージビデオ', cid)
+                return False, False
 
         return url, Summary(url=url, title=title, pid=pid, cid=cid)
 
@@ -819,6 +846,9 @@ class DMMTitleListParser:
         self.nexturl = self._ret_nextpage(he)
 
         return (self._ret_titles(ttl) for ttl in he.find_class('ttl'))
+
+
+sp_wikis = (_re.compile(r' "target="_blank"'), r'" target="_blank"')
 
 
 def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
@@ -879,6 +909,10 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
     verbose('Parsing list pages finished')
 
 
+p_name = _re.compile(
+    r'(?P<fore>[\w>]*)?(?P<paren>[(（][\w>]*[）)])?(?P<back>[\w>]*)?')
+
+
 def parse_names(name):
     '''
     出演者情報の解析(rawテキスト)
@@ -910,6 +944,9 @@ def parse_names(name):
 
     verbose('name prepared: {}, {}, {}'.format(shown, dest, parened))
     return shown, dest, parened
+
+
+p_etc = _re.compile(r'ほか\w*?計(\d+)名')
 
 
 def ret_numofpfmrs(etc):
@@ -966,6 +1003,8 @@ def from_tsv(files):
 
 class _FromWiki:
     '''タイトル一覧をウィキテキスト(表形式)からインポート'''
+    _p_interlink = _re.compile(r'(\[\[.+?\]\])')
+
     def __init__(self):
         self.article = ''
 
@@ -973,7 +1012,7 @@ class _FromWiki:
         '''出演者情報の解析(ウィキテキスト)'''
         shown = dest = parened = ''
 
-        for e in p_interlink.split(name):
+        for e in self._p_interlink.split(name):
 
             if not e:
                 continue
@@ -1399,6 +1438,9 @@ def stringize_performers(pfmrs, number, follow):
     return pfmrsstr, pnum
 
 
+p_base_url = _re.compile(r'(.*/)-/')
+
+
 def resolve_service(url):
     '''サービスの決定'''
     verbose('Resolving service...')
@@ -1408,6 +1450,10 @@ def resolve_service(url):
         emsg('E', '未サポートのURLです。')
     else:
         return SVC_URL[base]
+
+
+p_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
+p_id = _re.compile(r'/id=([\d,]+?)/')
 
 
 def get_id(url, cid=False):
@@ -1440,6 +1486,9 @@ def gen_pid(cid, pattern=None):
     return pid, cid
 
 
+p_splitid = _re.compile(r'([a-z]+)[+-]?(\d+)', _re.I)
+
+
 def split_pid(pid):
     return p_splitid.findall(pid)[0]
 
@@ -1468,6 +1517,9 @@ class InvalidPage(Exception):
 
 class _GetActName:
     '''名前の取得'''
+    _p_actname1 = _re.compile(r'[)）][(（]')
+    _p_actname2 = _re.compile(r'[（(、]')
+
     def __call__(self, elems):
         try:
             data = elems.find('.//h1').text.strip()
@@ -1475,16 +1527,16 @@ class _GetActName:
             raise InvalidPage
 
         # 複数の女優名チェク ('）（' で分割を試みる)
-        named = p_actname1.split(data)
+        named = self._p_actname1.split(data)
 
         if len(named) == 1:
             # 分割されなかったら名前は1つのみなのでそのまま名前とよみに分割
             named = p_inbracket.split(data)
 
         # 名前を分割
-        name = p_actname2.split(named[0])
+        name = self._p_actname2.split(named[0])
         # よみを分割
-        yomi = p_actname2.split(named[1].rstrip('）)'))
+        yomi = self._p_actname2.split(named[1].rstrip('）)'))
 
         # 現在の名前の格納
         self.current = name[0]
@@ -1600,6 +1652,11 @@ def open_ssw(page):
         _webbrowser.open_new_tab(
             'http://seesaawiki.jp/w/sougouwiki/e/add?pagename={}'.format(
                 quote(page)))
+
+
+sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
+           (_re.compile(r'Courier'), 'Sans'),
+           (_re.compile(r'nowrap="nowrap"'), ''))
 
 
 def show_diff(flines, tlines, fdesc, tdesc, context=True):
