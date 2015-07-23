@@ -805,7 +805,7 @@ class ExtractIDs:
 
             if k.startswith('http://'):
 
-                for i in libssw.get_id(k, is_cid):
+                for i in libssw.get_id(k, is_cid, ignore=True):
                     yield i
 
                 if not self.retrieval:
@@ -957,7 +957,7 @@ def main(argv=None):
     verbose('ids: ', ids)
 
     if not args.retrieval:
-        args.retrieval = extr_ids.retrieval
+        args.retrieval = extr_ids.retrieval or 'keyword'
     emsg('I', '対象: {}'.format(args.retrieval))
 
     # -L, -M , -U 以外では --not-in-series は意味がない
@@ -1042,7 +1042,7 @@ def main(argv=None):
     else:
         # DMMから一覧を検索/取得
         verbose('Call from_dmm()')
-        if args.retrieval == 'url' or 'keyword':
+        if args.retrieval in ('url', 'keyword'):
             priurls = args.keyword
         else:
             priurls = libssw.join_priurls(args.retrieval,

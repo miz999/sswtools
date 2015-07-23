@@ -1456,11 +1456,13 @@ p_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
 p_id = _re.compile(r'/id=([\d,]+?)/')
 
 
-def get_id(url, cid=False):
+def get_id(url, cid=False, ignore=False):
     '''URLからIDを取得'''
     try:
         return p_cid.findall(url) if cid else p_id.findall(url)[0].split(',')
     except IndexError:
+        if ignore:
+            return ()
         emsg('E', 'IDを取得できません: ', url)
 
 
