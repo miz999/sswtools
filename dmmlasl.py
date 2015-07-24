@@ -7,7 +7,7 @@
 dmmlasl.py [-t {maker | label}] ID [オプション ...]
 
 説明:
-    DMMから、指定したメーカーに所属する全レーベルおよびシリーズの情報(名称、作品数、
+    DMMから、指定したメーカーに所属する全レーベルおよび全シリーズの情報(名称、作品数、
     品番のプレフィクス、最終リリース日)を取得しウィキテキスト形式で一覧を作成する。
     作成したウィキテキストは、デフォルトで
     {maker | label}.<ID>.{メーカー名 | レーベル名}.wiki
@@ -103,6 +103,7 @@ import pickle
 import time
 from collections import Counter, OrderedDict
 from pathlib import Path
+from operator import itemgetter
 
 import libssw
 
@@ -342,7 +343,12 @@ def summ_prefixes(prefixes, fd):
 
 
 def print_serises(keys, name, prefix, url, latest, withdmm, withlatest, fd):
-    for n, sid in enumerate(sorted(keys), start=1):
+    keyiter = sorted(((k, latest[k]) for k in keys),
+                     key=itemgetter(1),
+                     reverse=True)
+
+    for n, item in enumerate(keyiter, start=1):
+        sid = item[0]
         print('***{}.[[{}]]'.format(n, name[sid]), file=fd)
         summ_prefixes(prefix[sid], fd)
         if withlatest:
@@ -586,8 +592,10 @@ def main():
     print(time.strftime('(%Y年%m月%d日現在)'), file=fd)
 
     if not args.only_series:
-        for n, lid in enumerate(sorted(lb_name), start=1):
-
+        for n, item in enumerate(
+                sorted(lb_latest.items(), key=itemgetter(1), reverse=True),
+                start=1):
+            lid = item[0]
             print('**{}.[[{}]]'.format(n, lb_name[lid]), file=fd)
             summ_prefixes(lb_prefix[lid], fd)
 

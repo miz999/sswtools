@@ -265,6 +265,9 @@ def main():
         if not props.actress:
             continue
 
+        if any('総集編' in n for n in props.note):
+            continue
+
         print('\nTITLE: {}'.format(props.title))
         print('URL:   {}'.format(prod_url))
 
