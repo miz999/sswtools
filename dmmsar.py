@@ -212,6 +212,7 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
 
 --not-in-series
     シリーズに属していない作品のみ作成する(-L/-M/-U 指定時のみ)。
+    見つかったシリーズ名の一覧を最後に出力する。
 
 --row 行番号
     表形式を作成する時の最初のデータのみなし行位置。10件毎のヘッダー挿入やページ
@@ -1250,11 +1251,6 @@ def main(argv=None):
     if not VERBOSE and args.wikitext:
         print(file=sys.stderr)
 
-    if args.n_i_s:
-        print('** 見つかったシリーズ一覧(順不同)', file=sys.stderr, flush=True)
-        for i, s in series_set:
-            print('-[[{}]]'.format(s), file=sys.stderr, flush=True)
-
     if wikitexts:
         # ウィキテキストの書き出し
         verbose('Writing wikitext')
@@ -1425,6 +1421,11 @@ def main(argv=None):
 
         if args.out:
             fd.close()
+
+    if args.n_i_s:
+        print('** 見つかったシリーズ一覧(順不同)')
+        for i, s in series_set:
+            print('-[[{}]]'.format(s))
 
     # キャッシュディレクトリの削除
     if args.clear_cache:
