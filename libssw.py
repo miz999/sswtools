@@ -552,6 +552,10 @@ def unquote(string, encoding='euc_jisx0213', errors='replace'):
     return _up.unquote(string, encoding=encoding, errors=errors)
 
 
+def clip_pname(url):
+    return unquote(url.rsplit('/', 1)[-1])
+
+
 def rm_nlcode(string):
     return string.translate(t_nl)
 
@@ -790,7 +794,6 @@ class DMMTitleListParser:
         pid, cid = gen_pid(url, self._patn_pid)
         cid = cid.lstrip('79')
 
-        is_omit = False
         # 除外作品チェック (タイトルから)
         for key, word in check_omitword(title):
             if key not in self._no_omits:
@@ -1112,7 +1115,7 @@ class _FromHtml:
         url = el.get('href')
         if not url.startswith(BASEURL_SSW):
             return url
-        return unquote(el.get('href').rsplit('/', 1)[-1])
+        return clip_pname(el.get('href'))
 
     def _enclose(self, ph):
         return ph if ph.startswith('(') else '({})'.format(ph)
@@ -1250,6 +1253,8 @@ class _FromHtml:
                     if anchor is not None:
                         pid = anchor.text.strip()
                         url = anchor.get('href')
+                        if not url.endswith('/'):
+                            url += url + '/'
                     else:
                         pid = md.NO.text
                         if not pid:
@@ -1265,7 +1270,8 @@ class _FromHtml:
 
                     # タイトルに改行があればスペースへ置き換え
                     if 'TITLE' in md._fields:
-                        title = ' '.join(md.TITLE.xpath('text()')) or '__' + pid
+                        title = ' '.join(md.TITLE.xpath('text()')) or \
+                                '__' + pid
                     else:
                         title = '__' + pid
                     actress = [a for a in self._parse_performers(md.ACTRESS)
@@ -1331,18 +1337,19 @@ def _rdrparser(page, he):
     for el in userarea:
         if el.tail and el.tail.strip() == 'リダイレクト：':
             rdr_flg = True
-            dest = getnext_text(el, './')
+            dest = clip_pname(el.getnext().get('href'))
             verbose('rdr dest: ', dest)
 
             if dest:
-                if len(dest) > 1:
-                    emsg('W',
-                         '"{}"のリダイレクト先を特定できません。もしかして…'.format(
-                             page))
-                    for cand in dest:
-                        emsg('W', '⇒  ', cand)
-                else:
-                    return dest[0]
+                return dest
+                # if len(dest) > 1:
+                #     emsg('W',
+                #          '"{}"のリダイレクト先を特定できません。もしかして…'.format(
+                #              page))
+                #     for cand in dest:
+                #         emsg('W', '⇒  ', cand)
+                # else:
+                #     return dest[0]
 
     if rdr_flg:
         emsg('W', '"{}"のリダイレクト先が見つからないか特定できません。'.format(page))
