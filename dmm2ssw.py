@@ -1635,7 +1635,7 @@ def det_listpage(summ, retrieval, args):
              '一覧ページが見つからなかったのでDMMのものを採用します。')
         emsg('W', list_type, ': ', list_page)
         if __name__ != '__main__':
-            emsg('I', 'タイトル: ', summ['title'])
+            emsg('I', 'タイトル: ', summ['title'], ' ({})'.format(summ['pid']))
 
     return list_type, list_page
 

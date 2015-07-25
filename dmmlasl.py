@@ -606,6 +606,7 @@ def main():
                 print('-[[DMMの一覧>{}]]'.format(lb_url[lid]), file=fd)
 
             if not args.only_label:
+                # シリーズ別出力
                 if lb_series[lid] or len(lb_ophans_prefix[lid]):
                     print('[+]', file=fd)
 
@@ -634,6 +635,7 @@ def main():
                 print('-最終リリース: {}'.format(mk_ophans_latest), file=fd)
 
     elif not args.only_label:
+        '''only-series'''
         print_serises(sr_name, sr_name, sr_prefix, sr_url, sr_latest,
                       args.dmm, args.latest, fd)
 
