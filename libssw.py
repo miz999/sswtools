@@ -1095,8 +1095,9 @@ class _FromWiki:
                                    number=number,
                                    note=note)
 
-        if Cols is None:
-            emsg('E', '素人系総合Wikiの一覧ページのウィキテキストではないようです。')
+            if Cols is None:
+                emsg('E', '素人系総合Wikiの一覧ページのウィキテキストではないようです: ',
+                     _fileinput.filename())
 
 
 from_wiki = _FromWiki()
@@ -1226,7 +1227,7 @@ class _FromHtml:
                 self.article = he.find(
                     './/div[@id="page-header-inner"]//h2').text.strip()
             except AttributeError:
-                emsg('E', '素人系総合Wikiの一覧ページのHTMLではないようです。')
+                emsg('E', '素人系総合Wiki一覧ページのHTMLではないようです: ', wurl)
 
             userarea = he.find_class('user-area')[0]
 
