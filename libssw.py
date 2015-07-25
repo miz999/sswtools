@@ -71,7 +71,6 @@ OMITWORDS = {'総集編':      '総集編',
              'COMPLETE':   '総集編',
              'コンプリート': '総集編',
              '総編版':      '総集編',
-             '大全集':      '総集編',
 
              'DMM初回限定':  '限定盤',
              'DMM限定':     '限定盤',
@@ -84,6 +83,7 @@ OMITWORDS = {'総集編':      '総集編',
 # 【混ぜるな危険】
 #  'コレクション'
 #  '保存版'
+#  '大全集'
 #  '全集'
 
 OMITTYPE = ('イメージビデオ', '総集編', 'アウトレット', '限定盤', 'UMD')
@@ -1095,6 +1095,10 @@ class _FromWiki:
                                    number=number,
                                    note=note)
 
+        if Cols is None:
+            emsg('E', '素人系総合Wikiの一覧ページのウィキテキストではないようです。')
+
+
 from_wiki = _FromWiki()
 
 
@@ -1218,8 +1222,11 @@ class _FromHtml:
                 with open(wurl, 'rb') as f:
                     he = _fromstring(f.read())
 
-            self.article = he.find(
-                './/div[@id="page-header-inner"]//h2').text.strip()
+            try:
+                self.article = he.find(
+                    './/div[@id="page-header-inner"]//h2').text.strip()
+            except AttributeError:
+                emsg('E', '素人系総合Wikiの一覧ページのHTMLではないようです。')
 
             userarea = he.find_class('user-area')[0]
 
