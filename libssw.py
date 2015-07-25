@@ -1062,6 +1062,9 @@ class _FromWiki:
                 except IndexError:
                     continue
 
+                if not url.endswith('/'):
+                    url += '/'
+
                 if not md.TITLE:
                     # タイトルがない時は品番を利用
                     md = md._replace(TITLE='__' + pid)
@@ -1086,11 +1089,8 @@ class _FromWiki:
                 note = p_delim.split(md.NOTE)
                 note = list(n for n in note if 'シリーズ' not in n)
 
-                # verbose('md.title: ', md.TITLE)
-                # verbose('md.pid: ', pid)
-                # verbose('md.url: ', url)
-                # verbose('md.actress: ', actress)
-                # verbose('md.note: ', md.NOTE)
+                verbose('md: {}, {}, {}, {}, {}'.format(md.TITLE, pid, url,
+                                                        actress, md.NOTE))
                 yield url, Summary(url=url,
                                    title=md.TITLE,
                                    pid=pid,
@@ -1125,7 +1125,6 @@ class _FromHtml:
 
         # 内部リンクの前にある文字列チェック
         foretxt = (td.text or '').strip()
-        verbose('foretxt: "{}"'.format(foretxt))
 
         if foretxt:
             # 先頭にリテラルあり
@@ -1154,18 +1153,15 @@ class _FromHtml:
             dest = self._unquotename(a)
             if dest == shown:
                 dest = ''
-            verbose('shown: {}, dest {}: '.format(shown, dest))
 
             # 内部リンクの後にある文字列チェック
             tailtxt = (a.tail or '').strip()
-            verbose('tailtxt: "{}"'.format(tailtxt))
 
             if not tailtxt:
                 yield shown, dest, ''
             else:
                 # 「~ ほか」チェック
                 splitetc = tailtxt.rsplit(maxsplit=1)
-                verbose('splitetc: ', splitetc)
                 self.number = ret_numofpfmrs(splitetc[-1])
                 if len(splitetc) > 1:
                     tailtxt = splitetc[0]
@@ -1254,7 +1250,7 @@ class _FromHtml:
                         pid = anchor.text.strip()
                         url = anchor.get('href')
                         if not url.endswith('/'):
-                            url += url + '/'
+                            url += '/'
                     else:
                         pid = md.NO.text
                         if not pid:
@@ -1280,11 +1276,8 @@ class _FromHtml:
                     if 'ORIGINAL' in md._fields:
                         note.extend(self._parse_notes(md.ORIGINAL))
 
-                    # verbose('md.title: ', title)
-                    # verbose('md.pid: ', pid)
-                    # verbose('md.url: ', url)
-                    verbose('md.actress: ', actress)
-                    # verbose('md.note: ', note)
+                    verbose('md: {}, {}, {}, {}, {}'.format(title, pid, url,
+                                                            actress, note))
                     yield url, Summary(url=url,
                                        title=title,
                                        pid=pid,
