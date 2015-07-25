@@ -344,7 +344,8 @@ def main():
                                           series=args.series,
                                           label=args.label,
                                           linklabel=args.linklabel,
-                                          hide_list=args.hide_list))
+                                          hide_list=args.hide_list,
+                                          smm=False))
             verbose('Return from dmm2ssw: {}, {}, {}'.format(
                 b, status, data))
             if b:
