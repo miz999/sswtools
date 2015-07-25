@@ -656,7 +656,7 @@ def _normalize(string):
     '''
     タイトルから【.+?】と非unicode単語文字を除いて正規化
     '''
-    string = _unicodedata.normalize('NFKC', string).replace(' ', '')
+    string = _unicodedata.normalize('NFKC', string).replace(' ', '').lower()
     string = _libssw.sub(sp_ltbracket_h, string)
     string = _libssw.sub(sp_ltbracket_t, string)
     string = _libssw.sub(sp_nowrdchr, string)
@@ -857,7 +857,8 @@ class __TrySMM:
             return ()
 
         search_url = '{}/search/image/-_-/cate/20/word/{}'.format(
-            BASEURL_SMM, _up.quote('{} {}'.format(pid, title[:50])))
+            BASEURL_SMM, pid)
+            # BASEURL_SMM, _up.quote('{} {}'.format(pid, title[:50])))
 
         resp, he_search = _libssw.open_url(search_url, set_cookie=self._cookie)
 
