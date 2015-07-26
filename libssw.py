@@ -174,6 +174,8 @@ OMNI_PREFIX = (
     '55id',          # TMAの総集編
     '83sbb',         # マルクス兄弟の総集編
     '83scf',         # マルクス兄弟の総集編
+    '84bdhyaku',     # 100人 KMPの総集編レーベル
+    '84hyaku',       # 100人 KMPの総集編レーベル
     '84hyas',        # 100人 KMPの総集編レーベル
     '9onsd',         # S1の総集編(BD)
     'abcb',          # ABC/妄想族の総集編
@@ -392,12 +394,21 @@ class Emsg:
 emsg = Emsg(OWNNAME)
 
 
-class OrderedDictWithHead(_OrderedDict):
-    '''先頭のアイテムの値だけを返すメソッドhead()付きOrderedDict'''
+class OrderedDict2(_OrderedDict):
+    '''
+    先頭のアイテムの値だけを返すメソッドhead()と
+    最後のアイテムの値だけを返すメソッドlast()付きの
+    OrderedDict
+    '''
     def head(self):
         if not len(self):
             raise KeyError('データが0件です。')
         return self[self._OrderedDict__root.next.key]
+
+    def last(self):
+        if not len(self):
+            raise KeyError('データが0件です。')
+        return self[self._OrderedDict__root.prev.key]
 
 
 # def copy2clipboard(string):

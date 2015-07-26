@@ -1056,7 +1056,7 @@ def main(argv=None):
 
     # 作品情報の取り込み
     # 新着順
-    products = libssw.OrderedDictWithHead((u, p) for u, p in p_gen)
+    products = libssw.OrderedDict2((u, p) for u, p in p_gen)
     emsg('I', '一覧取得完了')
 
     if not args.service:
