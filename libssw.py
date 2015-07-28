@@ -401,14 +401,20 @@ class OrderedDict2(_OrderedDict):
     OrderedDict
     '''
     def head(self):
+        '''先頭のアイテムの値を返す'''
         if not len(self):
             raise KeyError('データが0件です。')
         return self[self._OrderedDict__root.next.key]
 
     def last(self):
+        '''最後のアイテムの値を返す'''
         if not len(self):
             raise KeyError('データが0件です。')
         return self[self._OrderedDict__root.prev.key]
+
+
+class OrderedDictWithHead(OrderedDict2):
+    pass
 
 
 # def copy2clipboard(string):
@@ -546,6 +552,72 @@ class Summary:
                 if isinstance(other, list):
                     other = other[:]
                 setattr(self, a, other)
+
+
+class ProductProps:
+    '''一覧情報用(後方互換性重視)'''
+    __slots__ = ('url',
+                 'release',
+                 'title',
+                 'subtitle',
+                 'pid',
+                 'cid',
+                 'actress',
+                 'number',
+                 'note')
+
+    def __init__(self,
+                 url='',
+                 release='',
+                 title='',
+                 subtitle='',
+                 pid='',
+                 cid='',
+                 actress=[],
+                 number=0,
+                 note=[]):
+        for key in self.__slots__:
+            value = eval(key)
+            if isinstance(value, list):
+                setattr(self, key, value[:])
+            else:
+                setattr(self, key, value)
+
+    def __contains__(self, key):
+        return hasattr(self, key)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    def __call__(self, *keys):
+        return self.values(*keys)
+
+    def __iter__(self):
+        return iter(self.__slots__)
+
+    def keys(self):
+        return self.__slots__
+
+    def values(self, *keys):
+        attrs = keys or self.__slots__
+        return list(getattr(self, k) for k in attrs)
+
+    def items(self, *args):
+        attrs = args or self.__slots__
+        return list((a, getattr(self, a)) for a in attrs)
+
+    def update(self, upddata):
+        if hasattr(upddata, 'keys'):
+            for k in upddata:
+                if upddata[k]:
+                    setattr(self, k, upddata[k])
+        else:
+            for k, v in upddata:
+                if v:
+                    setattr(self, k, v)
 
 
 def sub(p_list, string, n=False):
@@ -833,7 +905,7 @@ class DMMTitleListParser:
                 omit('イメージビデオ', cid)
                 return False, False
 
-        return url, Summary(url=url, title=title, pid=pid, cid=cid)
+        return url, ProductProps(url=url, title=title, pid=pid, cid=cid)
 
     def _ret_nextpage(self, he):
         '''ページネーション処理'''
@@ -1006,13 +1078,13 @@ def from_tsv(files):
 
             note = row[6] if numcols > 6 else []
 
-            yield row[0], Summary(url=row[0],
-                                  title=row[1],
-                                  pid=row[2],
-                                  actress=actress.copy(),
-                                  number=number,
-                                  director=director.copy(),
-                                  note=note)
+            yield row[0], ProductProps(url=row[0],
+                                       title=row[1],
+                                       pid=row[2],
+                                       actress=actress.copy(),
+                                       number=number,
+                                       director=director.copy(),
+                                       note=note)
 
 
 class _FromWiki:
@@ -1102,12 +1174,12 @@ class _FromWiki:
 
                 verbose('md: {}, {}, {}, {}, {}'.format(md.TITLE, pid, url,
                                                         actress, md.NOTE))
-                yield url, Summary(url=url,
-                                   title=md.TITLE,
-                                   pid=pid,
-                                   actress=actress.copy(),
-                                   number=number,
-                                   note=note)
+                yield url, ProductProps(url=url,
+                                        title=md.TITLE,
+                                        pid=pid,
+                                        actress=actress.copy(),
+                                        number=number,
+                                        note=note)
 
             if Cols is None:
                 emsg('E', '素人系総合Wikiの一覧ページのウィキテキストではないようです: ',
@@ -1289,12 +1361,12 @@ class _FromHtml:
 
                     verbose('md: {}, {}, {}, {}, {}'.format(title, pid, url,
                                                             actress, note))
-                    yield url, Summary(url=url,
-                                       title=title,
-                                       pid=pid,
-                                       actress=actress.copy(),
-                                       number=self.number,
-                                       note=note)
+                    yield url, ProductProps(url=url,
+                                            title=title,
+                                            pid=pid,
+                                            actress=actress.copy(),
+                                            number=self.number,
+                                            note=note)
 
 from_html = _FromHtml()
 

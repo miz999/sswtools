@@ -8,7 +8,7 @@ dmmlasl.py [-t {maker | label}] ID [オプション ...]
 
 説明:
     DMMから、指定したメーカーに所属する全レーベルおよび全シリーズの情報(名称、作品数、
-    品番のプレフィクス、最終リリース日)を取得しウィキテキスト形式で一覧を作成する。
+    品番のプレフィクス、最新リリース日)を取得しウィキテキスト形式で一覧を作成する。
     作成したウィキテキストは、デフォルトで
     {maker | label}.<ID>.{メーカー名 | レーベル名}.wiki
     というファイル名で保存する。
@@ -78,7 +78,7 @@ IDまたはURL
     DMMの一覧ページヘのリンクを出力しない。
 
 -a, --without-latest
-    各レーベル/シリーズの最終リリース日を出力しない。
+    各レーベル/シリーズの最新リリース日を出力しない。
 
 -e, --without-prefixes
     品番のプレフィクスの統計を出力しない
@@ -187,7 +187,7 @@ def get_args():
                            dest='dmm',
                            default=True)
     argparser.add_argument('-a', '--without-latest',
-                           help='最終リリース日を追加しない',
+                           help='最新リリース日を追加しない',
                            action='store_false',
                            dest='latest',
                            default=True)
@@ -236,7 +236,7 @@ def get_elems(props):
 
 
 def ret_idname(el):
-    '''レーベル/シリーズのIDと名称を返す'''
+    '''作品の所属するレーベル/シリーズのIDと名称を返す'''
     e = el.getnext().xpath('a')
     return (libssw.get_id(e[0].get('href'))[0], e[0].text.strip()) if e \
         else (None, '')
@@ -246,24 +246,26 @@ class RetrieveMembers:
     def __init__(self, listparser, service):
         self.listparser = listparser
         self.service = service
+        self.ophans = []
         self.ophans_prods = OrderedDict()
         self.ophans_prefix = Counter()
 
-    def __call__(self, tier, newcomers, existings, ophans=None):
+    def __call__(self, tier, newcomers, existings, last_pid):
         '''レーベル/シリーズ情報を返す'''
-        self.ophans = ophans or []
 
         if tier == 'label':
             rname = 'メーカー'
-            nwid = 7
+            nwidx = 7
         else:
             rname = 'レーベル'
-            nwid = 5
+            nwidx = 5
 
-        queue = list(newcomers.keys())
+        self.ophans.clear()
         self.ophans_prods.clear()
         self.ophans_prefix.clear()
         self.ophans_latest = '0000/00/00'
+
+        queue = list(newcomers.keys())
         while queue:
             url = queue.pop()
 
@@ -275,23 +277,27 @@ class RetrieveMembers:
             verbose('popped: {}'.format(props.items()))
             libssw.inprogress('この{}残り: {}'.format(rname, len(queue)))
 
+            # 作品ページを開いて要素を取得
             el = get_elems(props)
             if not len(el):
                 continue
 
+            # レーベル/シリーズIDと名前
+            mid, mname = ret_idname(el[nwidx])
             mreldate = libssw.getnext_text(el[1])
-            mid, mname = ret_idname(el[nwid])
             if not mid:
                 self.ophans.append(url)
                 self.ophans_prods[url] = props
                 mprefix = libssw.split_pid(props.pid)[0]
                 self.ophans_prefix[mprefix] += 1
                 verbose('ophans: {}'.format(props.pid))
+
                 if mreldate > self.ophans_latest:
                     self.ophans_latest = mreldate
                     verbose('ophans latest: {}'.format(self.ophans_latest))
                 continue
 
+            # 複数メーカーにまたがっていて扱いが面倒なレーベルは整理
             if tier == 'label' and \
                ROOTID in IGNORE_PARES and \
                mid in IGNORE_PARES[ROOTID]:
@@ -300,15 +306,15 @@ class RetrieveMembers:
 
             priurls = libssw.join_priurls(tier, mid, service=self.service)
 
-            mprods = libssw.OrderedDictWithHead()
+            # レーベル/シリーズの全作品情報の取得
+            mprods = libssw.OrderedDict2()
             for murl, mprops in libssw.from_dmm(self.listparser,
                                                 priurls,
+                                                key_id=last_pid,
+                                                idattr='pid',
                                                 ignore=True,
                                                 show_info=False):
-                if murl in existings:
-                    verbose('exists found')
-                    break
-                else:
+                if murl not in existings:
                     mprods[murl] = mprops
 
             if not mprods:
@@ -322,17 +328,19 @@ class RetrieveMembers:
 
 
 def count_prefixes(prods):
+    '''品番プレフィクスの集計'''
     return Counter(libssw.split_pid(prods[p].pid)[0] for p in prods)
 
 
 def get_latest(prods):
-    '''最終リリース作品のリリース日を返す'''
+    '''最新リリース作品のリリース日を返す'''
     item = prods.head()
     mel = get_elems(item)
     return libssw.getnext_text(mel[1])
 
 
 def summ_prefixes(prefixes, fd):
+    '''品番プレフィクスのまとめ'''
     if not PREFIXES:
         return
 
@@ -343,6 +351,7 @@ def summ_prefixes(prefixes, fd):
 
 
 def print_serises(keys, name, prefix, url, latest, withdmm, withlatest, fd):
+    '''シリーズ情報の出力'''
     keyiter = sorted(((k, latest[k]) for k in keys),
                      key=itemgetter(1),
                      reverse=True)
@@ -352,7 +361,7 @@ def print_serises(keys, name, prefix, url, latest, withdmm, withlatest, fd):
         print('***{}.[[{}]]'.format(n, name[sid]), file=fd)
         summ_prefixes(prefix[sid], fd)
         if withlatest:
-            print('-最終リリース: {}'.format(latest[sid]), file=fd)
+            print('-最新リリース: {}'.format(latest[sid]), file=fd)
         if withdmm:
             print('-[[DMMの一覧>{}]]'.format(url[sid]), file=fd)
 
@@ -361,7 +370,7 @@ def main():
     global ROOTID
     global PREFIXES
 
-    existings = OrderedDict()
+    existings = libssw.OrderedDict2()
     newcomers = OrderedDict()
 
     mk_prefix = Counter()
@@ -436,10 +445,17 @@ def main():
 
     # 新規追加分を取得
     priurls = libssw.join_priurls(target, ROOTID, service=service)
-    for nurl, nprops in libssw.from_dmm(listparser, priurls, ignore=True):
-        if nurl in existings:
-            break
-        else:
+
+    try:
+        last_pid = existings.last()['pid']
+    except KeyError:
+        last_pid = None
+
+    # メーカーの新規作品情報の取得
+    for nurl, nprops in libssw.from_dmm(listparser, priurls,
+                                        key_id=last_pid, idattr='pid',
+                                        ignore=True):
+        if nurl not in existings:
             newcomers[nurl] = nprops
 
     nc_num = len(newcomers)
@@ -463,25 +479,28 @@ def main():
     emsg('I', '{} [id={}, 新規{}/全{}作品]'.format(
         article_name, ROOTID, nc_num, total))
 
-    # まずレーベル毎にまとめ
-    ophans = mk_ophans or None
+    # まずレーベル別にまとめ
     for lid, lname, lurl, lprods in ret_members('label',
                                                 newcomers,
                                                 existings,
-                                                ophans):
+                                                last_pid):
         if lid not in lb_name:
+            # 新規レーベル
             lb_name[lid] = lname
             lb_url[lid] = lurl
             lb_prods[lid] = lprods
         else:
+            # 既知レーベルの新規作品
             for u in reversed(lprods):
                 lb_prods[lid][u] = lprods[u]
+
         lb_newcomers[lid] = lprods
+        lb_latest[lid] = get_latest(lprods)
+
         emsg('I', 'レーベル: {} [id={}, 新規{}作品]'.format(
             lname, lid, len(lprods)))
 
-        lb_latest[lid] = get_latest(lprods)
-
+    # 新作情報を追加してレーベル全体情報の再作成
     for lid in lb_prods:
         if args.regen_pid:
             for p in lb_prods[lid]:
@@ -509,7 +528,7 @@ def main():
     if ncmk_ophans_latest > mk_ophans_latest:
         mk_ophans_latest = ncmk_ophans_latest
 
-    # レーベル別にシリーズまとめ
+    # レーベルごとにシリーズまとめ
     for lid in lb_newcomers:
         lprods = lb_newcomers[lid]
 
@@ -521,13 +540,12 @@ def main():
         emsg('I', '')
         emsg('I', 'レーベル「{}」のシリーズ'.format(lb_name[lid]))
 
-        ophans = lb_ophans.get(lid, ())
-        verbose('exising ophans: {}'.format(len(ophans)))
+        verbose('exising ophans: {}'.format(len(lb_ophans.get(lid, ()))))
         lb_series[lid] = []
         for sid, sname, surl, sprods in ret_members('series',
                                                     lprods,
                                                     existings,
-                                                    ophans):
+                                                    last_pid):
             if sid not in sr_name:
                 sr_name[sid] = sname
                 sr_url[sid] = surl
@@ -600,7 +618,7 @@ def main():
             summ_prefixes(lb_prefix[lid], fd)
 
             if args.latest:
-                print('-最終リリース: {}'.format(lb_latest[lid]), file=fd)
+                print('-最新リリース: {}'.format(lb_latest[lid]), file=fd)
 
             if args.dmm:
                 print('-[[DMMの一覧>{}]]'.format(lb_url[lid]), file=fd)
@@ -619,7 +637,7 @@ def main():
                     summ_prefixes(lb_ophans_prefix[lid], fd)
 
                     if args.latest:
-                        print('-最終リリース: {}'.format(lb_ophans_latest[lid]),
+                        print('-最新リリース: {}'.format(lb_ophans_latest[lid]),
                               file=fd)
 
                 if lb_series[lid] or len(lb_ophans_prefix[lid]):
@@ -632,7 +650,7 @@ def main():
             summ_prefixes(mk_ophans_prefix, fd)
 
             if args.latest:
-                print('-最終リリース: {}'.format(mk_ophans_latest), file=fd)
+                print('-最新リリース: {}'.format(mk_ophans_latest), file=fd)
 
     elif not args.only_label:
         '''only-series'''
@@ -645,6 +663,11 @@ def main():
 
     if newcomers or args.regen_pid:
         pkpath = Path(args.pickle_path or '.') / '{}.pickle'.format(outstem)
+        try:
+            pkpath.rename(pkpath.with_suffix(pkpath.suffix + '.bak'))
+        except FileNotFoundError:
+            pass
+
         verbose('save file: {}'.format(pkpath))
         with pkpath.open('wb') as f:
             pickle.dump((existings,
