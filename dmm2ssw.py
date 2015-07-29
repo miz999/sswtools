@@ -1583,62 +1583,72 @@ def check_actuallpage(url, lpage, ltype, pid):
     return result
 
 
-def det_listpage(summ, retrieval, args):
+class ResolveListpage:
     '''一覧ページへのリンク情報の決定'''
-    verbose('Processing list link')
+    def __init__(self):
+        self.unknowns = set()
 
-    list_type = ''
+    def __call__(self, summ, retrieval, args):
+        verbose('Processing list link')
 
-    for attr, typ in (('series', 'シリーズ'),
-                      ('label', 'レーベル'),
-                      ('maker', 'メーカー')):
+        list_type = ''
 
-        list_page = summ[attr]
+        for attr, typ in (('series', 'シリーズ'),
+                          ('label', 'レーベル'),
+                          ('maker', 'メーカー')):
 
-        if list_page:
-            if list_page == '__HIDE__':
-                continue
-            elif _libssw.le80bytes(list_page):
-                list_attr = attr
-                list_type = typ
-                break
+            list_page = summ[attr]
+
+            if list_page:
+                if list_page == '__HIDE__':
+                    continue
+                elif _libssw.le80bytes(list_page):
+                    list_attr = attr
+                    list_type = typ
+                    break
+                else:
+                    emsg('W',
+                         typ,
+                         '名が80バイトを超えているのでそのページは無いものとします: ',
+                         list_page)
+        else:
+            return '', ''
+
+        verbose('List type: {}, List page: {}'.format(list_type, list_page))
+
+        # SCOOP個別対応
+        if list_page == 'SCOOP（スクープ）':
+            list_page = 'スクープ'
+
+        # wiki構文と衝突する文字列の置き換え
+        list_page = list_page.translate(_libssw.t_wikisyntax)
+
+        if not args.check_listpage or \
+           (list_attr == retrieval and args.table == 1):
+            verbose('pass checking listpage')
+            return list_type, list_page
+
+        if (list_type, list_page) not in self.unknowns:
+
+            # Wiki上の実際の一覧ページを探し、見つかったらそれにする。
+            actuall = check_actuallpage(summ['url'],
+                                        list_page,
+                                        list_type,
+                                        summ['pid'])
+            if actuall:
+                list_page = actuall
             else:
-                emsg('W',
-                     typ,
-                     '名が80バイトを超えているのでそのページは無いものとします: ',
-                     list_page)
-    else:
-        return '', ''
+                emsg('W', list_type,
+                     '一覧ページが見つからなかったのでDMMのものを採用します。')
+                emsg('W', list_type, ': ', list_page)
+                if __name__ != '__main__':
+                    emsg('I', 'タイトル: ', summ['title'],
+                         ' ({})'.format(summ['pid']))
+                self.unknowns.add((list_type, list_page))
 
-    verbose('List type: {}, List page: {}'.format(list_type, list_page))
-
-    # SCOOP個別対応
-    if list_page == 'SCOOP（スクープ）':
-        list_page = 'スクープ'
-
-    # wiki構文と衝突する文字列の置き換え
-    list_page = list_page.translate(_libssw.t_wikisyntax)
-
-    if not args.check_listpage or \
-       (list_attr == retrieval and args.table == 1):
-        verbose('pass checking listpage')
         return list_type, list_page
 
-    # Wiki上の実際の一覧ページを探し、見つかったらそれにする。
-    actuall = check_actuallpage(summ['url'],
-                                list_page,
-                                list_type,
-                                summ['pid'])
-    if actuall:
-        list_page = actuall
-    else:
-        emsg('W', list_type,
-             '一覧ページが見つからなかったのでDMMのものを採用します。')
-        emsg('W', list_type, ': ', list_page)
-        if __name__ != '__main__':
-            emsg('I', 'タイトル: ', summ['title'], ' ({})'.format(summ['pid']))
-
-    return list_type, list_page
+resolve_listpage = ResolveListpage()
 
 
 def expansion(phrases, summ):
@@ -1926,8 +1936,9 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     # シリーズ/レーベル一覧へのリンク情報の設定
     # 一覧ページの直接指定があればそれを、なければ シリーズ > レーベル で決定
     if not (args.hide_list or summ['list_type']):
-        summ['list_type'], summ['list_page'] = det_listpage(summ, retrieval,
-                                                            args)
+        summ['list_type'], summ['list_page'] = resolve_listpage(summ,
+                                                                retrieval,
+                                                                args)
     if args.linklabel:
         summ['list_type'] = args.linklabel
     verbose('summ[list_page]: ', summ['list_page'])
