@@ -413,10 +413,6 @@ class OrderedDict2(_OrderedDict):
         return self[self._OrderedDict__root.prev.key]
 
 
-class OrderedDictWithHead(OrderedDict2):
-    pass
-
-
 # def copy2clipboard(string):
 #     '''クリップボードへコピー'''
 #     verbose('copy string: {}'.format(repr(string)))
@@ -516,46 +512,30 @@ class Summary:
         attrs = args or self.__slots__
         return list((a, getattr(self, a)) for a in attrs)
 
-    def update(self, upddata):
-        if hasattr(upddata, 'keys'):
-            for k in upddata:
-                if upddata[k]:
-                    setattr(self, k, upddata[k])
+    def __set(self, attr, other, overwrite):
+        this = getattr(self, attr)
+        if isinstance(other, list):
+            other = other.copy()
+        if not this or overwrite:
+            setattr(self, attr, other)
+
+    def merge(self, otherobj, overwrite=False):
+        if hasattr(otherobj, 'keys'):
+            for key in otherobj:
+                val = otherobj[key]
+                if val:
+                    self.__set(key, val, overwrite)
         else:
-            for k, v in upddata:
-                if v:
-                    setattr(self, k, v)
+            for key, val in otherobj:
+                if val:
+                    self.__set(key, val, overwrite)
 
-    def stringize(self, *args):
-        attrs = args or self.__slots__
-        for a in attrs:
-            v = getattr(self, a)
-            if a == 'note' and not v:
-                break
-            if isinstance(v, int):
-                v = str(v) if v else ''
-            elif isinstance(v, list):
-                v = ','.join(v)
-            yield v
-
-    def tsv(self, *args):
-        attrs = args or self.__slots__
-        return '\t'.join(self.stringize(*attrs))
-
-    def merge(self, p, override=False):
-        for a in p:
-            this = getattr(self, a)
-            other = getattr(p, a)
-            if not this and other:
-                setattr(self, a, other)
-            elif other and override:
-                if isinstance(other, list):
-                    other = other[:]
-                setattr(self, a, other)
+    def update(self, otherobj):
+        self.merge(otherobj, overwrite=True)
 
 
 class ProductProps:
-    '''一覧情報用(後方互換性重視)'''
+    '''一覧情報保管用(後方互換性重視)'''
     __slots__ = ('url',
                  'release',
                  'title',
@@ -564,6 +544,7 @@ class ProductProps:
                  'cid',
                  'actress',
                  'number',
+                 'director',
                  'note')
 
     def __init__(self,
@@ -575,6 +556,7 @@ class ProductProps:
                  cid='',
                  actress=[],
                  number=0,
+                 director=[],
                  note=[]):
         for key in self.__slots__:
             value = eval(key)
@@ -609,15 +591,42 @@ class ProductProps:
         attrs = args or self.__slots__
         return list((a, getattr(self, a)) for a in attrs)
 
-    def update(self, upddata):
-        if hasattr(upddata, 'keys'):
-            for k in upddata:
-                if upddata[k]:
-                    setattr(self, k, upddata[k])
+    def tsv(self, *args):
+        attrs = args or self.__slots__
+        return '\t'.join(self.stringize(*attrs))
+
+    def stringize(self, *args):
+        attrs = args or self.__slots__
+        for a in attrs:
+            v = getattr(self, a)
+            if a == 'note' and not v:
+                break
+            if isinstance(v, int):
+                v = str(v) if v else ''
+            elif isinstance(v, list):
+                v = ','.join(v)
+            yield v
+
+    def __set(self, attr, other, overwrite):
+        this = getattr(self, attr)
+        if isinstance(other, list):
+            other = other.copy()
+        if not this or overwrite:
+            setattr(self, attr, other)
+
+    def merge(self, otherobj, overwrite=False):
+        if hasattr(otherobj, 'keys'):
+            for key in otherobj:
+                val = otherobj[key]
+                if val:
+                    self.__set(key, val, overwrite)
         else:
-            for k, v in upddata:
-                if v:
-                    setattr(self, k, v)
+            for key, val in otherobj:
+                if val:
+                    self.__set(key, val, overwrite)
+
+    def update(self, otherobj):
+        self.merge(otherobj, overwrite=True)
 
 
 def sub(p_list, string, n=False):
