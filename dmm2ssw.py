@@ -1649,6 +1649,10 @@ def expansion(phrases, summ):
         yield ph
 
 
+def build_addcols(add_column, summ):
+    return tuple(expansion(add_column, summ)) if add_column else ()
+
+
 def check_missings(summ):
     '''未取得情報のチェック'''
     missings = [m for m in ('release', 'title', 'maker', 'label', 'image_sm')
@@ -1858,7 +1862,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                     '／'.join(summ['director']),
                                     args.dir_col,
                                     False,
-                                    add_column)
+                                    build_addcols(args.add_column, summ))
         verbose('wktxt_t: ', wktxt_t)
         return False, resp.status, ReturnVal(summ['release'],
                                              summ['pid'],
@@ -1932,7 +1936,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
         summ['note'] = list(expansion(args.note, summ)) + summ['note']
     verbose('note: ', summ['note'])
 
-    add_column = tuple(expansion(args.add_column, summ)) if args.add_column else ()
+    add_column = build_addcols(args.add_column, summ)
     verbose('add column: ', add_column)
 
     # 出演者文字列の作成
