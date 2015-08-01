@@ -218,6 +218,7 @@ OMNI_PREFIX = (
     'h_175dbeb',     # BabyEntertainmentの総集編
     'h_175dxdb',     # BabyEntertainmentの総集編
     'h_179dmdv',     # ゲインコーポレーションの総集編
+    'h_237swat',     # シリーズ ○○三昧 プラネットプラスの総集編シリーズ
     'h_254kanz',     # 完全盤 STAR PARADISEの総集編レーベル
     'h_254mgdn',     # MEGADON STAR PARADISEの総集編レーベル
     'h_254wnxg',     # VOLUME STAR PARADISEの総集編レーベル
@@ -814,9 +815,8 @@ def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
 
 p_omnivals = (_re.compile(r'(?:[2-9]\d|\d{3,})[人名]'),
               _re.compile(r'(?:[5-9]\d|\d{3,})連?発'),
-              _re.compile(r'(?:[6-9]|\d{2,})時間'),
-              _re.compile(r'(?:3[6-9]\d|[4-9]\d{2}|\d{4,})分'))
-
+              _re.compile(r'(?:[4-9]|\d{2,})時間'),
+              _re.compile(r'(?:2[4-9]\d|[4-9]\d{2}|\d{4,})分'))
 
 def check_omnivals(title):
     '''隠れ総集編チェック(関連数値編)'''
@@ -832,7 +832,6 @@ def check_omnivals(title):
 
 p_ge4h = _re.compile(r'(?:[4-9]|\d{2,})時間')
 p_ge200m = _re.compile(r'(?:[2-9]\d{2}|\d{4,})分')
-
 
 def is_omnirookie(cid, title):
     '''ROOKIE隠れ総集編チェック'''
@@ -945,7 +944,6 @@ class DMMTitleListParser:
 
 sp_wikis = (_re.compile(r' "target="_blank"'), r'" target="_blank"')
 
-
 def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
              ignore=False, show_info=True):
     '''DMMから作品一覧を取得'''
@@ -1007,7 +1005,6 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
 p_name = _re.compile(
     r'(?P<fore>[\w>]*)?(?P<paren>[(（][\w>]*[）)])?(?P<back>[\w>]*)?')
 
-
 def parse_names(name):
     '''
     出演者情報の解析(rawテキスト)
@@ -1042,7 +1039,6 @@ def parse_names(name):
 
 
 p_etc = _re.compile(r'ほか\w*?計(\d+)名')
-
 
 def ret_numofpfmrs(etc):
     number = None
@@ -1540,7 +1536,6 @@ def stringize_performers(pfmrs, number, follow):
 
 p_base_url = _re.compile(r'(.*/)-/')
 
-
 def resolve_service(url):
     '''サービスの決定'''
     verbose('Resolving service...')
@@ -1554,7 +1549,6 @@ def resolve_service(url):
 
 p_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
 p_id = _re.compile(r'/id=([\d,]+?)/')
-
 
 def get_id(url, cid=False, ignore=False):
     '''URLからIDを取得'''
@@ -1589,7 +1583,6 @@ def gen_pid(cid, pattern=None):
 
 
 p_splitid = _re.compile(r'([a-z]+)[+-]?(\d+)', _re.I)
-
 
 def split_pid(pid):
     return p_splitid.findall(pid)[0]
@@ -1759,7 +1752,6 @@ def open_ssw(page):
 sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
            (_re.compile(r'Courier'), 'Sans'),
            (_re.compile(r'nowrap="nowrap"'), ''))
-
 
 def show_diff(flines, tlines, fdesc, tdesc, context=True):
     '''差分をとってブラウザで開く'''
