@@ -371,13 +371,6 @@ sp_ltbracket_t = (_re.compile(r'(?:【.+?】)+?$'), '')
 sp_nowrdchr = (_re.compile(r'\W'), '')
 sp_pid = None  # dmmsar.py 側から更新
 
-sp_expansion = ((_re.compile('@{media}'), 'media'),
-                (_re.compile('@{time}'), 'time'),
-                (_re.compile('@{series}'), 'series'),
-                (_re.compile('@{maker}'), 'maker'),
-                (_re.compile('@{label}'), 'label'),
-                (_re.compile('@{cid}'), 'cid'))
-
 
 IMG_URL = {'dvd':    'http://pics.dmm.co.jp/mono/movie/adult/',
            'rental': 'http://pics.dmm.co.jp/mono/movie/',
@@ -667,6 +660,31 @@ class LongTitleException(Exception):
     pass
 
 
+def _compare_title(cand, title):
+    '''
+    同じタイトルかどうか比較
+    title はあらかじめ _normalize() に通しておくこと
+    '''
+    cand = _normalize(cand.strip())
+    verbose('cand norm: ', cand)
+    return cand.startswith(title) or title.startswith(cand)
+
+
+sp_expansion = ((_re.compile('@{media}'), 'media'),
+                (_re.compile('@{time}'), 'time'),
+                (_re.compile('@{series}'), 'series'),
+                (_re.compile('@{maker}'), 'maker'),
+                (_re.compile('@{label}'), 'label'),
+                (_re.compile('@{cid}'), 'cid'))
+
+def expansion(phrases, summ):
+    '''予約変数の展開'''
+    for ph in phrases:
+        for p, r in sp_expansion:
+            ph = p.sub(getattr(summ, r), ph)
+        yield ph
+
+
 def _ret_apache(cid, pid):
     '''Apacheのタイトルの長いやつ'''
     verbose('Checking Apache title...')
@@ -785,16 +803,6 @@ TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
                        '84scpx': _ret_scoop,      # SCOOP
                        # 'h_113se': _ret_plum_se, # 素人援交生中出し(プラム)
                        }
-
-
-def _compare_title(cand, title):
-    '''
-    同じタイトルかどうか比較
-    title はあらかじめ _normalize() に通しておくこと
-    '''
-    cand = _normalize(cand.strip())
-    verbose('cand norm: ', cand)
-    return cand.startswith(title) or title.startswith(cand)
 
 
 class __TrySMM:
@@ -1649,14 +1657,6 @@ class ResolveListpage:
         return list_type, list_page
 
 resolve_listpage = ResolveListpage()
-
-
-def expansion(phrases, summ):
-    '''予約変数の展開'''
-    for ph in phrases:
-        for p, r in sp_expansion:
-            ph = p.sub(getattr(summ, r), ph)
-        yield ph
 
 
 def build_addcols(add_column, summ):
