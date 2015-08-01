@@ -107,6 +107,8 @@ from operator import itemgetter
 
 import libssw
 
+# import pdb
+
 __version__ = 20150424
 
 VERBOSE = 0
@@ -225,10 +227,10 @@ def get_args():
 
 
 def get_elems(props):
-    resp, he = libssw.open_url(props.url)
+    resp, he = libssw.open_url(props['url'])
     if resp.status != 200:
         emsg('W', 'ページを取得できませんでした: '
-             'url="{0.url}", title={0.title}, status={1}'.format(
+             'url="{0[url]}", title={0[title]}, status={1}'.format(
                  props, resp.status))
         return False
 
@@ -288,9 +290,9 @@ class RetrieveMembers:
             if not mid:
                 self.ophans.append(url)
                 self.ophans_prods[url] = props
-                mprefix = libssw.split_pid(props.pid)[0]
+                mprefix = libssw.split_pid(props['pid'])[0]
                 self.ophans_prefix[mprefix] += 1
-                verbose('ophans: {}'.format(props.pid))
+                verbose('ophans: {}'.format(props['pid']))
 
                 if mreldate > self.ophans_latest:
                     self.ophans_latest = mreldate
@@ -307,7 +309,7 @@ class RetrieveMembers:
             priurls = libssw.join_priurls(tier, mid, service=self.service)
 
             # レーベル/シリーズの全作品情報の取得
-            mprods = libssw.OrderedDict2()
+            mprods = OrderedDict()
             for murl, mprops in libssw.from_dmm(self.listparser,
                                                 priurls,
                                                 key_id=last_pid,
@@ -315,7 +317,7 @@ class RetrieveMembers:
                                                 ignore=True,
                                                 show_info=False):
                 if murl not in existings:
-                    mprods[murl] = mprops
+                    mprods[murl] = dict(mprops)
 
             if not mprods:
                 return
@@ -329,12 +331,12 @@ class RetrieveMembers:
 
 def count_prefixes(prods):
     '''品番プレフィクスの集計'''
-    return Counter(libssw.split_pid(prods[p].pid)[0] for p in prods)
+    return Counter(libssw.split_pid(prods[p]['pid'])[0] for p in prods)
 
 
 def get_latest(prods):
     '''最新リリース作品のリリース日を返す'''
-    item = prods.head()
+    item = prods[prods._OrderedDict__root.next.key]
     mel = get_elems(item)
     return libssw.getnext_text(mel[1])
 
@@ -370,7 +372,7 @@ def main():
     global ROOTID
     global PREFIXES
 
-    existings = libssw.OrderedDict2()
+    existings = OrderedDict()
     newcomers = OrderedDict()
 
     mk_prefix = Counter()
@@ -447,8 +449,8 @@ def main():
     priurls = libssw.join_priurls(target, ROOTID, service=service)
 
     try:
-        last_pid = existings.last()['pid']
-    except KeyError:
+        last_pid = existings[existings._OrderedDict__root.prev.key]['pid']
+    except AttributeError:
         last_pid = None
 
     # メーカーの新規作品情報の取得
@@ -456,7 +458,7 @@ def main():
                                         key_id=last_pid, idattr='pid',
                                         ignore=True):
         if nurl not in existings:
-            newcomers[nurl] = nprops
+            newcomers[nurl] = dict(nprops)
 
     nc_num = len(newcomers)
     total = nc_num + len(existings)
@@ -504,7 +506,7 @@ def main():
     for lid in lb_prods:
         if args.regen_pid:
             for p in lb_prods[lid]:
-                lb_prods[lid][p].pid = libssw.gen_pid(lb_prods[lid][p].url)[0]
+                lb_prods[lid][p]['pid'] = libssw.gen_pid(lb_prods[lid][p]['url'])[0]
         lb_prefix[lid] = count_prefixes(lb_prods[lid])
         lb_ophans_prods[lid] = OrderedDict()
         lb_ophans_prefix[lid] = Counter()
@@ -521,7 +523,7 @@ def main():
 
     if args.regen_pid:
         for p in mk_ophans_prods:
-            mk_ophans_prods[p].pid = libssw.gen_pid(mk_ophans_prods[p].url)[0]
+            mk_ophans_prods[p]['pid'] = libssw.gen_pid(mk_ophans_prods[p]['url'])[0]
     mk_ophans_prefix = count_prefixes(mk_ophans_prods)
     ncmk_ophans_latest = ret_members.ophans_latest
 
@@ -584,15 +586,15 @@ def main():
         verbose('lb_ophans_prods[{}]: {}'.format(lid, len(lb_ophans_prods[lid])))
         if args.regen_pid:
             for p in lb_ophans_prods[lid]:
-                lb_ophans_prods[lid][p].pid = libssw.gen_pid(
-                    lb_ophans_prods[lid][p].url)[0]
+                lb_ophans_prods[lid][p]['pid'] = libssw.gen_pid(
+                    lb_ophans_prods[lid][p]['url'])[0]
         lb_ophans_prefix[lid] = count_prefixes(lb_ophans_prods[lid])
         verbose('lb_ophans_prefix[{}]: {}'.format(lid, len(lb_ophans_prefix[lid])))
 
     for sid in sr_prods:
         if args.regen_pid:
             for p in sr_prods[sid]:
-                sr_prods[sid][p].pid = libssw.gen_pid(sr_prods[sid][p].url)[0]
+                sr_prods[sid][p]['pid'] = libssw.gen_pid(sr_prods[sid][p]['url'])[0]
         sr_prefix[sid] = count_prefixes(sr_prods[sid])
 
     for url in reversed(newcomers):
