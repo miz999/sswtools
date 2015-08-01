@@ -377,30 +377,30 @@ def main():
 
     mk_prefix = Counter()
 
+    mk_ophans = []
+    mk_ophans_prods = dict()
+    mk_ophans_prefix = Counter()
+    mk_ophans_latest = ''
+
+    lb_newcomers = dict()
+
     lb_name = dict()
     lb_url = dict()
     lb_prods = dict()
     lb_prefix = Counter()
     lb_latest = dict()
+    lb_series = dict()
 
-    lb_newcomers = dict()
+    lb_ophans = dict()
+    lb_ophans_prods = dict()
+    lb_ophans_prefix = Counter()
+    lb_ophans_latest = dict()
 
     sr_name = dict()
     sr_url = dict()
     sr_prods = dict()
     sr_prefix = Counter()
     sr_latest = dict()
-
-    mk_ophans = []
-    mk_ophans_prods = dict()
-    mk_ophans_prefix = Counter()
-    mk_ophans_latest = ''
-
-    lb_series = dict()
-    lb_ophans = dict()
-    lb_ophans_prods = dict()
-    lb_ophans_prefix = Counter()
-    lb_ophans_latest = dict()
 
     args = get_args()
     PREFIXES = args.prefixes
@@ -491,6 +491,7 @@ def main():
             lb_name[lid] = lname
             lb_url[lid] = lurl
             lb_prods[lid] = lprods
+            lb_series[lid] = []
         else:
             # 既知レーベルの新規作品
             for u in reversed(lprods):
@@ -502,37 +503,44 @@ def main():
         emsg('I', 'レーベル: {} [id={}, 新規{}作品]'.format(
             lname, lid, len(lprods)))
 
-    # 新作情報を追加してレーベル全体情報の再作成
-    for lid in lb_prods:
-        if args.regen_pid:
-            for p in lb_prods[lid]:
-                lb_prods[lid][p]['pid'] = libssw.gen_pid(lb_prods[lid][p]['url'])[0]
-        lb_prefix[lid] = count_prefixes(lb_prods[lid])
-        lb_ophans_prods[lid] = OrderedDict()
-        lb_ophans_prefix[lid] = Counter()
-
+    #
+    # メーカーその他作品まとめ
+    #
     ncmk_ophans = ret_members.ophans.copy()
     ncmk_ophans_prods = ret_members.ophans_prods.copy()
     emsg('I', '{}その他: {}作品'.format(
         article_name, len(ncmk_ophans_prods)))
 
+    # メーカーその他作品の追加
     mk_ophans.extend(ncmk_ophans)
     for u in reversed(ncmk_ophans_prods):
         mk_ophans_prods[u] = ncmk_ophans_prods[u]
     verbose('mk_ophans_prods: {}'.format(len(mk_ophans_prods)))
 
+    # メーカーその他作品の品番およびプレフィクス
     if args.regen_pid:
         for p in mk_ophans_prods:
             mk_ophans_prods[p]['pid'] = libssw.gen_pid(mk_ophans_prods[p]['url'])[0]
     mk_ophans_prefix = count_prefixes(mk_ophans_prods)
-    ncmk_ophans_latest = ret_members.ophans_latest
 
+    # メーカーその他作品の最新リリース日
+    ncmk_ophans_latest = ret_members.ophans_latest
     if ncmk_ophans_latest > mk_ophans_latest:
         mk_ophans_latest = ncmk_ophans_latest
 
+    #
+    # レーベル別まとめ
+    #
+    # 新作情報を追加してレーベル全体のプレフィクス情報の再作成
+    for lid in lb_prods:
+        if args.regen_pid:
+            for p in lb_prods[lid]:
+                lb_prods[lid][p]['pid'] = libssw.gen_pid(lb_prods[lid][p]['url'])[0]
+        lb_prefix[lid] = count_prefixes(lb_prods[lid])
+
     # レーベルごとにシリーズまとめ
-    for lid in lb_newcomers:
-        lprods = lb_newcomers[lid]
+    for lid in lb_prods:
+        lprods = lb_prods[lid]
 
         if lb_name[lid].startswith(IGNORE_LABELS) and args.suppress:
             lb_series[lid] = ()
@@ -543,7 +551,6 @@ def main():
         emsg('I', 'レーベル「{}」のシリーズ'.format(lb_name[lid]))
 
         verbose('exising ophans: {}'.format(len(lb_ophans.get(lid, ()))))
-        lb_series[lid] = []
         for sid, sname, surl, sprods in ret_members('series',
                                                     lprods,
                                                     existings,
@@ -562,6 +569,7 @@ def main():
             sr_latest[sid] = get_latest(sprods)
             lb_series[lid].append(sid)
 
+        # レーベルその他作品まとめ
         nclb_ophans = ret_members.ophans.copy()
         nclb_ophans_prods = ret_members.ophans_prods.copy()
         emsg('I', '{}その他: {}作品'.format(
@@ -627,14 +635,16 @@ def main():
 
             if not args.only_label:
                 # シリーズ別出力
-                if lb_series[lid] or len(lb_ophans_prefix[lid]):
+                numoflboph = len(lb_ophans_prefix.get(lid, ()))
+                if lid in lb_series or numoflboph:
                     print('[+]', file=fd)
 
-                print_serises(lb_series[lid],
-                              sr_name, sr_prefix, sr_url, sr_latest,
-                              args.dmm, args.latest, fd)
+                if lid in lb_series:
+                    print_serises(lb_series[lid],
+                                  sr_name, sr_prefix, sr_url, sr_latest,
+                                  args.dmm, args.latest, fd)
 
-                if len(lb_ophans_prefix[lid]):
+                if numoflboph:
                     print('***{}その他'.format(lb_name[lid]), file=fd)
                     summ_prefixes(lb_ophans_prefix[lid], fd)
 
@@ -642,7 +652,7 @@ def main():
                         print('-最新リリース: {}'.format(lb_ophans_latest[lid]),
                               file=fd)
 
-                if lb_series[lid] or len(lb_ophans_prefix[lid]):
+                if lid in lb_series or numoflboph:
                     print('[END]', file=fd)
 
             print(file=fd)
