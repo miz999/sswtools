@@ -513,85 +513,6 @@ class Summary:
         attrs = args or self.__slots__
         return list((a, getattr(self, a)) for a in attrs)
 
-    def __set(self, attr, other, overwrite):
-        this = getattr(self, attr)
-        if isinstance(other, list):
-            other = other.copy()
-        if not this or overwrite:
-            setattr(self, attr, other)
-
-    def merge(self, otherobj, overwrite=False):
-        if hasattr(otherobj, 'keys'):
-            for key in otherobj:
-                val = otherobj[key]
-                if val:
-                    self.__set(key, val, overwrite)
-        else:
-            for key, val in otherobj:
-                if val:
-                    self.__set(key, val, overwrite)
-
-    def update(self, otherobj):
-        self.merge(otherobj, overwrite=True)
-
-
-class ProductProps:
-    '''一覧情報保管用(後方互換性重視)'''
-    __slots__ = ('url',
-                 'release',
-                 'title',
-                 'subtitle',
-                 'pid',
-                 'cid',
-                 'actress',
-                 'number',
-                 'director',
-                 'note')
-
-    def __init__(self,
-                 url='',
-                 release='',
-                 title='',
-                 subtitle='',
-                 pid='',
-                 cid='',
-                 actress=[],
-                 number=0,
-                 director=[],
-                 note=[]):
-        for key in self.__slots__:
-            value = eval(key)
-            if isinstance(value, list):
-                setattr(self, key, value[:])
-            else:
-                setattr(self, key, value)
-
-    def __contains__(self, key):
-        return hasattr(self, key)
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
-
-    def __call__(self, *keys):
-        return self.values(*keys)
-
-    def __iter__(self):
-        return iter(self.__slots__)
-
-    def keys(self):
-        return self.__slots__
-
-    def values(self, *keys):
-        attrs = keys or self.__slots__
-        return list(getattr(self, k) for k in attrs)
-
-    def items(self, *args):
-        attrs = args or self.__slots__
-        return list((a, getattr(self, a)) for a in attrs)
-
     def tsv(self, *args):
         attrs = args or self.__slots__
         return '\t'.join(self.stringize(*attrs))
@@ -628,6 +549,101 @@ class ProductProps:
 
     def update(self, otherobj):
         self.merge(otherobj, overwrite=True)
+
+
+# class ProductProps:
+#     '''一覧情報保管用(後方互換性重視)'''
+#     __slots__ = ('url',
+#                  'release',
+#                  'title',
+#                  'subtitle',
+#                  'pid',
+#                  'cid',
+#                  'actress',
+#                  'number',
+#                  'director',
+#                  'note')
+
+#     def __init__(self,
+#                  url='',
+#                  release='',
+#                  title='',
+#                  subtitle='',
+#                  pid='',
+#                  cid='',
+#                  actress=[],
+#                  number=0,
+#                  director=[],
+#                  note=[]):
+#         for key in self.__slots__:
+#             value = eval(key)
+#             if isinstance(value, list):
+#                 setattr(self, key, value[:])
+#             else:
+#                 setattr(self, key, value)
+
+#     def __contains__(self, key):
+#         return hasattr(self, key)
+
+#     def __getitem__(self, key):
+#         return getattr(self, key)
+
+#     def __setitem__(self, key, value):
+#         setattr(self, key, value)
+
+#     def __call__(self, *keys):
+#         return self.values(*keys)
+
+#     def __iter__(self):
+#         return iter(self.__slots__)
+
+#     def keys(self):
+#         return self.__slots__
+
+#     def values(self, *keys):
+#         attrs = keys or self.__slots__
+#         return list(getattr(self, k) for k in attrs)
+
+#     def items(self, *args):
+#         attrs = args or self.__slots__
+#         return list((a, getattr(self, a)) for a in attrs)
+
+#     def tsv(self, *args):
+#         attrs = args or self.__slots__
+#         return '\t'.join(self.stringize(*attrs))
+
+#     def stringize(self, *args):
+#         attrs = args or self.__slots__
+#         for a in attrs:
+#             v = getattr(self, a)
+#             if a == 'note' and not v:
+#                 break
+#             if isinstance(v, int):
+#                 v = str(v) if v else ''
+#             elif isinstance(v, list):
+#                 v = ','.join(v)
+#             yield v
+
+#     def __set(self, attr, other, overwrite):
+#         this = getattr(self, attr)
+#         if isinstance(other, list):
+#             other = other.copy()
+#         if not this or overwrite:
+#             setattr(self, attr, other)
+
+#     def merge(self, otherobj, overwrite=False):
+#         if hasattr(otherobj, 'keys'):
+#             for key in otherobj:
+#                 val = otherobj[key]
+#                 if val:
+#                     self.__set(key, val, overwrite)
+#         else:
+#             for key, val in otherobj:
+#                 if val:
+#                     self.__set(key, val, overwrite)
+
+#     def update(self, otherobj):
+#         self.merge(otherobj, overwrite=True)
 
 
 def sub(p_list, string, n=False):
@@ -913,7 +929,7 @@ class DMMTitleListParser:
                 omit('イメージビデオ', cid)
                 return False, False
 
-        return url, ProductProps(url=url, title=title, pid=pid, cid=cid)
+        return url, Summary(url=url, title=title, pid=pid, cid=cid)
 
     def _ret_nextpage(self, he):
         '''ページネーション処理'''
@@ -1083,13 +1099,13 @@ def from_tsv(files):
 
             note = row[6] if numcols > 6 else []
 
-            yield row[0], ProductProps(url=row[0],
-                                       title=row[1],
-                                       pid=row[2],
-                                       actress=actress.copy(),
-                                       number=number,
-                                       director=director.copy(),
-                                       note=note)
+            yield row[0], Summary(url=row[0],
+                                  title=row[1],
+                                  pid=row[2],
+                                  actress=actress.copy(),
+                                  number=number,
+                                  director=director.copy(),
+                                  note=note)
 
 
 class _FromWiki:
@@ -1179,12 +1195,12 @@ class _FromWiki:
 
                 verbose('md: {}, {}, {}, {}, {}'.format(md.TITLE, pid, url,
                                                         actress, md.NOTE))
-                yield url, ProductProps(url=url,
-                                        title=md.TITLE,
-                                        pid=pid,
-                                        actress=actress.copy(),
-                                        number=number,
-                                        note=note)
+                yield url, Summary(url=url,
+                                   title=md.TITLE,
+                                   pid=pid,
+                                   actress=actress.copy(),
+                                   number=number,
+                                   note=note)
 
             if Cols is None:
                 emsg('E', '素人系総合Wikiの一覧ページのウィキテキストではないようです: ',
@@ -1366,12 +1382,12 @@ class _FromHtml:
 
                     verbose('md: {}, {}, {}, {}, {}'.format(title, pid, url,
                                                             actress, note))
-                    yield url, ProductProps(url=url,
-                                            title=title,
-                                            pid=pid,
-                                            actress=actress.copy(),
-                                            number=self.number,
-                                            note=note)
+                    yield url, Summary(url=url,
+                                       title=title,
+                                       pid=pid,
+                                       actress=actress.copy(),
+                                       number=self.number,
+                                       note=note)
 
 from_html = _FromHtml()
 
