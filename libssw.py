@@ -958,12 +958,34 @@ class DMMTitleListParser:
         return (self._ret_titles(ttl) for ttl in he.find_class('ttl'))
 
 
+class IsGeaterEqualId:
+    '''品番の比較'''
+    def _is_ge_cid(self, cid):
+        return cid >= self.key_id
+
+    def _is_ge_pid(self, pid):
+        prefix, number = split_pid(pid)
+        return prefix == self.key_id[0] and number >= self.key_id[1]
+
+    def __init__(self, key_id, attr):
+        if not key_id:
+            self._is_ge = lambda x: False
+        else:
+            self.key_id = split_pid(key_id) if attr == 'pid' else key_id
+            self._is_ge = self._is_ge_pid if attr == 'pid' else self._is_ge_cid
+
+    def __call__(self, cand):
+        return self._is_ge(cand)
+
+
 sp_wikis = (_re.compile(r' "target="_blank"'), r'" target="_blank"')
 
-def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
+def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr='',
              ignore=False, show_info=True):
     '''DMMから作品一覧を取得'''
     verbose('Start parsing DMM list pages')
+
+    is_ge_id = IsGeaterEqualId(key_id, idattr)
 
     for purl in priurls:
 
@@ -999,8 +1021,7 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr=None,
 
                     yield url, prop
 
-                    if key_id and \
-                       rm_hyphen(getattr(prop, idattr)) == key_id:
+                    if is_ge_id(getattr(prop, idattr, False)):
                         p = pages + 1
                         pages_last = min((pages_last, p)) if pages_last else p
                         verbose('set pages last: ', pages_last)

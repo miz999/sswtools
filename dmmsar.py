@@ -991,7 +991,7 @@ def main(argv=None):
     p_filter_ttl = args.filter_title and re.compile(args.filter_title, re.I)
 
     if args.start_pid:
-        key_id = libssw.rm_hyphen(args.start_pid)
+        key_id = args.start_pid
         key_type = 'start'
         idattr = 'pid'
     elif args.start_cid:
@@ -999,7 +999,7 @@ def main(argv=None):
         key_type = 'start'
         idattr = 'cid'
     elif args.last_pid:
-        key_id = libssw.rm_hyphen(args.last_pid)
+        key_id = args.last_pid
         key_type = 'last'
         idattr = 'pid'
     elif args.last_cid:
@@ -1009,7 +1009,9 @@ def main(argv=None):
     else:
         key_id = None
         key_type = None
-        idattr = None
+        idattr = ''
+
+    is_ge_id = libssw.IsGeaterEqualId(key_id, idattr)
 
     if args.add_column:
         add_header = '|'.join(c.split(':')[0] for c in args.add_column) + '|'
@@ -1143,7 +1145,7 @@ def main(argv=None):
         # 開始ID指定処理(--{start,last}-{p,c}id)
         if before and key_id:
             # 指定された品番が見つかるまでスキップ
-            if key_id != libssw.rm_hyphen(getattr(props, idattr)):
+            if not is_ge_id(getattr(props, idattr)):
                 emsg('I',
                      '作品を除外しました: {}={} (start id not met yet)'.format(
                          idattr, getattr(props, idattr)))

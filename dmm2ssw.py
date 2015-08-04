@@ -945,7 +945,7 @@ class DMMParser:
         self.quiet = quiet
         self.no_omits = no_omits
         self.start_date = start_date
-        self.start_pid_s = start_pid_s and _libssw.split_pid(start_pid_s)
+        self.is_ge_id = _libssw.IsGeaterEqualId(start_pid_s, 'pid')
         self.filter_pid_s = filter_pid_s
         self.pass_bd = pass_bd
         self.n_i_s = n_i_s
@@ -1155,11 +1155,8 @@ class DMMParser:
             verbose('cid: ', self._sm['cid'], ', pid: ', self._sm['pid'])
 
             # 作成開始品番チェック(厳密)
-            if self.start_pid_s:
-                prefix, number = _libssw.split_pid(self._sm['pid'])
-                if self.start_pid_s[0] == prefix and \
-                   self.start_pid_s[1] > number:
-                    raise OmitTitleException('pid', self._sm['pid'])
+            if not self.is_ge_id(self._sm['pid']):
+                raise OmitTitleException('pid', self._sm['pid'])
 
             # filter-pid-sチェック
             if self.filter_pid_s and not self.filter_pid_s.search(
@@ -1257,10 +1254,10 @@ class DMMParser:
                 resp, he_more = _libssw.open_url(more_url, 'utf-8')
                 verbose('more_url opened')
 
-                p_iter = _list_pfmrs(he_more.xpath('.//a/text()'))
+                p_list = _list_pfmrs(he_more.xpath('.//a/text()'))
 
             else:
-                p_iter = _list_pfmrs(el.xpath('a/text()'))
+                p_list = _list_pfmrs(el.xpath('a/text()'))
 
         elif smm:
             # 出演者情報がなければSMMを見てみる(セル版のときのみ)
