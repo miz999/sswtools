@@ -153,7 +153,7 @@ def get_args():
             dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = args.verbose - 1
     verbose('verbose mode on')
 
-    args.start_pid = libssw.rm_hyphen(args.start_pid).upper()
+    args.start_pid = args.start_pid.upper()
 
     if args.browser:
         args.gen_wikitext = True
@@ -245,7 +245,9 @@ def main():
 
     print('ページ名:', listname)
 
+    is_lt_id = libssw.IsIdLessThan(args.start_pid, 'pid')
     before = True if args.start_pid else False
+
     shortfalls = set()
 
     for prod_url in targets:
@@ -254,10 +256,7 @@ def main():
         props = targets[prod_url]
         verbose('props: ', props.items())
 
-        pid = libssw.rm_hyphen(libssw.gen_pid(prod_url)[0])
-        verbose('pid: ', pid)
-
-        if before and args.start_pid != pid:
+        if before and is_lt_id(libssw.gen_pid(prod_url)):
             continue
         else:
             before = False

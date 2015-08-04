@@ -1011,7 +1011,7 @@ def main(argv=None):
         key_type = None
         idattr = ''
 
-    is_ge_id = libssw.IsGeaterEqualId(key_id, idattr)
+    is_lt_id = libssw.IsIdLessThan(key_id, idattr)
 
     if args.add_column:
         add_header = '|'.join(c.split(':')[0] for c in args.add_column) + '|'
@@ -1145,7 +1145,7 @@ def main(argv=None):
         # 開始ID指定処理(--{start,last}-{p,c}id)
         if before and key_id:
             # 指定された品番が見つかるまでスキップ
-            if not is_ge_id(getattr(props, idattr)):
+            if is_lt_id(getattr(props, idattr)):
                 emsg('I',
                      '作品を除外しました: {}={} (start id not met yet)'.format(
                          idattr, getattr(props, idattr)))

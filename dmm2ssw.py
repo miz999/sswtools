@@ -945,7 +945,7 @@ class DMMParser:
         self.quiet = quiet
         self.no_omits = no_omits
         self.start_date = start_date
-        self.is_ge_id = _libssw.IsGeaterEqualId(start_pid_s, 'pid')
+        self.is_lt_id = _libssw.IsIdLessThan(start_pid_s, 'pid')
         self.filter_pid_s = filter_pid_s
         self.pass_bd = pass_bd
         self.n_i_s = n_i_s
@@ -1155,7 +1155,7 @@ class DMMParser:
             verbose('cid: ', self._sm['cid'], ', pid: ', self._sm['pid'])
 
             # 作成開始品番チェック(厳密)
-            if not self.is_ge_id(self._sm['pid']):
+            if self.is_lt_id(self._sm['pid']):
                 raise OmitTitleException('pid', self._sm['pid'])
 
             # filter-pid-sチェック

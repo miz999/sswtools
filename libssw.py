@@ -958,24 +958,24 @@ class DMMTitleListParser:
         return (self._ret_titles(ttl) for ttl in he.find_class('ttl'))
 
 
-class IsGeaterEqualId:
+class IsIdLessThan:
     '''品番の比較'''
-    def _is_ge_cid(self, cid):
-        return cid >= self.key_id
+    def _is_lt_cid(self, cid):
+        return cid < self.key_id
 
-    def _is_ge_pid(self, pid):
+    def _is_lt_pid(self, pid):
         prefix, number = split_pid(pid)
-        return prefix == self.key_id[0] and number >= self.key_id[1]
+        return prefix == self.key_id[0] and number < self.key_id[1]
 
     def __init__(self, key_id, attr):
         if not key_id:
-            self._is_ge = lambda x: False
+            self._is_lt = lambda x: False
         else:
             self.key_id = split_pid(key_id) if attr == 'pid' else key_id
-            self._is_ge = self._is_ge_pid if attr == 'pid' else self._is_ge_cid
+            self._is_lt = self._is_lt_pid if attr == 'pid' else self._is_lt_cid
 
     def __call__(self, cand):
-        return self._is_ge(cand)
+        return self._is_lt(cand)
 
 
 sp_wikis = (_re.compile(r' "target="_blank"'), r'" target="_blank"')
@@ -985,7 +985,7 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr='',
     '''DMMから作品一覧を取得'''
     verbose('Start parsing DMM list pages')
 
-    is_ge_id = IsGeaterEqualId(key_id, idattr)
+    is_lt_id = IsIdLessThan(key_id, idattr)
 
     for purl in priurls:
 
@@ -1021,7 +1021,7 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr='',
 
                     yield url, prop
 
-                    if is_ge_id(getattr(prop, idattr, False)):
+                    if not is_lt_id(getattr(prop, idattr, False)):
                         p = pages + 1
                         pages_last = min((pages_last, p)) if pages_last else p
                         verbose('set pages last: ', pages_last)
