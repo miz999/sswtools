@@ -59,9 +59,9 @@ IGNORE_PERFORMERS = {'45067': 'KIプランニング',
     ページならリダイレクト先を取得してリンク先にする。
     -f オプションが与えられるとリダイレクトかどうかチェックしない。
 
-    ■実際の一覧ページ名の自動取得
-    一覧ページ名を実際のWiki上の記事名から探して適切なリンク先の取得を試みる。
-    (「DANDY」→「DANDY 2」など)
+    ■実際のレーベル/シリーズ一覧ページ名の自動取得
+    レーベル/シリーズ一覧ページ名を実際のWiki上の記事名から探して適切なリンク先の
+    取得を試みる(「DANDY」→「DANDY 2」など)。
     作品のDMMのURLで検索するため、一覧ページにその作品のエントリがないか、あっても
     他のサイトへのリンクになっていると失敗する。
     そうでなくても失敗するかもしれない(一覧ページに追加して間もなく、検索でまだ
@@ -125,18 +125,18 @@ DMM作品ページのURL
 -a, --actress 出演者 [出演者 ...]
     クレジットされてない出演者を追加する場合用。
     出演者(のwikiページ名)を指定する。
-    女優名がリダイレクトページならwiki同様 "表示名>ページ名" と指定する。
-    DMMページ上にすでに出演者情報が存在する場合はそれに含まれなかったものが末尾に
-    追加される。
+    リンクの表示文字列を変えたいならwiki同様 "表示名>ページ名" と指定する。
+    DMMページ上にすでに出演者情報が存在しても無視され、ここの指定値に置き換えられる。
     ここに"("または"（"で始まる文字列(例: (1人目)、(M・Sさん) など)を指定すると
     内部リンクにしない。
     "女優A,女優B／(3人目)" というようにスラッシュやカンマなどで区切って渡すのも可
     (ただし出力では区切り文字はすべて"／"になる)。
     女優名ページ用ウィキテキストの場合、-n 指定も含め2名に満たない場合は出力
     されない。
-    出演者文字列の先頭に @@ をつけるとウィキテキストの構文で直接指定したとみなす
-    (@@を取り除いてそのままウィキテキストに出力する)。
-    ウィキテキストで直接指定時は引数は先頭の1個だけ取られ、2個目以降は無視される。
+    出演者文字列の先頭に @@ をつけるとウィキテキストの構文で直接指定したとみなし
+    (@@を取り除いてそのままウィキテキストに出力する)、DMM上の出演者情報を
+    置き換える以外の女優名に関する処理はすべて行われない。
+    ウィキテキストで直接指定時のオプション引数は先頭の1個だけ取られ、2個目以降は無視される。
 
 -n, --number 出演者数
     未知の出演者がいる場合用。
@@ -195,7 +195,7 @@ DMM作品ページのURL
     ・TMAの一部
         55t28349 ⇒ T28-349
         55id22036 ⇒ 22ID-036
-    ・AROMAの一部作品(過去の同一品番との衝突回避)
+    ・AROMAの一部作品(DMM上での過去の同一品番との衝突回避)
         11arm0374 ⇒ ARM-374
     ・ドグマの D1 CLIMAX レーベル
         d1001 ⇒ D1-001
@@ -243,7 +243,7 @@ DMM作品ページのURL
 --join-tsv ファイル [ファイル ...] (TSV)
     DMMから得た作品と(URLが)同じ作品がファイル内にあった場合、DMMからは取得できなかった
     情報がファイル側にあればそれで補完する(NOTEも含む)。
-    ファイル形式については「インポートファイル形式」参照。
+    ファイル形式については dmmsar.py の「インポートファイル形式」参照。
 
 --join-wiki ウィキテキスト [ウィキテキスト ...] (一覧ページの表形式)
     DMMから得た作品と(URLが)同じ作品がウィキテキスト内にあった場合、DMMからは取得
@@ -847,8 +847,10 @@ class __TrySMM:
                 break
 
     def _chk_anonym(self, pfmr):
-        '''SMM出演者情報でひらがなのみの名前の場合代用名かどうかチェック
-        名前がひらがなのみで5文字未満で既知のひらがな女優名でなければ仮名とみなす'''
+        '''
+        SMM出演者情報でひらがなのみの名前の場合代用名かどうかチェック
+        名前がひらがなのみで4文字以下で既知のひらがな女優名でなければ代用名とみなす
+        '''
         # if _libssw.p_neghirag.search(pfmr) or self._is_existent(pfmr):
         if _libssw.p_neghirag.search(pfmr) or \
            len(pfmr) > 4 or \
@@ -920,16 +922,13 @@ class __TrySMM:
             smmpfmrs = he_prod.xpath('//li[@id="all_cast_li"]/a/text()')
             verbose('smmpfmrs: ', smmpfmrs)
 
-            smmpfmrs = [self._chk_anonym(p) for p in smmpfmrs]
-            verbose('chk anonym: ', smmpfmrs)
-
-            return smmpfmrs[:]
+            return [self._chk_anonym(p) for p in smmpfmrs]
 
             break
 
         else:
             verbose('all titles are mismatched')
-            return ()
+            return []
 
 _try_smm = __TrySMM()
 
@@ -1229,8 +1228,7 @@ class DMMParser:
         def _list_pfmrs(plist):
             return [(_trim_name(p.strip()), '', '') for p in plist]
 
-        verbose('gvnpfmrs: ', gvnpfmrs)
-        verbose('smm: ', smm)
+        verbose('Retrieving performers... (smm:{})'.format(smm))
 
         el = self._he.get_element_by_id('performer', ())
 
@@ -1259,10 +1257,10 @@ class DMMParser:
                 resp, he_more = _libssw.open_url(more_url, 'utf-8')
                 verbose('more_url opened')
 
-                p_list = _list_pfmrs(he_more.xpath('//a/text()'))
+                p_iter = _list_pfmrs(he_more.xpath('.//a/text()'))
 
             else:
-                p_list = _list_pfmrs(el.xpath('a/text()'))
+                p_iter = _list_pfmrs(el.xpath('a/text()'))
 
         elif smm:
             # 出演者情報がなければSMMを見てみる(セル版のときのみ)
@@ -1274,19 +1272,20 @@ class DMMParser:
                 emsg('I', 'SMM: ', _try_smm.title_smm)
                 emsg('I', '出演者: ', ','.join(p[0] or p[2] for p in p_list))
         else:
-            p_list = ()
+            p_list = []
 
-        pfilter = ''.join(_chain.from_iterable(p_list))
+        # pfilter = ''.join(_chain.from_iterable(p_list))
 
         # DMM/SMMから取得した出演者をyield
-        for name in p_list:
-            yield name
+        return p_list.copy()
+        # for name in p_list:
+        #     yield name
 
         # 与えられた出演者情報でDMMに欠けているものをyield
-        for gvn in gvnpfmrs:
-            verbose('gvn: ', gvn)
-            if all(g not in pfilter for g in gvn[:2] if g):
-                yield gvn
+        # for gvn in gvnpfmrs:
+        #     verbose('gvn: ', gvn)
+        #     if all(g not in pfilter for g in gvn[:2] if g):
+        #         yield gvn
 
     def _get_otherslink(self, service, firmly=True):
         '''他のサービスの作品リンクの取得'''
@@ -1472,12 +1471,12 @@ class DMMParser:
         # パッケージ画像の取得
         self._sm['image_lg'], self._sm['image_sm'] = self._ret_images(service)
 
-        if not self.ignore_pfmrs:
+        if not (self.ignore_pfmrs or self._sm['actress']):
             # 出演者の取得
-            self._sm['actress'] = list(
-                self._ret_performers(
-                    self._sm['actress'],
-                    getattr(args, 'smm', False) and service == 'dvd'))
+            # self._sm['actress'] = list(
+            self._sm['actress'] = self._ret_performers(
+                self._sm['actress'],
+                getattr(args, 'smm', False) and service == 'dvd')
 
             # レンタル版で出演者情報がなかったとき他のサービスで調べてみる
             if (service == 'rental' or self.data_replaced == 'rental') \
