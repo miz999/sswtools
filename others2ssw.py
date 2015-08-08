@@ -4,7 +4,7 @@
 その他アダルトサイトから素人系Wikiのウィキテキストを作成
 
 書式：
-uncnsrd2ssw.py "作品ページのURL" ["URL" ...]
+others2ssw.py "作品ページのURL" ["URL" ...]
 
 対応サイト：
 ・JAPORN.TV系(avfantasy, aventertainments, mediafreakcity)
