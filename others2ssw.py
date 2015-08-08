@@ -17,6 +17,7 @@ uncnsrd2ssw.py "作品ページのURL" ["URL" ...]
 ・天然むすめ
 ・熟女倶楽部
 ・人妻パラダイス
+・人妻切り
 '''
 import argparse
 import re
@@ -24,7 +25,7 @@ from urllib.parse import urlparse
 
 import libssw
 
-__version__ = 20140808
+__version__ = 20150808
 
 VERBOSE = 0
 
@@ -46,7 +47,7 @@ def get_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description='無修正系サイトのURLから素人系総合wiki用ウィキテキストを作成する',
         epilog='対応サイト: JAPORN.TV, 一本道, カリビアンコム(含プレミアム), HEYZO, '
-        'HEY動画, Tokyo-Hot(my.tokyo-hot.com), パコパコママ, 天然むすめ, 熟女倶楽部, 人妻パラダイス')
+        'HEY動画, Tokyo-Hot(my.tokyo-hot.com), パコパコママ, 天然むすめ, 熟女倶楽部, 人妻パラダイス, 人妻切り')
     argparser.add_argument('url',
                            help='作品ページのURL',
                            nargs='+',
@@ -312,6 +313,32 @@ def h_paradise(he, url):
     censored(url, None, title, studio, (), img_s, url, '')
 
 
+def hitodumagiri(he, url):
+    studio = '人妻斬り'
+
+    performer = he.find_class('name_JP_hitozuma')[0].text.strip()
+    age = libssw.p_number.findall(
+        he.xpath('//table[@summary="movie info"][1]//tr[1]/td')[1].text)[0]
+
+    title = performer + age + '才'
+
+    qname = '+'.join(libssw.quote(n) for n in performer.split())
+    srchurl = 'http://www.c0930.com/search/?q={}&x=0&y=0&category_search_type=and&flag_match_type=0'.format(qname)
+
+    release = None
+    while not release:
+        resp, srchp = libssw.open_url(srchurl)
+        for div in srchp.find_class('unit-thumbs ori1'):
+            if div[1].get('href') == url:
+                release = libssw.p_number.findall(div[0].text)
+        else:
+            nextbold = he.find_class('next bold')
+            if nextbold is not None:
+                srchurl = nextbold[0].get('href')
+
+    uncensored(url, release, title, studio, [performer], '')
+
+
 def main():
     global FOLLOW_RDR
 
@@ -362,6 +389,9 @@ def main():
 
         elif netloc.endswith('h-paradise.net'):
             h_paradise(he, url)
+
+        elif netloc == 'www.c0930.com':
+            hitodumagiri(he, url)
 
         else:
             emsg('E', '未知のサイトです。')
