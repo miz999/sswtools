@@ -567,7 +567,10 @@ def main():
                 sname, sid, len(sprods)))
 
             sr_latest[sid] = get_latest(sprods)
-            lb_series[lid].append(sid)
+            try:
+                lb_series[lid].append(sid)
+            except KeyError:
+                lb_series[lid] = [sid]
 
         # レーベルその他作品まとめ
         nclb_ophans = ret_members.ophans.copy()
