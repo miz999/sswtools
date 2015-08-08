@@ -832,7 +832,7 @@ def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
 p_omnivals = (_re.compile(r'(?:[2-9]\d|\d{3,})[人名]'),
               _re.compile(r'(?:[5-9]\d|\d{3,})連?発'),
               _re.compile(r'(?:[4-9]|\d{2,})時間'),
-              _re.compile(r'(?:2[4-9]\d|[4-9]\d{2}|\d{4,})分'))
+              _re.compile(r'(?:2[4-9]\d|[3-9]\d{2}|\d{4,})分'))
 
 def check_omnivals(title):
     '''隠れ総集編チェック(関連数値編)'''

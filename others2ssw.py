@@ -139,8 +139,7 @@ def japorn(he, url):
             dvdlink = dvd[0].get('href')
             note = ' ([[DVD版>{}]])'.format(dvdlink)
 
-    title = he.xpath(
-        '//div[@id="mini-tabet"]/h2')[0].text.strip()
+    title = he.xpath('//div[@id="mini-tabet"]/h2')[0].text.strip()
 
     for redtitle in he.iterfind('.//span[@class="redtitle"]'):
         label = redtitle.text.strip()
@@ -175,8 +174,7 @@ def ipondo(he, url):
     release = None
     while not release:
         r, e = libssw.open_url(searchurl)
-        for div in e.iterfind(
-                './/div[@class="list_container"]/div'):
+        for div in e.iterfind('.//div[@class="list_container"]/div'):
             a = div.xpath('a')[0]
             verbose('a: ', a.get('href'))
             if a.get('href') == url:
