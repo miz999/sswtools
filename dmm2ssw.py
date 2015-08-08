@@ -702,7 +702,7 @@ def _ret_apache(cid, pid):
     opid, actress, director = _libssw.ret_apacheinfo(he)
 
     if pid != opid:
-        verbose('check_apache: PID on Apache official is different fro DMM')
+        verbose('check_apache: PID on Apache official is different from DMM')
         raise LongTitleException(pid, opid)
 
     return he.head.find('title').text.strip().replace('\n', ' ')
@@ -711,7 +711,7 @@ def _ret_apache(cid, pid):
 class _RetrieveTitleSCOOP:
     '''SCOOPのタイトルの長いやつ'''
     def __init__(self):
-        self.cookie = _libssw.load_cache('kmp_cookie', expire=86400)
+        self._cookie = _libssw.load_cache('kmp_cookie', expire=86400)
 
     def __call__(self, cid, pid):
         verbose('Checking SCOOP title...')
@@ -721,12 +721,12 @@ class _RetrieveTitleSCOOP:
         url = 'http://www.km-produce.com/works/{}-{}'.format(prefix, number)
 
         while True:
-            verbose('cookie: ', self.cookie)
-            resp, he = _libssw.open_url(url, set_cookie=self.cookie)
+            verbose('cookie: ', self._cookie)
+            resp, he = _libssw.open_url(url, set_cookie=self._cookie)
             if 'set-cookie' in resp:
-                self.cookie = resp['set-cookie']
+                self._cookie = resp['set-cookie']
                 verbose('set cookie')
-                _libssw.save_cache(self.cookie, 'kmp_cookie')
+                _libssw.save_cache(self._cookie, 'kmp_cookie')
             else:
                 break
 
@@ -743,9 +743,9 @@ _ret_scoop = _RetrieveTitleSCOOP()
 class _RetrieveTitlePlum:
     '''プラムのタイトル'''
     def __init__(self, prefix):
-        self.prefix = prefix
-        self.ssid = None
-        self.cart = None
+        self._prefix = prefix
+        self._ssid = None
+        self._cart = None
 
     def _parse_cookie(self, cookie):
         verbose('parse cookie: ', cookie)
@@ -754,18 +754,18 @@ class _RetrieveTitlePlum:
                 continue
             lhs, rhs = c.split('=')
             if rhs == 'deleted':
-                self.ssid = lhs
+                self._ssid = lhs
             elif lhs == 'cart_pDq7k':
-                self.cart = rhs
+                self._cart = rhs
 
-        if self.ssid and self.cart:
+        if self._ssid and self._cart:
             return 'AJCSSESSID={}; cart_pDq7k={}; enter=enter'.format(
-                self.ssid, self.cart)
+                self._ssid, self._cart)
 
     def __call__(self, cid, pid):
         verbose('Checking Plum title...')
 
-        number = cid.replace(self.prefix, '')
+        number = cid.replace(self._prefix, '')
         if len(number) < 3:
             number = '{:0>3}'.format(number)
         url = 'http://www.plum-web.com/?view=detail&ItemCD=SE{}&label=SE'.format(number)
@@ -941,18 +941,18 @@ class DMMParser:
                  start_date=None, start_pid_s=None, filter_pid_s=None,
                  pass_bd=False, n_i_s=False, deeper=True, quiet=False):
         self._sm = _libssw.Summary()
-        self.deeper = deeper
-        self.quiet = quiet
-        self.no_omits = no_omits
-        self.start_date = start_date
-        self.is_lt_id = _libssw.IsIdLessThan(start_pid_s, 'pid')
-        self.filter_pid_s = filter_pid_s
-        self.pass_bd = pass_bd
-        self.n_i_s = n_i_s
+        self._deeper = deeper
+        self._quiet = quiet
+        self._no_omits = no_omits
+        self._start_date = start_date
+        self._is_lt_id = _libssw.IsIdLessThan(start_pid_s, 'pid')
+        self._filter_pid_s = filter_pid_s
+        self._pass_bd = pass_bd
+        self._n_i_s = n_i_s
 
     def _mark_omitted(self, key, hue):
         '''除外タイトルの扱い'''
-        if key in self.no_omits:
+        if key in self._no_omits:
             # 除外対称外なら備考に記録
             if not any(key in s for s in self._sm['note']):
                 self._sm['note'].append(key)
@@ -989,7 +989,7 @@ class DMMParser:
         title_dmm = tdmm if not _normalize(title).startswith(_normalize(tdmm)) \
                     else ''
 
-        if __name__ == '__main__' and self.deeper:
+        if __name__ == '__main__' and self._deeper:
             # 除外チェック
             for key, word in _libssw.check_omitword(title):
                 self._mark_omitted(key, word)
@@ -1009,7 +1009,7 @@ class DMMParser:
 
         elif tag in ('発売日：', '貸出開始日：', '配信開始日：'):
 
-            if self.start_date and data.replace('/', '') < self.start_date:
+            if self._start_date and data.replace('/', '') < self._start_date:
                 raise OmitTitleException('release', 'date')
 
             self._sm['release'] = _libssw.rm_nlcode(_libssw.getnext_text(prop))
@@ -1036,7 +1036,7 @@ class DMMParser:
 
             # ジュエル系なら出演者情報は無視
             if mkid in IGNORE_PERFORMERS:
-                self.ignore_pfmrs = True
+                self._ignore_pfmrs = True
                 verbose('Jewel family found')
 
             # 総集編メーカーチェック
@@ -1045,12 +1045,12 @@ class DMMParser:
 
             # 総集編容疑メーカー
             if mkid in OMIT_MAKER_SUSS:
-                self.omit_suss = OMIT_MAKER_SUSS[mkid]
+                self._omit_suss = OMIT_MAKER_SUSS[mkid]
 
             # 他のサービスを強制チェック
             if mkid in FORCE_CHK_SALE_MK:
                 verbose('series forece chk other: ', FORCE_CHK_SALE_MK[mkid])
-                self.force_chk_sale = True
+                self._force_chk_sale = True
 
             verbose('maker: ', self._sm['maker'])
 
@@ -1071,7 +1071,7 @@ class DMMParser:
 
             # レンタル先行レーベルチェック
             if lbid in RENTAL_PRECEDES:
-                self.rental_pcdr = True
+                self._rental_pcdr = True
 
             self._sm['label_id'] = lbid
 
@@ -1086,7 +1086,7 @@ class DMMParser:
 
             srid = _libssw.get_id(sr.get('href'))[0]
 
-            if self.n_i_s:
+            if self._n_i_s:
                 verbose('not in series')
                 raise OmitTitleException('series', (srid, sr.text))
 
@@ -1112,7 +1112,7 @@ class DMMParser:
             if srid in FORCE_CHK_SALE_SR:
                 verbose('series forece chk other: ',
                         FORCE_CHK_SALE_SR[srid])
-                self.force_chk_sale = True
+                self._force_chk_sale = True
 
             verbose('series: ', self._sm['series'])
 
@@ -1136,7 +1136,7 @@ class DMMParser:
                     self._mark_omitted(OMITGENRE[gid], 'genre')
 
                 if gid == GENRE_BD:
-                    self.bluray = True
+                    self._bluray = True
                     verbose('media: Blu-ray')
 
                 self._sm['genre'].append(g.text)
@@ -1145,7 +1145,7 @@ class DMMParser:
             data = _libssw.getnext_text(prop)
 
             # URL上とページ内の品番の相違チェック
-            if not self.quiet and \
+            if not self._quiet and \
                self._sm['cid'] and \
                self._sm['cid'] != data.rsplit('so', 1)[0]:
                 emsg('I', '品番がURLと異なっています: url={}, page={}'.format(
@@ -1155,11 +1155,11 @@ class DMMParser:
             verbose('cid: ', self._sm['cid'], ', pid: ', self._sm['pid'])
 
             # 作成開始品番チェック(厳密)
-            if self.is_lt_id(self._sm['pid']):
+            if self._is_lt_id(self._sm['pid']):
                 raise OmitTitleException('pid', self._sm['pid'])
 
             # filter-pid-sチェック
-            if self.filter_pid_s and not self.filter_pid_s.search(
+            if self._filter_pid_s and not self._filter_pid_s.search(
                     self._sm['pid']):
                 raise OmitTitleException('pid filtered', self._sm['pid'])
 
@@ -1168,10 +1168,10 @@ class DMMParser:
                 self._mark_omitted('総集編', data)
 
             # ROOKIE総集編チェック
-            if self.omit_suss:
+            if self._omit_suss:
                 hh, mmm = _libssw.is_omnirookie(data, self._sm['title'])
                 if hh or mmm:
-                    self._mark_omitted('総集編', self.omit_suss)
+                    self._mark_omitted('総集編', self._omit_suss)
 
             # 隠れIVチェック
             if _libssw.check_omitprfx(data, _libssw.IV_PREFIX):
@@ -1230,8 +1230,8 @@ class DMMParser:
         el = self._he.get_element_by_id('performer', ())
 
         if len(el):
-            if self.omit_suss and len(el) > 3:
-                self._mark_omitted('総集編', self.omit_suss)
+            if self._omit_suss and len(el) > 3:
+                self._mark_omitted('総集編', self._omit_suss)
 
             if el[-1].get('href') == '#':
                 # 「▼すべて表示する」があったときのその先の解析
@@ -1373,7 +1373,7 @@ class DMMParser:
             verbose('rltd ttl: ', rlttl)
             for key, word in _libssw.check_omitword(rlttl):
                 # 限定品の除外チェック
-                if key not in self.no_omits:
+                if key not in self._no_omits:
                     break
             else:
                 verbose('rltditem: ', rlitem.getparent().get('href'))
@@ -1384,14 +1384,15 @@ class DMMParser:
         '''作品ページの解析'''
         self._he = he
         self._sm = sm
-        self.ignore_pfmrs = ignore_pfmrs
-        self.data_replaced = False
-        self.bluray = False
-        self.omit_suss = False
-        self.rental_pcdr = False
-        self.force_chk_sale = False
+        self._ignore_pfmrs = ignore_pfmrs
+        self._bluray = False
+        self._omit_suss = False
+        self._rental_pcdr = False
+        self._force_chk_sale = False
 
-        verbose('self._sm: ', self._sm.items())
+        self.data_replaced = False
+
+        verbose('self._sm preset: ', self._sm.items())
 
         # 作品情報の取得
         for prop in self._he.iterfind('.//td[@class="nw"]'):
@@ -1413,8 +1414,8 @@ class DMMParser:
 
         sale_data = None
         # if self.deeper and service != 'ama' and __name__ != '__main__':
-        if self.deeper and service != 'ama':
-            if self.rental_pcdr and args.check_rental:
+        if self._deeper and service != 'ama':
+            if self._rental_pcdr and args._check_rental:
                 # レンタル先行メーカーチェック
                 if service != 'rental':
                     # レンタル先行メーカーなのにレンタル版のURLじゃなかったらレンタル版を
@@ -1454,10 +1455,10 @@ class DMMParser:
             #         self._sm['note'].append('動画配信のみ')
 
             # Blu-ray版のときのDVD版の、またはその逆のチェック
-            related = 'DVD' if self.bluray else 'Blu-ray'
+            related = 'DVD' if self._bluray else 'Blu-ray'
             rltd_url = self._check_rltditem(related)
             if rltd_url:
-                if self.bluray and self.pass_bd:
+                if self._bluray and self._pass_bd:
                     # Blu-ray版だったときDVD版があればパス
                     verbose('raise Blu-ray exception')
                     raise OmitTitleException('Blu-ray', 'DVD exists')
@@ -1468,7 +1469,7 @@ class DMMParser:
         # パッケージ画像の取得
         self._sm['image_lg'], self._sm['image_sm'] = self._ret_images(service)
 
-        if not (self.ignore_pfmrs or self._sm['actress']):
+        if not (self._ignore_pfmrs or self._sm['actress']):
             # 出演者の取得
             # self._sm['actress'] = list(
             self._sm['actress'] = self._ret_performers(
@@ -1477,7 +1478,7 @@ class DMMParser:
 
             # レンタル版で出演者情報がなかったとき他のサービスで調べてみる
             if (service == 'rental' or self.data_replaced == 'rental') \
-               and (not self._sm['actress'] or self.force_chk_sale) \
+               and (not self._sm['actress'] or self._force_chk_sale) \
                and getattr(args, 'check_rltd'):
 
                 verbose('possibility missing performers, checking others...')
@@ -1590,7 +1591,7 @@ def check_actuallpage(url, lpage, ltype, pid):
 class ResolveListpage:
     '''一覧ページへのリンク情報の決定'''
     def __init__(self):
-        self.unknowns = set()
+        self._unknowns = set()
 
     def __call__(self, summ, retrieval, args):
         verbose('Processing list link')
@@ -1632,7 +1633,7 @@ class ResolveListpage:
             verbose('pass checking listpage')
             return list_type, list_page
 
-        if (list_type, list_page) not in self.unknowns:
+        if (list_type, list_page) not in self._unknowns:
 
             # Wiki上の実際の一覧ページを探し、見つかったらそれにする。
             actuall = check_actuallpage(summ['url'],
@@ -1648,7 +1649,7 @@ class ResolveListpage:
                 if __name__ != '__main__':
                     emsg('I', 'タイトル: ', summ['title'],
                          ' ({})'.format(summ['pid']))
-                self.unknowns.add((list_type, list_page))
+                self._unknowns.add((list_type, list_page))
 
         return list_type, list_page
 
@@ -1663,7 +1664,6 @@ def check_missings(summ):
     '''未取得情報のチェック'''
     missings = [m for m in ('release', 'title', 'maker', 'label', 'image_sm')
                 if not summ[m]]
-    verbose('missings: ', missings)
     missings and emsg(
         'W', '取得できない情報がありました: ', ",".join(missings))
 
@@ -1758,7 +1758,6 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
             if not data:
                 emsg('E', 'URLを指定してください。')
 
-            verbose('data from stdin: ', data.split('\t'))
             for key, data in zip(('url', 'title', 'pid', 'actress', 'number',
                                   'director', 'director', 'note'),
                                  data.split('\t')):

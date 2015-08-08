@@ -513,10 +513,6 @@ class Summary:
         attrs = args or self.__slots__
         return list((a, getattr(self, a)) for a in attrs)
 
-    def tsv(self, *args):
-        attrs = args or self.__slots__
-        return '\t'.join(self.stringize(*attrs))
-
     def stringize(self, *args):
         attrs = args or self.__slots__
         for a in attrs:
@@ -528,6 +524,10 @@ class Summary:
             elif isinstance(v, list):
                 v = ','.join(v)
             yield v
+
+    def tsv(self, *args):
+        attrs = args or self.__slots__
+        return '\t'.join(self.stringize(*attrs))
 
     def __set(self, attr, other, overwrite):
         this = getattr(self, attr)
@@ -949,8 +949,6 @@ class DMMTitleListParser:
 
     def __call__(self, he):
         '''解析実行'''
-        verbose('Parsing TitleList')
-
         self.article.append((self._get_article(he), self.priurl))
 
         self.nexturl = self._ret_nextpage(he)
@@ -958,21 +956,49 @@ class DMMTitleListParser:
         return (self._ret_titles(ttl) for ttl in he.find_class('ttl'))
 
 
+p_splitid = _re.compile(r'([a-z]+)[+-]?(\d+)', _re.I)
+
+def split_pid(pid):
+    return p_splitid.findall(pid)[0]
+
+
+def sort_by_id(products, reverse=False):
+    '''
+    桁数が揃ってない品番もソート
+    '''
+    def _make_items(products, maxdigit):
+        '''URL(キー)と桁を揃えた品番'''
+        for url in products:
+            prefix, number = split_pid(products[url].pid)
+            yield url, '{0}{1:0>{2}}'.format(prefix, number, maxdigit)
+
+    maxdigit = max(
+        p_number.findall(products[p].pid)[0] for p in products)
+
+    return (url for url, pid in sorted(_make_items(products, maxdigit),
+                                       key=_itemgetter(1),
+                                       reverse=reverse))
+
+
 class IsIdLessThan:
     '''品番の比較'''
     def _is_lt_cid(self, cid):
-        return cid < self.key_id
+        return cid < self._key_id
 
     def _is_lt_pid(self, pid):
         prefix, number = split_pid(pid)
-        return prefix == self.key_id[0] and number < self.key_id[1]
+        return prefix == self._key_id[0] and number < self._key_id[1]
 
-    def __init__(self, key_id, attr):
+    def __init__(self, key_id, attr, if_inactive=False):
         if not key_id:
-            self._is_lt = lambda x: False
+            self._is_lt = lambda x: if_inactive
         else:
-            self.key_id = split_pid(key_id) if attr == 'pid' else key_id
-            self._is_lt = self._is_lt_pid if attr == 'pid' else self._is_lt_cid
+            if attr == 'pid':
+                self._key_id = split_pid(key_id)
+                self._is_lt = self._is_lt_pid
+            else:
+                self._key_id = key_id
+                self._is_lt = self._is_lt_cid
 
     def __call__(self, cand):
         return self._is_lt(cand)
@@ -985,7 +1011,7 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr='',
     '''DMMから作品一覧を取得'''
     verbose('Start parsing DMM list pages')
 
-    is_lt_id = IsIdLessThan(key_id, idattr)
+    is_lt_id = IsIdLessThan(key_id, idattr, True)
 
     for purl in priurls:
 
@@ -1021,7 +1047,7 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr='',
 
                     yield url, prop
 
-                    if not is_lt_id(getattr(prop, idattr, False)):
+                    if not is_lt_id(getattr(prop, idattr)):
                         p = pages + 1
                         pages_last = min((pages_last, p)) if pages_last else p
                         verbose('set pages last: ', pages_last)
@@ -1051,7 +1077,6 @@ def parse_names(name):
 
     # カッコ括りの付記の分割
     m = p_name.search(name)
-    verbose('m.groups(): ', m.groups())
 
     if any(m.groups()):
         shown = m.group('fore') or m.group('back')
@@ -1105,10 +1130,13 @@ def from_tsv(files):
         for row in f:
             # タブ区切りなので改行を明示して除去してタブを明示して分割
             row = tuple(c.strip() for c in row.rstrip('\n').split('\t'))
-            verbose('row: ', row)
 
             # 女優名がある場合分割
-            actress = p_delim.split(row[3]) if row[3] else []
+            try:
+                actress = p_delim.split(row[3]) if row[3] else []
+            except IndexError:
+                emsg('E', '正しいインポートファイル形式ではないようです。')
+
             # 処理用に女優名を要素解析
             actress = list(parse_names(a) for a in actress)
 
@@ -1214,8 +1242,6 @@ class _FromWiki:
                 note = p_delim.split(md.NOTE)
                 note = list(n for n in note if 'シリーズ' not in n)
 
-                verbose('md: {}, {}, {}, {}, {}'.format(md.TITLE, pid, url,
-                                                        actress, md.NOTE))
                 yield url, Summary(url=url,
                                    title=md.TITLE,
                                    pid=pid,
@@ -1287,10 +1313,10 @@ class _FromHtml:
             else:
                 # 「~ ほか」チェック
                 splitetc = tailtxt.rsplit(maxsplit=1)
-                self.number = ret_numofpfmrs(splitetc[-1])
+                self._number = ret_numofpfmrs(splitetc[-1])
                 if len(splitetc) > 1:
                     tailtxt = splitetc[0]
-                elif self.number is not None:
+                elif self._number is not None:
                     tailtxt = ''
 
                 tails = p_delim.split(tailtxt)
@@ -1361,7 +1387,7 @@ class _FromHtml:
                     'Cols', _makeheader(tbl.find('.//tr[th]').iterfind('th')))
 
                 for tr in tbl.iterfind('.//tr[td]'):
-                    self.number = 0
+                    self._number = 0
 
                     tds = tr.xpath('td')
 
@@ -1401,13 +1427,11 @@ class _FromHtml:
                     if 'ORIGINAL' in md._fields:
                         note.extend(self._parse_notes(md.ORIGINAL))
 
-                    verbose('md: {}, {}, {}, {}, {}'.format(title, pid, url,
-                                                            actress, note))
                     yield url, Summary(url=url,
                                        title=title,
                                        pid=pid,
                                        actress=actress.copy(),
-                                       number=self.number,
+                                       number=self._number,
                                        note=note)
 
 from_html = _FromHtml()
@@ -1538,7 +1562,6 @@ def stringize_performers(pfmrs, number, follow):
     '''
     def _build_performerslink(pfmrs, follow):
         '''女優リンクの作成'''
-        verbose('pfmrs: ', pfmrs)
         for shown, dest, parened in pfmrs:
             if shown in HIDE_NAMES.values():
                 shown, dest, parened = '', '', '(削除依頼対応)'
@@ -1577,7 +1600,7 @@ def resolve_service(url):
     '''サービスの決定'''
     verbose('Resolving service...')
     base = p_base_url.findall(url)[0]
-    verbose('base url: ', base)
+
     if not base or base not in SVC_URL:
         emsg('E', '未サポートのURLです。')
     else:
@@ -1617,30 +1640,6 @@ def gen_pid(cid, pattern=None):
         pid = pid.upper()
 
     return pid, cid
-
-
-p_splitid = _re.compile(r'([a-z]+)[+-]?(\d+)', _re.I)
-
-def split_pid(pid):
-    return p_splitid.findall(pid)[0]
-
-
-def sort_by_id(products, reverse=False):
-    '''
-    桁数が揃ってない品番もソート
-    '''
-    def _make_items(products, maxdigit):
-        '''URL(キー)と桁を揃えた品番'''
-        for url in products:
-            prefix, number = split_pid(products[url].pid)
-            yield url, '{0}{1:0>{2}}'.format(prefix, number, maxdigit)
-
-    maxdigit = max(
-        p_number.findall(products[p].pid)[0] for p in products)
-
-    return (url for url, pid in sorted(_make_items(products, maxdigit),
-                                       key=_itemgetter(1),
-                                       reverse=reverse))
 
 
 class InvalidPage(Exception):
@@ -1697,7 +1696,6 @@ def ret_apacheinfo(elems):
     pid = actress = director = ''
 
     for t in elems.find_class("detail-main-meta")[0].xpath('li/text()'):
-        verbose('t: ', t)
 
         t = t.strip()
 

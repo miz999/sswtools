@@ -145,32 +145,27 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
     除外もれ/除外しないもれが発生する場合もある。
 
 --start-pid 品番(例:JMD-112)
-    データ作成開始品番。一覧取得後、この品番が見つかればそれ以降のものだけ作成
-    する。大文字小文字は区別しない。
-    この品番と一致するものがなければならない。
+    データ作成開始品番。一覧取得後、この品番とプレフィクスが同じで番号がこれ以上のもの
+    が見つかればそれ以降のものだけ作成する。大文字小文字は区別しない。
     DMM作品ページのURL(cid=)から品番を作成しているが、URLのcidが実際の品番と
     異なることがあり、このとき抜けやズレが発生する場合がある。
     より厳密にチェックする場合は --start-pid-s オプションを使用する。
 
 --start-pid-s 品番(例:JMD-112)
     --start-pid をより厳密にチェックする。
-    ただし、ここで指定した品番が見つからなくてもより大きい番号であればそこから
-    作成する。
-    作品ごとに作品ページを見に行くので開始品番を見つける時間がよりかかる。
+    作品ごとに作品ページを見に行くので開始品番を見つけるまでの時間がよりかかる。
 
 --start-cid DMM上の品番(例:15jmd112so)
     --start-pid と似ているが、DMM上の品番でチェックする。
     DMM上の品番とは、DMMサイト上でDMMが割り振った品番のこと。
     大文字小文字は区別しない。
-    この品番に一致するものがなければならない。
     DMM作品ページのURL(cid)から品番を取得しているが、URLのcidが実際の品番と
     異なることがあり、このとき抜けやズレなどが発生する場合がある。
 
 -e, --last-pid 品番
-    Wiki上ですでに作成済みの作品の最後の品番。一覧取得後、この品番が見つかるまで
-    スキップし、このつぎの作品以降を作成する。
+    Wiki上ですでに作成済みの作品の最後の品番。一覧取得後、この品番とプレフィクスが同じで
+    番号がこれ以上のものが見つかるまでスキップし、そのつぎの作品以降を作成する。
     大文字小文字は区別しない。
-    この品番と一致するものがなければならない。
     DMM作品ページのURL(cid=)から品番を取得しているが、URLのcidが実際の品番と
     異なることがあり、このとき抜けやズレが発生する場合がある。
     より厳密にチェックする場合は --last-pid-s オプションを使用する。
@@ -179,7 +174,6 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
     --last-pid と似ているが、DMM上の品番でチェックする。
     DMM上の品番とは、DMMサイト上でDMMが割り振った品番のこと。
     大文字小文字は区別しない。
-    この品番に一致するものがなければならない。
     DMM作品ページのURL(cid=)から品番を取得しているが、URLのidが実際の品番と
     異なることがあり、このとき抜けやズレなどが発生する場合がある。
 
@@ -377,7 +371,7 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
 
  2)
     ・シリーズ「バコバコ風俗」の女優ページ用とシリーズ一覧ページ用両方のウィキテキストを作成する。(-tt)
-    ・作成したウィキテキストをファイル名「bakobako.wiki」に保存する(実際のファイル名は「bakobako_actress.wiki」と「bakobako_table.wiki」になる)。(-o)
+    ・作成したウィキテキストをファイル名「bakobako.wiki」に保存する(実際のファイル名は「bakobako_actress.1.wiki」と「bakobako_table.1.wiki」になる)。(-o)
 
     dmmsar.py "http://www.dmm.co.jp/mono/dvd/-/list/=/article=series/id=8225/" -tt -o bakobako.wiki
 
@@ -985,33 +979,42 @@ def main(argv=None):
                   args.subtitle_regex[1]) if args.subtitle_regex else None
 
     # フィルター用パターン
-    p_filter_pid = args.filter_pid and re.compile(args.filter_pid, re.I)
+    if args.filter_pid:
+        filter_id = re.compile(args.filter_pid, re.I)
+        fidattr = 'pid'
+    elif args.filter_cid:
+        filter_id = re.compile(args.filter_cid, re.I)
+        fidattr = 'cid'
+    else:
+        filter_id = None
+        fidattr = ''
+
     p_filter_pid_s = args.filter_pid_s and re.compile(args.filter_pid_s, re.I)
-    p_filter_cid = args.filter_cid and re.compile(args.filter_cid, re.I)
     p_filter_ttl = args.filter_title and re.compile(args.filter_title, re.I)
 
+    # 作成開始品番
     if args.start_pid:
         key_id = args.start_pid
         key_type = 'start'
-        idattr = 'pid'
+        kidattr = 'pid'
     elif args.start_cid:
         key_id = args.start_cid
         key_type = 'start'
-        idattr = 'cid'
+        kidattr = 'cid'
     elif args.last_pid:
         key_id = args.last_pid
         key_type = 'last'
-        idattr = 'pid'
+        kidattr = 'pid'
     elif args.last_cid:
         key_id = args.last_cid
         key_type = 'last'
-        idattr = 'cid'
+        kidattr = 'cid'
     else:
         key_id = None
         key_type = None
-        idattr = ''
+        kidattr = ''
 
-    is_lt_id = libssw.IsIdLessThan(key_id, idattr)
+    is_lt_id = libssw.IsIdLessThan(key_id, kidattr)
 
     if args.add_column:
         add_header = '|'.join(c.split(':')[0] for c in args.add_column) + '|'
@@ -1054,7 +1057,7 @@ def main(argv=None):
         p_gen = libssw.from_dmm(listparser, priurls,
                                 pages_last=args.pages_last,
                                 key_id=key_id,
-                                idattr=idattr)
+                                idattr=kidattr)
 
     # 作品情報の取り込み
     # 新着順
@@ -1145,10 +1148,10 @@ def main(argv=None):
         # 開始ID指定処理(--{start,last}-{p,c}id)
         if before and key_id:
             # 指定された品番が見つかるまでスキップ
-            if is_lt_id(getattr(props, idattr)):
+            if is_lt_id(getattr(props, kidattr)):
                 emsg('I',
                      '作品を除外しました: {}={} (start id not met yet)'.format(
-                         idattr, getattr(props, idattr)))
+                         kidattr, getattr(props, kidattr)))
                 omitted += 1
                 rest -= 1
                 continue
@@ -1156,24 +1159,16 @@ def main(argv=None):
                 before = False
                 if key_type == 'start':
                     emsg('I', '開始IDが見つかりました: {}'.format(
-                        getattr(props, idattr)))
+                        getattr(props, kidattr)))
                 else:
                     emsg('I', '最終IDが見つかりました: {}'.format(
-                        getattr(props, idattr)))
+                        getattr(props, kidattr)))
                     continue
 
-        # 品番(pid)が指定されたパターンにマッチしないものはスキップ処理(--filter-pid)
-        if args.filter_pid and not p_filter_pid.search(props.pid):
-            emsg('I', '作品を除外しました: pid={} (filtered)'.format(
-                props.pid))
-            omitted += 1
-            rest -= 1
-            continue
-
-        # DMM上の品番(cid)が指定されたパターンにマッチしないものはスキップ処理(--filter-cid)
-        if args.filter_cid and not p_filter_cid.search(props.cid):
-            emsg('I', '作品を除外しました: cid={} (filtered)'.format(
-                props.cid))
+        # 品番(pid/cid)が指定されたパターンにマッチしないものはスキップ処理(--filter-{p,c}id)
+        if filter_id and not filter_id.search(getattr(props, fidattr)):
+            emsg('I', '作品を除外しました: {}={} (filtered)'.format(
+                fidattr, getattr(props, fidattr)))
             omitted += 1
             rest -= 1
             continue
@@ -1309,7 +1304,6 @@ def main(argv=None):
 
         for k in sortkeys:
             wikitexts.sort(key=attrgetter(k))
-        verbose('wikitexts: ', wikitexts)
 
         print()
 
