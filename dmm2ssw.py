@@ -121,7 +121,6 @@ DMM作品ページのURL
 
 
 オプション:
-
 -a, --actress 出演者 [出演者 ...]
     クレジットされてない出演者を追加する場合用。
     出演者(のwikiページ名)を指定する。
@@ -360,8 +359,6 @@ ReturnVal = _namedtuple('ReturnVal',
 
 p_more = _re.compile(r"url: '(.*?)'")
 p_related = _re.compile(r'var url = "(.*)"')
-p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
-# p_genre = _re.compile(r'/article=keyword/id=(6003|6147|6561)/')
 p_age = _re.compile(r'(\(\d+?\))$')
 
 sp_heart = (_re.compile(r'（ハート）|◆'), r'♥')
@@ -937,6 +934,9 @@ class DMMParser:
     '''
     DMM作品ページの解析
     '''
+    p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
+    # p_genre = _re.compile(r'/article=keyword/id=(6003|6147|6561)/')
+
     def __init__(self, no_omits=_libssw.OMITTYPE,
                  start_date=None, start_pid_s=None, filter_pid_s=None,
                  pass_bd=False, n_i_s=False, deeper=True, quiet=False):
@@ -1127,7 +1127,7 @@ class DMMParser:
             for g in prop.getnext():
                 verbose('genre: ', g.text)
                 try:
-                    gid = p_genre.findall(g.get('href'))[0]
+                    gid = self.p_genre.findall(g.get('href'))[0]
                 except IndexError:
                     continue
 

@@ -20,16 +20,16 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
     ・品番のプレフィクスがあらかじめ登録されている総集編のものと一致
     ・ジャンルに総集編がある
     ・タイトルに「総集編」「BEST」などの関連ワードがある
-    ・タイトルに「20人(名)」以上/「50(連)発」以上/「4時間」以上/「240分」以上のうち
+    ・タイトルに「20人/名」以上/「50(連)発」以上/「4時間」以上/「240分」以上のうち
     2つ以上含まれている
     ・メーカーがROOKIEで出演者数が3人を超えている
     ・メーカーがROOKIEでタイトルに4時間以上または200分以上の時間が含まれている
 
 
 注意:
-    内部でサイトごとにアクセスに5秒の間隔を置いている。
     一度取得したページはキャッシュされ(一部のページを除く)、Wikiなら最大2時間、
     それ以外は24時間はそれを利用する。
+    内部でサイトごとにアクセスに5秒の間隔を置いている。
     この間隔を短く/無くしたりして短時間に大量の情報を取得した場合、(D)DoS攻撃と
     みなされて通報されるかもしれないので注意。
 
@@ -805,7 +805,7 @@ class ExtractIDs:
 
                 if not self.retrieval:
                     try:
-                        self.retrieval = libssw.p_list_article.findall(k)[0]
+                        self.retrieval = libssw.get_article(k)
                     except IndexError:
                         self.retrieval = 'keyword'
                     verbose('retrieval(extracted): ', self.retrieval)

@@ -150,7 +150,7 @@ def japorn(he, url):
             studio = redtitle.getnext().text.strip()
         elif label.startswith('発売日'):
             reltext = redtitle.tail.strip()
-            release = libssw.p_number.findall(reltext)
+            release = libssw.extr_num(reltext)
             release = [release[i] for i in (2, 0, 1)]
 
     uncensored(url, release, title, studio, performers, note)
@@ -178,8 +178,7 @@ def ipondo(he, url):
             a = div.xpath('a')[0]
             verbose('a: ', a.get('href'))
             if a.get('href') == url:
-                release = libssw.p_number.findall(
-                    div.xpath('p')[0].text_content())
+                release = libssw.extr_num(div.xpath('p')[0].text_content())
                 break
         else:
             # ページ内に見つからなかったら次のページヘ
@@ -205,7 +204,7 @@ def caribbean(he, netloc, url):
         studio = 'カリビアンコム プレミアム'
         title = he.find_class('video-detail')[0].xpath('.//h1')[0].text.strip()
 
-    release = libssw.p_number.findall(
+    release = libssw.extr_num(
         he.find_class('movie-info')[0].xpath('dl[3]/dd')[0].text)
 
     performers = he.find_class(
@@ -220,7 +219,7 @@ def heyzo(he, url):
     title = he.xpath('//meta[@name="description"]')[0].get('content')
     title = p_heyzo_title.findall(title)[0]
 
-    release = libssw.p_number.findall(
+    release = libssw.extr_num(
         he.find_class('release-day')[0].getnext().text.strip())
 
     performers = he.xpath(
@@ -237,7 +236,7 @@ def heydouga(he, url):
 
     movieinfo = he.find_class('movieInfo')[0]
 
-    release = libssw.p_number.findall(movieinfo.xpath('li[1]')[0].text)
+    release = libssw.extr_num(movieinfo.xpath('li[1]')[0].text)
 
     performers = movieinfo.xpath('li[2]/a')[0].text.split()
 
@@ -249,7 +248,7 @@ def tokyohot(he, url):
 
     title = he.xpath('//div[@class="pagetitle"]/h2')[0].text.strip()
 
-    release = libssw.p_number.findall(
+    release = libssw.extr_num(
         he.xpath('//dl[@class="info"][2]/dd[1]/text()')[0])
 
     performers = [t.strip() for t in
@@ -263,7 +262,7 @@ def pacopacomama(he, url):
 
     title = he.xpath('//title')[0].text.strip()
 
-    release = libssw.p_number.findall(he.find_class('date')[0].text)[:3]
+    release = libssw.extr_num(he.find_class('date')[0].text)[:3]
 
     performers = he.xpath(
         '//div[@class="detail-info-l"]//table/tr[1]/td/a'
@@ -277,7 +276,7 @@ def tenmusume(he, url):
 
     title = p_musume_title.findall(he.xpath('//title')[0].text.strip())[0]
 
-    release = libssw.p_number.findall(
+    release = libssw.extr_num(
         he.get_element_by_id('info').xpath('div[1]/ul/li[1]/em')[0].tail)
 
     performers = he.get_element_by_id('info').xpath(
@@ -293,8 +292,7 @@ def jukujoclub(he, url):
 
     title = movdata.xpath('tr[2]/td')[1].text.strip()
 
-    release = ['0000'] + libssw.p_number.findall(
-        movdata.xpath('tr[7]/td')[1].text)
+    release = ['0000'] + libssw.extr_num(movdata.xpath('tr[7]/td')[1].text)
 
     performers = movdata.xpath('tr[3]/td')[1].text_content().split()
 
@@ -315,7 +313,7 @@ def hitodumagiri(he, url):
     studio = '人妻斬り'
 
     performer = he.find_class('name_JP_hitozuma')[0].text.strip()
-    age = libssw.p_number.findall(
+    age = libssw.extr_num(
         he.xpath('//table[@summary="movie info"][1]//tr[1]/td')[1].text)[0]
 
     title = performer + age + '才'
@@ -328,7 +326,7 @@ def hitodumagiri(he, url):
         resp, srchp = libssw.open_url(srchurl)
         for div in srchp.find_class('unit-thumbs ori1'):
             if div[1].get('href') == url:
-                release = libssw.p_number.findall(div[0].text)
+                release = libssw.extr_num(div[0].text)
         else:
             nextbold = he.find_class('next bold')
             if nextbold is not None:

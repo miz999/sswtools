@@ -312,11 +312,9 @@ HIDE_NAMES = {'1023995': '立花恭子',
               '1026305': '北野ひな'}
 
 
-p_number = _re.compile(r'\d+')
 p_delim = _re.compile(r'[/／,、]')
 p_inbracket = _re.compile(r'[(（]')
 p_linkpare = _re.compile(r'\[\[(.+?)(?:>(.+?))?\]\]')
-p_list_article = _re.compile(r'/article=(.+?)/')
 p_hiragana = _re.compile(r'[ぁ-ゞー]')
 p_neghirag = _re.compile(r'[^ぁ-ゞー]')
 
@@ -551,101 +549,6 @@ class Summary:
         self.merge(otherobj, overwrite=True)
 
 
-# class ProductProps:
-#     '''一覧情報保管用(後方互換性重視)'''
-#     __slots__ = ('url',
-#                  'release',
-#                  'title',
-#                  'subtitle',
-#                  'pid',
-#                  'cid',
-#                  'actress',
-#                  'number',
-#                  'director',
-#                  'note')
-
-#     def __init__(self,
-#                  url='',
-#                  release='',
-#                  title='',
-#                  subtitle='',
-#                  pid='',
-#                  cid='',
-#                  actress=[],
-#                  number=0,
-#                  director=[],
-#                  note=[]):
-#         for key in self.__slots__:
-#             value = eval(key)
-#             if isinstance(value, list):
-#                 setattr(self, key, value[:])
-#             else:
-#                 setattr(self, key, value)
-
-#     def __contains__(self, key):
-#         return hasattr(self, key)
-
-#     def __getitem__(self, key):
-#         return getattr(self, key)
-
-#     def __setitem__(self, key, value):
-#         setattr(self, key, value)
-
-#     def __call__(self, *keys):
-#         return self.values(*keys)
-
-#     def __iter__(self):
-#         return iter(self.__slots__)
-
-#     def keys(self):
-#         return self.__slots__
-
-#     def values(self, *keys):
-#         attrs = keys or self.__slots__
-#         return list(getattr(self, k) for k in attrs)
-
-#     def items(self, *args):
-#         attrs = args or self.__slots__
-#         return list((a, getattr(self, a)) for a in attrs)
-
-#     def tsv(self, *args):
-#         attrs = args or self.__slots__
-#         return '\t'.join(self.stringize(*attrs))
-
-#     def stringize(self, *args):
-#         attrs = args or self.__slots__
-#         for a in attrs:
-#             v = getattr(self, a)
-#             if a == 'note' and not v:
-#                 break
-#             if isinstance(v, int):
-#                 v = str(v) if v else ''
-#             elif isinstance(v, list):
-#                 v = ','.join(v)
-#             yield v
-
-#     def __set(self, attr, other, overwrite):
-#         this = getattr(self, attr)
-#         if isinstance(other, list):
-#             other = other.copy()
-#         if not this or overwrite:
-#             setattr(self, attr, other)
-
-#     def merge(self, otherobj, overwrite=False):
-#         if hasattr(otherobj, 'keys'):
-#             for key in otherobj:
-#                 val = otherobj[key]
-#                 if val:
-#                     self.__set(key, val, overwrite)
-#         else:
-#             for key, val in otherobj:
-#                 if val:
-#                     self.__set(key, val, overwrite)
-
-#     def update(self, otherobj):
-#         self.merge(otherobj, overwrite=True)
-
-
 def sub(p_list, string, n=False):
     '''re.sub()、re.subn()ラッパー'''
     return p_list[0].subn(p_list[1], string) if n \
@@ -671,6 +574,18 @@ def rm_nlcode(string):
 
 def rm_hyphen(string):
     return string.translate(t_pidsep)
+
+
+p_number = _re.compile(r'\d+')
+
+def extr_num(string):
+    return p_number.findall(strring)
+
+
+p_list_article = _re.compile(r'/article=(.+?)/')
+
+def get_article(url):
+    return p_list_article.findall(url)[0]
 
 
 def files_exists(mode, *files):
@@ -972,8 +887,7 @@ def sort_by_id(products, reverse=False):
             prefix, number = split_pid(products[url].pid)
             yield url, '{0}{1:0>{2}}'.format(prefix, number, maxdigit)
 
-    maxdigit = max(
-        p_number.findall(products[p].pid)[0] for p in products)
+    maxdigit = max(extr_num(products[p].pid)[0] for p in products)
 
     return (url for url, pid in sorted(_make_items(products, maxdigit),
                                        key=_itemgetter(1),

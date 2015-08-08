@@ -408,7 +408,7 @@ def main():
     if args.root.startswith('http://'):
         # IDがURL渡しだったときの対処
         ROOTID = libssw.get_id(args.root)[0]
-        target = libssw.p_list_article.findall(args.root)[0]
+        target = libssw.get_article(args.root)
         service = libssw.resolve_service(args.root)
     else:
         ROOTID = args.root
