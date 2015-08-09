@@ -945,7 +945,7 @@ class DMMParser:
         self._quiet = quiet
         self._no_omits = no_omits
         self._start_date = start_date
-        self._is_lt_id = _libssw.IsIdLessThan(start_pid_s, 'pid')
+        self._not_sid = _libssw.NotKeyIdYet(start_pid_s, 'start', 'pid')
         self._filter_pid_s = filter_pid_s
         self._pass_bd = pass_bd
         self._n_i_s = n_i_s
@@ -1155,7 +1155,7 @@ class DMMParser:
             verbose('cid: ', self._sm['cid'], ', pid: ', self._sm['pid'])
 
             # 作成開始品番チェック(厳密)
-            if self._is_lt_id(self._sm['pid']):
+            if self._not_sid(self._sm['pid']):
                 raise OmitTitleException('pid', self._sm['pid'])
 
             # filter-pid-sチェック
@@ -1228,9 +1228,10 @@ class DMMParser:
         verbose('Retrieving performers... (smm:{})'.format(smm))
 
         el = self._he.get_element_by_id('performer', ())
-
-        if len(el):
-            if self._omit_suss and len(el) > 3:
+        len_el = len(el)
+        if len_el:
+            if self._omit_suss and len_el > 3:
+                # ROOKIE出演者数チェック
                 self._mark_omitted('総集編', self._omit_suss)
 
             if el[-1].get('href') == '#':
@@ -1248,7 +1249,7 @@ class DMMParser:
                             more_path = more_path[0]
                             break
                     else:
-                        emsg('E', '「▼すべて表示する」先が取得できませんでした。')
+                        emsg('E', '出演者の「▼すべて表示する」先が取得できませんでした。')
 
                 more_url = _up.urljoin(BASEURL, more_path)
                 resp, he_more = _libssw.open_url(more_url, 'utf-8')

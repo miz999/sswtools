@@ -579,7 +579,7 @@ def rm_hyphen(string):
 p_number = _re.compile(r'\d+')
 
 def extr_num(string):
-    return p_number.findall(strring)
+    return p_number.findall(string)
 
 
 p_list_article = _re.compile(r'/article=(.+?)/')
@@ -894,38 +894,59 @@ def sort_by_id(products, reverse=False):
                                        reverse=reverse))
 
 
-class IsIdLessThan:
-    '''品番の比較'''
-    def _is_lt_cid(self, cid):
+class NotKeyIdYet:
+    '''品番が key_id になるまで True を返す'''
+    def _is_start_cid(self, cid):
         return cid < self._key_id
 
-    def _is_lt_pid(self, pid):
+    def _is_start_pid(self, pid):
         prefix, number = split_pid(pid)
         return prefix == self._key_id[0] and number < self._key_id[1]
 
-    def __init__(self, key_id, attr, if_inactive=False):
+    def _is_last_pid(self, pid):
+        return rm_hyphen(pid) != self._key_id
+
+    def _is_last_cid(self, cid):
+        return cid != self._key_id
+
+    def __init__(self, key_id, key_type, attr, if_inactive=False):
         if not key_id:
-            self._is_lt = lambda x: if_inactive
+            self._match = lambda x: if_inactive
         else:
-            if attr == 'pid':
-                self._key_id = split_pid(key_id)
-                self._is_lt = self._is_lt_pid
+            if key_type == 'start':
+                if attr == 'pid':
+                    self._key_id = split_pid(key_id)
+                    self._match = self._is_start_pid
+                elif attr == 'cid':
+                    self._key_id = key_id
+                    self._match = self._is_start_cid
+                else:
+                    raise ValueError('Invalid value: attr')
+            elif key_type == 'last':
+                if attr == 'pid':
+                    self._key_id = rm_hyphen(key_id)
+                    self._match = self._is_last_pid
+                elif attr == 'cid':
+                    self._key_id = key_id
+                    self._match = self._is_last_cid
+                else:
+                    raise ValueError('Invalid value: attr')
             else:
-                self._key_id = key_id
-                self._is_lt = self._is_lt_cid
+                raise ValueError('Invalid value: key_id')
 
     def __call__(self, cand):
-        return self._is_lt(cand)
+        return self._match(cand)
 
 
 sp_wikis = (_re.compile(r' "target="_blank"'), r'" target="_blank"')
 
-def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr='',
+def from_dmm(listparser, priurls, pages_last=0,
+             key_id=None, key_type=None, idattr='pid',
              ignore=False, show_info=True):
     '''DMMから作品一覧を取得'''
     verbose('Start parsing DMM list pages')
 
-    is_lt_id = IsIdLessThan(key_id, idattr, True)
+    match_key_id = NotKeyIdYet(key_id, key_type, idattr, if_inactive=True)
 
     for purl in priurls:
 
@@ -961,7 +982,7 @@ def from_dmm(listparser, priurls, pages_last=0, key_id=None, idattr='',
 
                     yield url, prop
 
-                    if not is_lt_id(getattr(prop, idattr)):
+                    if not match_key_id(getattr(prop, idattr)):
                         p = pages + 1
                         pages_last = min((pages_last, p)) if pages_last else p
                         verbose('set pages last: ', pages_last)

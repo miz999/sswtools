@@ -313,6 +313,7 @@ class RetrieveMembers:
             for murl, mprops in libssw.from_dmm(self.listparser,
                                                 priurls,
                                                 key_id=last_pid,
+                                                key_type='last',
                                                 idattr='pid',
                                                 ignore=True,
                                                 show_info=False):
@@ -455,7 +456,9 @@ def main():
 
     # メーカーの新規作品情報の取得
     for nurl, nprops in libssw.from_dmm(listparser, priurls,
-                                        key_id=last_pid, idattr='pid',
+                                        key_id=last_pid,
+                                        key_type='last',
+                                        idattr='pid',
                                         ignore=True):
         if nurl not in existings:
             newcomers[nurl] = dict(nprops)

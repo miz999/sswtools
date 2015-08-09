@@ -245,7 +245,7 @@ def main():
 
     print('ページ名:', listname)
 
-    is_lt_id = libssw.IsIdLessThan(args.start_pid, 'pid')
+    not_sid = libssw.NotKeyIdYet(args.start_pid, 'start', 'pid')
     before = True if args.start_pid else False
 
     shortfalls = set()
@@ -256,7 +256,7 @@ def main():
         props = targets[prod_url]
         verbose('props: ', props.items())
 
-        if before and is_lt_id(libssw.gen_pid(prod_url)):
+        if before and not_sid(libssw.gen_pid(prod_url)):
             continue
         else:
             before = False

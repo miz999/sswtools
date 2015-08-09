@@ -110,8 +110,8 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
 -o, --out ファイル名のベース
     指定されたファイルに出力する。未指定時は標準出力に出力する。
     ウィキテキストを作成した場合、実際に出力されるファイル名は、
-    女優ページ用なら 識別子 + _actress + 拡張子
-    レーベル/シリーズ一覧ページ用なら 識別子 + _table + 拡張子
+    女優ページ用なら 識別子 + _actress + ページ数 + 拡張子
+    レーベル/シリーズ一覧ページ用なら 識別子 + _table + ページ数 + 拡張子
     となる。
     また、--split (デフォルトは200) の件数ごとに番号を付けてファイルを分ける。
     例) moodyz.wiki ⇒ moodyz_table.1.wiki
@@ -145,8 +145,8 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
     除外もれ/除外しないもれが発生する場合もある。
 
 --start-pid 品番(例:JMD-112)
-    データ作成開始品番。一覧取得後、この品番とプレフィクスが同じで番号がこれ以上のもの
-    が見つかればそれ以降のものだけ作成する。大文字小文字は区別しない。
+    データ作成開始品番。一覧取得後、この品番とプレフィクスが同じで番号がこれ以上の
+    ものが見つかればそれ以降のものだけ作成する。大文字小文字は区別しない。
     DMM作品ページのURL(cid=)から品番を作成しているが、URLのcidが実際の品番と
     異なることがあり、このとき抜けやズレが発生する場合がある。
     より厳密にチェックする場合は --start-pid-s オプションを使用する。
@@ -159,12 +159,12 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
     --start-pid と似ているが、DMM上の品番でチェックする。
     DMM上の品番とは、DMMサイト上でDMMが割り振った品番のこと。
     大文字小文字は区別しない。
-    DMM作品ページのURL(cid)から品番を取得しているが、URLのcidが実際の品番と
+    DMM作品ページのURL(cid=)から品番を取得しているが、URLのcidが実際の品番と
     異なることがあり、このとき抜けやズレなどが発生する場合がある。
 
 -e, --last-pid 品番
-    Wiki上ですでに作成済みの作品の最後の品番。一覧取得後、この品番とプレフィクスが同じで
-    番号がこれ以上のものが見つかるまでスキップし、そのつぎの作品以降を作成する。
+    Wiki上ですでに作成済みの作品の最後の品番。一覧取得後、この品番がみつかるまで
+    スキップし、そのつぎの作品以降を作成する。
     大文字小文字は区別しない。
     DMM作品ページのURL(cid=)から品番を取得しているが、URLのcidが実際の品番と
     異なることがあり、このとき抜けやズレが発生する場合がある。
@@ -1002,7 +1002,7 @@ def main(argv=None):
         key_type = 'start'
         kidattr = 'cid'
     elif args.last_pid:
-        key_id = args.last_pid
+        key_id = libssw.rm_hyphen(args.last_pid)
         key_type = 'last'
         kidattr = 'pid'
     elif args.last_cid:
@@ -1012,9 +1012,9 @@ def main(argv=None):
     else:
         key_id = None
         key_type = None
-        kidattr = ''
+        kidattr = 'pid'
 
-    is_lt_id = libssw.IsIdLessThan(key_id, kidattr)
+    not_key_id = libssw.NotKeyIdYet(key_id, key_type, kidattr)
 
     if args.add_column:
         add_header = '|'.join(c.split(':')[0] for c in args.add_column) + '|'
@@ -1057,6 +1057,7 @@ def main(argv=None):
         p_gen = libssw.from_dmm(listparser, priurls,
                                 pages_last=args.pages_last,
                                 key_id=key_id,
+                                key_type=key_type,
                                 idattr=kidattr)
 
     # 作品情報の取り込み
@@ -1148,7 +1149,7 @@ def main(argv=None):
         # 開始ID指定処理(--{start,last}-{p,c}id)
         if before and key_id:
             # 指定された品番が見つかるまでスキップ
-            if is_lt_id(getattr(props, kidattr)):
+            if not_key_id(getattr(props, kidattr)):
                 emsg('I',
                      '作品を除外しました: {}={} (start id not met yet)'.format(
                          kidattr, getattr(props, kidattr)))
