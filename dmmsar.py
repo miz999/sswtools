@@ -1124,7 +1124,7 @@ def main(argv=None):
     series_urls = []
     rest = total
     omitted = listparser.omitted
-    before = True
+    before = True if key_id else False
 
     dmmparser = dmm2ssw.DMMParser(no_omits=no_omits,
                                   start_date=args.start_date,
@@ -1147,7 +1147,7 @@ def main(argv=None):
             props.pid, props.cid = libssw.gen_pid(props.url, sp_pid)
 
         # 開始ID指定処理(--{start,last}-{p,c}id)
-        if before and key_id:
+        if before:
             # 指定された品番が見つかるまでスキップ
             if not_key_id(getattr(props, kidattr)):
                 emsg('I',

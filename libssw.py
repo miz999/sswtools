@@ -896,43 +896,42 @@ def sort_by_id(products, reverse=False):
 
 class NotKeyIdYet:
     '''品番が key_id になるまで True を返す'''
-    def _is_start_cid(self, cid):
-        return cid < self._key_id
-
     def _is_start_pid(self, pid):
         prefix, number = split_pid(pid)
         return prefix == self._key_id[0] and number < self._key_id[1]
-
-    def _is_last_pid(self, pid):
-        return rm_hyphen(pid) != self._key_id
-
-    def _is_last_cid(self, cid):
-        return cid != self._key_id
 
     def __init__(self, key_id, key_type, attr, if_inactive=False):
         if not key_id:
             self._match = lambda x: if_inactive
         else:
             if key_type == 'start':
+
                 if attr == 'pid':
                     self._key_id = split_pid(key_id)
                     self._match = self._is_start_pid
+
                 elif attr == 'cid':
                     self._key_id = key_id
-                    self._match = self._is_start_cid
+                    self._match = lambda cid: cid < self._key_id
+
                 else:
-                    raise ValueError('Invalid value: attr')
+                    raise ValueError('Invalid value: attr({})'.format(attr))
+
             elif key_type == 'last':
+
                 if attr == 'pid':
                     self._key_id = rm_hyphen(key_id)
-                    self._match = self._is_last_pid
+                    self._match = lambda pid: rm_hyphen(pid) != self._key_id
+
                 elif attr == 'cid':
                     self._key_id = key_id
-                    self._match = self._is_last_cid
+                    self._match = lambda cid: cid != self._key_id
+
                 else:
-                    raise ValueError('Invalid value: attr')
+                    raise ValueError('Invalid value: attr({})'.format(attr))
+
             else:
-                raise ValueError('Invalid value: key_id')
+                raise ValueError('Invalid value: key_id({})'.format(key_id))
 
     def __call__(self, cand):
         return self._match(cand)
