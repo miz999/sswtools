@@ -139,14 +139,22 @@ OMNI_PREFIX = (
     '29djsh',        # ジャネスの総集編
     '29djsj',        # ジャネスの総集編
     '29hwaz',        # ジャネスの総集編
+    '2apao',         # オーロラプロジェクト・アネックスの総集編 (レンタル)
     '2bdclb',        # ワープエンタテインメントの総集編
+    '2bom',          # BoinBB/ABCの総集編 (レンタル)
     '2box',          # ワープエンタテインメントの総集編
     '2clb',          # ワープエンタテインメントの総集編
+    '2koze',         # ローグ・プラネット（フェチ）/妄想族の総集編 (レンタル)
+    '2ptko',         # パツキン/ABCの総集編 (レンタル)
+    '2slba',         # スタイルアート/妄想族の総集編 (レンタル)
     '2spbox',        # ワープエンタテインメントの総集編
+    '2swac',         # 湘南/妄想族の総集編 (レンタル)
+    '2tomn',         # TEPPANの総集編 (レンタル)
     '2wpw',          # ワープエンタテインメントの総集編
     '2wsp',          # ワープエンタテインメントの総集編
     '2ycc',          # ワープエンタテインメントの総集編
     '30dmbk',        # MAZO BOYS CLUB (未来フューチャー) の総集編
+    '30dsmo',        # BS (未来フューチャー) の総集編
     '33awtb',        # AVS collector’sの総集編
     '33avsb',        # AVS collector’sの総集編
     '33avsw',        # AVS collector’sの総集編
@@ -162,16 +170,40 @@ OMNI_PREFIX = (
     '33plzb',        # AVS collector’sの総集編
     '33zosb',        # AVS collector’sの総集編
     '3bmw',          # ワンズファクトリーの総集編
+    '3mmb',          # 桃太郎ベスト (レンタル)
     '3naw',          # ワンズファクトリーの総集編
     '3swf',          # ワンズファクトリーの総集編
+    '3veq',          # VENUSの総集編 (レンタル)
     '434dfda',       # デジタルアークの総集編
     '434dgtl',       # デジタルアークの総集編
     '434gkdfda',     # デジタルアークの総集編
     '434kcda',       # デジタルアークの総集編
     '49cadv',        # クリスタル映像の総集編
+    '4atk',          # Attackers BEST 総集編専門レーベル (レンタル)
+    '4idb',          # アイポケの総集編 (レンタル)
+    '4jus',          # マドンナ/Madonnaの総集編 (レンタル)
+    '4kib',          # kira☆kiraの総集編 (レンタル)
+    '4kwb',          # kawaiiの総集編 (レンタル)
+    '4hndb',         # 本中の総集編 (レンタル)
+    '4mby',          # 溜池ゴローの総集編 (レンタル)
+    '4mib',          # ムーディーズの総集編 (レンタル)
+    '4mitb',         # 蜜月の総集編 (レンタル)
+    '4mvb',          # エムズビデオグループの総集編 (レンタル)
+    '4obe',          # マドンナ/Obasanの総集編 (レンタル)
+    '4ons',          # S1の総集編 (レンタル)
+    '4pbd',          # プレミアムの総集編 (レンタル)
+    '4ppb',          # OPPAIの総集編 (レンタル)
+    '4tmbt',         # teamZEROの総集編 (レンタル)
+    '4tywd',         # 乱丸の総集編 (レンタル)
+    '4vvv',          # ヴィの総集編 (レンタル)
     '51cma',         # シネマジックの総集編
+    '55boya',        # BO-YA TMAの総集編レーベル
     '55hsrm',        # SCREAM 総集編専門レーベル
     '55id',          # TMAの総集編
+    '5atk',          # Attackers BEST 総集編専門レーベル (レンタル)
+    '5cra',          # クロスの総集編 (レンタル)
+    '5krb',          # カルマ/BEST 総集編専門レーベル (レンタル)
+    '5mkck',         # E-BODYの総集編 (レンタル)
     '83sbb',         # マルクス兄弟の総集編
     '83scf',         # マルクス兄弟の総集編
     '84bdhyaku',     # 100人 KMPの総集編レーベル
@@ -196,9 +228,9 @@ OMNI_PREFIX = (
     'dgtl',          # デジタルアークの総中編
     'emac',          # DX（エマニエル）の総集編
     'fabs',          # FAプロの総集編
+    'h_066fabr',     # FAプロの総集編 (レンタル)
     'h_066fabs',     # FAプロの総集編
     'h_066rabs',     # FAプロ 竜二ベスト
-    'h_067nass',     # なでしこの総集編
     'h_068mxsps',    # マキシングの総集編
     'h_086abba',     # センタービレッジの総集編
     'h_086cbox',     # センタービレッジの総集編
@@ -218,6 +250,8 @@ OMNI_PREFIX = (
     'h_175dbeb',     # BabyEntertainmentの総集編
     'h_175dxdb',     # BabyEntertainmentの総集編
     'h_179dmdv',     # ゲインコーポレーションの総集編
+    'h_213agemix',   # SEX Agentの総集編 (レンタル)
+    'h_213ageom',    # SEX Agentの総集編
     'h_237swat',     # シリーズ ○○三昧 プラネットプラスの総集編シリーズ
     'h_254kanz',     # 完全盤 STAR PARADISEの総集編レーベル
     'h_254mgdn',     # MEGADON STAR PARADISEの総集編レーベル
@@ -281,7 +315,14 @@ OMNI_PREFIX = (
     'bf249',         # BeFreeの総集編作品
     'bf315',         # BeFreeの総集編作品
     'bf392',         # BeFreeの総集編作品
+    'bnsps382',      # ながえSTYLEの総集編作品
+    'emaf324',       # フォーディメンション（エマニエル）の総集編か再利用作品
+    'h_254vnds3141', # ネクストイレブンの総集編作品
+    'h_606ylw4303',  # Yellow Moon (Mellow Moon) の総集編作品
+    'h_606ylw4308',  # Yellow Moon (Mellow Moon) の総集編作品
     'h_746ssr051',   # SOSORUの総集編作品
+    'h_970kagh023',  # かぐや姫（メロウムーン）の総集編作品
+    'h_970kagh015',  # かぐや姫（メロウムーン）の総集編作品
 )
 # 品番正規表現
 OMNI_PATTERN = (
@@ -903,6 +944,7 @@ class NotKeyIdYet:
     def __init__(self, key_id, key_type, attr, if_inactive=False):
         if not key_id:
             self._match = lambda x: if_inactive
+
         else:
             if key_type == 'start':
 

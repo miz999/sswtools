@@ -1150,9 +1150,8 @@ def main(argv=None):
         if before:
             # 指定された品番が見つかるまでスキップ
             if not_key_id(getattr(props, kidattr)):
-                emsg('I',
-                     '作品を除外しました: {}={} (start id not met yet)'.format(
-                         kidattr, getattr(props, kidattr)))
+                emsg('I', '作品を除外しました: {}={} (id not met yet)'.format(
+                    kidattr, getattr(props, kidattr)))
                 omitted += 1
                 rest -= 1
                 continue
@@ -1219,6 +1218,7 @@ def main(argv=None):
             b, status, data = dmm2ssw.main(props, args, dmmparser)
             verbose('Return from dmm2ssw: {}, {}, {}'.format(
                 b, status, data))
+            # 除外対象だったとき、data は (key, hue) のタプルになる。
 
             if b:
                 wikitexts.append(data)

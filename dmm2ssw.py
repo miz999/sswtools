@@ -354,7 +354,7 @@ BASEURL_SSW = _libssw.BASEURL_SSW
 REDIRECTS = _libssw.REDIRECTS
 
 ReturnVal = _namedtuple('ReturnVal',
-                        ('release', 'pid', 'title', 'title_dmm', 'url',
+                        ('release', 'pid', 'title', 'title_dmm', 'url', 'time',
                          'maker', 'label', 'series', 'wktxt_a', 'wktxt_t'))
 
 p_more = _re.compile(r"url: '(.*?)'")
@@ -425,6 +425,7 @@ OMIT_SERIES = {
     '213087': 'おませなJKの制服でオクチえっち！',
     '213295': '麗しき若妻',
     '213420': 'キレイなお姉さんのパンモロ○○コレクション',
+    '213604': 'ヌキサシバッチリ！！厳選センズリ専用ディルド＆指入れオナニー素材集',
     '213840': '癒しのじゅるじゅぽフェラCOLLECTION',
 }
 
@@ -1875,6 +1876,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                              summ['title'],
                                              summ['title_dmm'],
                                              summ['url'],
+                                             summ['time'],
                                              summ.values('maker', 'maker_id'),
                                              summ.values('label', 'label_id'),
                                              summ.values('series', 'series_id'),
@@ -2010,6 +2012,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                             summ['title'],
                                             summ['title_dmm'],
                                             summ['url'],
+                                            summ['time'],
                                             summ.values('maker', 'maker_id'),
                                             summ.values('label', 'label_id'),
                                             summ.values('series', 'series_id'),
