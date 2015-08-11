@@ -12,6 +12,7 @@ import urllib.parse as _up
 import fileinput as _fileinput
 import pickle as _pickle
 import webbrowser as _webbrowser
+import unicodedata as _unicodedata
 # import tkinter
 from operator import itemgetter as _itemgetter
 from multiprocessing import Process as _Process
@@ -316,6 +317,7 @@ OMNI_PREFIX = (
     'bf249',          # BeFreeの総集編作品
     'bf315',          # BeFreeの総集編作品
     'bf374',          # BeFreeの総集編作品
+    'bf375',          # BeFreeの総集編作品
     'bf392',          # BeFreeの総集編作品
     'bnsps382',       # ながえSTYLEの総集編作品
     'emaf324',        # フォーディメンション（エマニエル）の総集編か再利用作品
@@ -776,6 +778,11 @@ class __OpenUrl:
 open_url = __OpenUrl()
 
 
+def norm_uc(string):
+    '''unicode正規化'''
+    return _unicodedata.normalize('NFKC', string)
+
+
 def check_omitword(title):
     '''タイトル内の除外キーワードチェック'''
     for key in OMITWORDS:
@@ -792,7 +799,7 @@ def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
 
 p_omnivals = (
     _re.compile(r'(?:[2-9]\d|\d{3,})(?:人[^目]?|名)'),
-    _re.compile(r'(?:[二弐][一二三四五六七八九十〇弐参拾百]+|[三四五六七八九][一二三四五六七八九十〇壱弐参拾百]+|[一二三四五六七八九壱弐参拾百][一二三四五六七八九十〇壱弐参拾百]{2,})(?:人[^目]?|名)'),
+    _re.compile(r'(?:[二弐][一二三四五六七八九十〇壱弐参拾百]+|[三四五六七八九参][一二三四五六七八九十〇壱弐参拾百]+|[一二三四五六七八九壱弐参百][一二三四五六七八九十〇壱弐参拾百]{2,})(?:人[^目]?|名)'),
     _re.compile(r'(?:[5-9]\d|\d{3,})連?発'),
     _re.compile(r'(?:[五六七八九][一二三四五六七八九十〇壱弐参拾百]+|[一二三四五六七八九百][一二三四五六七八九十〇]{2,})連?発'),
     _re.compile(r'(?:1[5-9]|[2-9]\d|\d{3,})本番'),
@@ -804,6 +811,7 @@ p_omnivals = (
 
 def check_omnivals(title):
     '''隠れ総集編チェック(関連数値編)'''
+    title = norm_uc(title)
     def pick():
         for p in p_omnivals:
             m = p.findall(title)

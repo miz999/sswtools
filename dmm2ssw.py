@@ -330,7 +330,6 @@ import sys as _sys
 import re as _re
 import argparse as _argparse
 import urllib.parse as _up
-import unicodedata as _unicodedata
 from itertools import chain as _chain
 from copy import deepcopy as _deepcopy
 from collections import namedtuple as _namedtuple
@@ -417,12 +416,14 @@ OMIT_SERIES = {
     '209360': '○○ism',
     '209413': 'アウトレットDVD5枚組 1980',
     '209887': '奥さんの体がエロいから犯されるんです！！！',
+    '210101': '○時間SPECIAL',
     '210208': 'ママ友！増刊号 ヤリ友の輪',
     '210925': '淫乱すぎる若妻48人の連続ドスケベSEX',
     '210926': 'どすけべ妻のいやらしいフェラチオ',
     '211184': 'The○○ 美熟女スペシャル',
     '211414': '母乳厳選集',
     '213087': 'おませなJKの制服でオクチえっち！',
+    '213109': '夫の前で犯される人妻',
     '213295': '麗しき若妻',
     '213420': 'キレイなお姉さんのパンモロ○○コレクション',
     '213604': 'ヌキサシバッチリ！！厳選センズリ専用ディルド＆指入れオナニー素材集',
@@ -647,7 +648,7 @@ def _normalize(string):
     '''
     タイトルから【.+?】と非unicode単語文字を除いて正規化
     '''
-    string = _unicodedata.normalize('NFKC', string).replace(' ', '').lower()
+    string = _libssw.norm_uc(string).replace(' ', '').lower()
     string = _libssw.sub(sp_ltbracket_h, string)
     string = _libssw.sub(sp_ltbracket_t, string)
     string = _libssw.sub(sp_nowrdchr, string)
