@@ -1809,7 +1809,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
 
     if args.actress and args.actress[0].startswith('@@'):
         # ウィキテキストで直接指定
-        rawpfmrs = args.actress[0].lstrip('@@')
+        rawpfmrs = args.actress[0][2:]
     else:
         rawpfmrs = ''
 
