@@ -91,238 +91,239 @@ OMITTYPE = ('イメージビデオ', '総集編', 'アウトレット', '限定�
 # 総集編・再収録専門そうなやつ
 # 品番プレフィクス(URL上のもの)
 OMNI_PREFIX = (
-    '118bst',        # プレステージの総集編
-    '118dcm',        # プレステージの総集編
-    '118dcx',        # プレステージの総集編
-    '118ful',        # プレステージの総集編
-    '118kmx',        # プレステージの総集編
-    '118mzq',        # プレステージの総集編
-    '118pet',        # プレステージの総集編
-    '118ppb',        # プレステージの総集編
-    '118ppt',        # プレステージの総集編
-    '118pre',        # プレステージの総集編
-    '118spa',        # プレステージの総集編
-    '118spp',        # プレステージの総集編
-    '118tgbe',       # プレステージの総集編
-    '118tre',        # プレステージの総集編
-    '118zesp',       # プレステージの総集編
-    '13box',         # グローリークエストの総集編
-    '13gqe',         # グローリークエストの総集編
-    '13qq',          # グローリークエストの総集編
-    '13rvg',         # グローリークエストの総集編
-    '13sqv',         # グローリークエストの総集編
-    '13ysr',         # グローリークエストの総集編
-    '143umd',        # グローバルメディアエンタテインメントの総集編
-    '15ald',         # 桃太郎映像出版の総集編
-    '15mofd',        # 桃太郎映像出版の総集編
-    '164sbdd',       # サイドビーの総集編レーベル クスコ
-    '164sbhe',       # サイドビーの総集編レーベル HEROINE
-    '17dbr',         # ルビーの総集編シリーズ
-    '17hrd',         # ルビーの総集編
-    '17kmk',         # ルビーの総集編シリーズ
-    '187jame',       # スタイルアートjam/妄想族の総集編
-    '187slba',       # スタイルアートLOVE BETES/妄想族の総集編
-    '18alsp',        # タカラ映像の総集編
-    '18mbox',        # タカラ映像の総集編
-    '18mght',        # タカラ映像の総集編
-    '1svomn',        # サディスティックビレッジの総集編
-    '21issd',        # アウダースジャパンの総集編
-    '21pssd',        # アウダースジャパンの総集編
-    '23aukb',        # U＆Kの総集編
-    '23uksp',        # U＆Kの総集編
-    '24hfd',         # ドリームチケットの総集編
-    '28drn',         # DRAGON（ハヤブサ） 総集編専門レーベル
-    '28gen',         # GIGA TON 総集編専門レーベル
-    '28wed',         # EIGHT MAN 総集編専門レーベル
-    '29cxaz',        # ジャネス/ladiesの総集編
-    '29cwaz',        # ジャネス/ladiesの総集編
-    '29djsh',        # ジャネスの総集編
-    '29djsj',        # ジャネスの総集編
-    '29hwaz',        # ジャネスの総集編
-    '2apao',         # オーロラプロジェクト・アネックスの総集編 (レンタル)
-    '2bdclb',        # ワープエンタテインメントの総集編
-    '2bom',          # BoinBB/ABCの総集編 (レンタル)
-    '2box',          # ワープエンタテインメントの総集編
-    '2clb',          # ワープエンタテインメントの総集編
-    '2koze',         # ローグ・プラネット（フェチ）/妄想族の総集編 (レンタル)
-    '2ptko',         # パツキン/ABCの総集編 (レンタル)
-    '2slba',         # スタイルアート/妄想族の総集編 (レンタル)
-    '2spbox',        # ワープエンタテインメントの総集編
-    '2swac',         # 湘南/妄想族の総集編 (レンタル)
-    '2tomn',         # TEPPANの総集編 (レンタル)
-    '2wpw',          # ワープエンタテインメントの総集編
-    '2wsp',          # ワープエンタテインメントの総集編
-    '2ycc',          # ワープエンタテインメントの総集編
-    '30dmbk',        # MAZO BOYS CLUB (未来フューチャー) の総集編
-    '30dsmo',        # BS (未来フューチャー) の総集編
-    '33awtb',        # AVS collector’sの総集編
-    '33avsb',        # AVS collector’sの総集編
-    '33avsw',        # AVS collector’sの総集編
-    '33nopc',        # AVS collector’sの総集編
-    '33acec',        # AVS collector’sの総集編
-    '33dphb',        # AVS collector’sの総集編
-    '33dphc',        # AVS collector’sの総集編
-    '33dpnw',        # AVS collector’sの総集編
-    '33dsfb',        # AVS collector’sの総集編
-    '33exbs',        # AVS collector’sの総集編
-    '33igub',        # AVS collector’sの総集編
-    '33ncgb',        # AVS collector’sの総集編
-    '33plzb',        # AVS collector’sの総集編
-    '33zosb',        # AVS collector’sの総集編
-    '3bmw',          # ワンズファクトリーの総集編
-    '3mmb',          # 桃太郎ベスト (レンタル)
-    '3naw',          # ワンズファクトリーの総集編
-    '3swf',          # ワンズファクトリーの総集編
-    '3veq',          # VENUSの総集編 (レンタル)
-    '434dfda',       # デジタルアークの総集編
-    '434dgtl',       # デジタルアークの総集編
-    '434gkdfda',     # デジタルアークの総集編
-    '434kcda',       # デジタルアークの総集編
-    '49cadv',        # クリスタル映像の総集編
-    '4atk',          # Attackers BEST 総集編専門レーベル (レンタル)
-    '4idb',          # アイポケの総集編 (レンタル)
-    '4jus',          # マドンナ/Madonnaの総集編 (レンタル)
-    '4kib',          # kira☆kiraの総集編 (レンタル)
-    '4kwb',          # kawaiiの総集編 (レンタル)
-    '4hndb',         # 本中の総集編 (レンタル)
-    '4mby',          # 溜池ゴローの総集編 (レンタル)
-    '4mib',          # ムーディーズの総集編 (レンタル)
-    '4mitb',         # 蜜月の総集編 (レンタル)
-    '4mvb',          # エムズビデオグループの総集編 (レンタル)
-    '4obe',          # マドンナ/Obasanの総集編 (レンタル)
-    '4ons',          # S1の総集編 (レンタル)
-    '4pbd',          # プレミアムの総集編 (レンタル)
-    '4ppb',          # OPPAIの総集編 (レンタル)
-    '4tmbt',         # teamZEROの総集編 (レンタル)
-    '4tywd',         # 乱丸の総集編 (レンタル)
-    '4vvv',          # ヴィの総集編 (レンタル)
-    '51cma',         # シネマジックの総集編
-    '55boya',        # BO-YA TMAの総集編レーベル
-    '55hsrm',        # SCREAM 総集編専門レーベル
-    '55id',          # TMAの総集編
-    '5atk',          # Attackers BEST 総集編専門レーベル (レンタル)
-    '5cra',          # クロスの総集編 (レンタル)
-    '5krb',          # カルマ/BEST 総集編専門レーベル (レンタル)
-    '5mkck',         # E-BODYの総集編 (レンタル)
-    '83sbb',         # マルクス兄弟の総集編
-    '83scf',         # マルクス兄弟の総集編
-    '84bdhyaku',     # 100人 KMPの総集編レーベル
-    '84hyaku',       # 100人 KMPの総集編レーベル
-    '84hyas',        # 100人 KMPの総集編レーベル
-    '9onsd',         # S1の総集編(BD)
-    'abcb',          # ABC/妄想族の総集編
-    'anhd',          # アンナと花子の総集編
-    'atkd',          # Attackers BEST 総集編専門レーベル
-    'apao',          # オーロラプロジェクト・アネックスの総集編
-    'avsw',          # AVS collector’s の総集編
-    'bcdp',          # 総集編メーカー BACK DROP
-    'bijc',          # 美人魔女の総集編
-    'bomn',          # BoinBB/ABCの総集編
-    'bmw',           # ワンズファクトリーの総集編
-    'cnz',           # キャンディの総集編
-    'corb',          # たぶんCOREの総集編
-    'crad',          # クロスの総集編
-    'crmn',          # 痴ロモン/妄想族 総集編レーベル
-    'daid',          # ダイナマイトエンタープライズの総集編
-    'dazd',          # ダスッ！の総集編
-    'dgtl',          # デジタルアークの総中編
-    'emac',          # DX（エマニエル）の総集編
-    'fabs',          # FAプロの総集編
-    'h_066fabr',     # FAプロの総集編 (レンタル)
-    'h_066fabs',     # FAプロの総集編
-    'h_066rabs',     # FAプロ 竜二ベスト
-    'h_068mxsps',    # マキシングの総集編
-    'h_086abba',     # センタービレッジの総集編
-    'h_086cbox',     # センタービレッジの総集編
-    'h_086cvdx',     # センタービレッジの総集編
-    'h_086euudx',    # センタービレッジの総集編
-    'h_086ferax',    # センタービレッジの総集編
-    'h_086gomu',     # センタービレッジの総集編
-    'h_086hhedx',    # センタービレッジの総集編
-    'h_086hthdx',    # センタービレッジの総集編
-    'h_086honex',    # センタービレッジの総集編
-    'h_086iannx',    # センタービレッジの総集編
-    'h_086jrzdx',    # センタービレッジの総集編
-    'h_086oita',     # センタービレッジの総集編
-    'h_086qizzx',    # センタービレッジの総集編
-    'h_108mobsp',    # モブスターズの総集編
-    'h_127ytr',      # NONの総集編
-    'h_175dbeb',     # BabyEntertainmentの総集編
-    'h_175dxdb',     # BabyEntertainmentの総集編
-    'h_179dmdv',     # ゲインコーポレーションの総集編
-    'h_213agemix',   # SEX Agentの総集編 (レンタル)
-    'h_213ageom',    # SEX Agentの総集編
-    'h_237swat',     # シリーズ ○○三昧 プラネットプラスの総集編シリーズ
-    'h_254kanz',     # 完全盤 STAR PARADISEの総集編レーベル
-    'h_254mgdn',     # MEGADON STAR PARADISEの総集編レーベル
-    'h_254wnxg',     # VOLUME STAR PARADISEの総集編レーベル
-    'h_443hpr',      # 催眠研究所の総集編シリーズ
-    'h_479gah',      # GO AHEAD 総集編レーベル (GALLOP)
-    'h_479gfs',      # SPECIAL GIFT 総集編レーベル (GALLOP)
-    'h_479gft',      # GIFT 総集編レーベル (GALLOP)
-    'h_479gfx',      # GIFT DX 総集編レーベル (GALLOP)
-    'h_479gne',      # NEO GIFT 総集編レーベル (GALLOP)
-    'h_537odfg',     # ワンダフルの総集編
-    'h_540exta',     # エクストラ 総集編専門レーベル
-    'h_543rlod',     # 乱熟 総集編メーカー
-    'h_543rloh',     # 乱熟 総集編メーカー
-    'h_543rloj',     # 乱熟 総集編メーカー
-    'h_543rlok',     # 乱熟 総集編メーカー
-    'h_543rloi',     # 乱熟 総集編メーカー
-    'h_544yuyg',     # ケンシロウプロジェクトの総集編
-    'h_797impa',     # impact（サンワソフト）の総集編
-    'h_838chao',     # CHAOS（Pandora）総集編レーベル (Pandra)
-    'h_865jkn',      # 総集編シリーズ 完熟肉汁つゆだく交尾集
-    'hjbb',          # はじめ企画の総集編
-    'hndb',          # 本中の総集編
-    'hoob',          # AVS collector’sの総集編
-    'idbd',          # アイポケの総集編
-    'jfb',           # Fitchの総集編
-    'jomn',          # ABC/妄想族の総集編
-    'jusd',          # マドンナ/Madonnaの総集編
-    'kibd',          # kira☆kiraの総集編
-    'koze',          # ローグ・プラネット（フェチ）/妄想族の総集編
-    'krbv',          # カルマ/BEST 総集編専門レーベル
-    'kwbd',          # kawaiiの総集編
-    'mbyd',          # 溜池ゴローの総集編
-    'mibd',          # ムーディーズの総集編
-    'mitb',          # 蜜月の総集編
-    'mkck',          # E-BODYの総集編
-    'mmb',           # 桃太郎ベスト
-    'mvbd',          # エムズビデオグループの総集編
-    'n_1155dslb',    # グラッソの復刻版(?)
-    'obe',           # マドンナ/Obasanの総集編
-    'onsd',          # S1の総集編
-    'oomn',          # お母さん.com/ABCの総集編
-    'rbb',           # ROOKIEの総集編
-    'pbd',           # プレミアムの総集編
-    'ppbd',          # OPPAIの総集編
-    'ptko',          # パツキン/ABCの総集編
-    'rabs',          # FAプロ 竜二ベスト
-    'slba',          # スタイルアート/妄想族の総集編
-    'stol',          # 変態紳士倶楽部の総集編
-    'swac',          # 湘南/妄想族の総集編
-    'tmbt',          # teamZEROの総集編
-    'tomn',          # TEPPANの総集編
-    'tywd',          # 乱丸の総集編
-    'veq',           # VENUSの総集編
-    'vero',          # VENUSの総集編
-    'veve',          # VENUSの総集編
-    'vvvd',          # ヴィの総集編
+    '118bst',         # プレステージの総集編
+    '118dcm',         # プレステージの総集編
+    '118dcx',         # プレステージの総集編
+    '118ful',         # プレステージの総集編
+    '118kmx',         # プレステージの総集編
+    '118mzq',         # プレステージの総集編
+    '118pet',         # プレステージの総集編
+    '118ppb',         # プレステージの総集編
+    '118ppt',         # プレステージの総集編
+    '118pre',         # プレステージの総集編
+    '118spa',         # プレステージの総集編
+    '118spp',         # プレステージの総集編
+    '118tgbe',        # プレステージの総集編
+    '118tre',         # プレステージの総集編
+    '118zesp',        # プレステージの総集編
+    '13box',          # グローリークエストの総集編
+    '13gqe',          # グローリークエストの総集編
+    '13qq',           # グローリークエストの総集編
+    '13rvg',          # グローリークエストの総集編
+    '13sqv',          # グローリークエストの総集編
+    '13ysr',          # グローリークエストの総集編
+    '143umd',         # グローバルメディアエンタテインメントの総集編
+    '15ald',          # 桃太郎映像出版の総集編
+    '15mofd',         # 桃太郎映像出版の総集編
+    '164sbdd',        # サイドビーの総集編レーベル クスコ
+    '164sbhe',        # サイドビーの総集編レーベル HEROINE
+    '17dbr',          # ルビーの総集編シリーズ
+    '17hrd',          # ルビーの総集編
+    '17kmk',          # ルビーの総集編シリーズ
+    '187jame',        # スタイルアートjam/妄想族の総集編
+    '187slba',        # スタイルアートLOVE BETES/妄想族の総集編
+    '18alsp',         # タカラ映像の総集編
+    '18mbox',         # タカラ映像の総集編
+    '18mght',         # タカラ映像の総集編
+    '1svomn',         # サディスティックビレッジの総集編
+    '21issd',         # アウダースジャパンの総集編
+    '21pssd',         # アウダースジャパンの総集編
+    '23aukb',         # U＆Kの総集編
+    '23uksp',         # U＆Kの総集編
+    '24hfd',          # ドリームチケットの総集編
+    '28drn',          # DRAGON（ハヤブサ） 総集編専門レーベル
+    '28gen',          # GIGA TON 総集編専門レーベル
+    '28wed',          # EIGHT MAN 総集編専門レーベル
+    '29cxaz',         # ジャネス/ladiesの総集編
+    '29cwaz',         # ジャネス/ladiesの総集編
+    '29djsh',         # ジャネスの総集編
+    '29djsj',         # ジャネスの総集編
+    '29hwaz',         # ジャネスの総集編
+    '2apao',          # オーロラプロジェクト・アネックスの総集編 (レンタル)
+    '2bdclb',         # ワープエンタテインメントの総集編
+    '2bom',           # BoinBB/ABCの総集編 (レンタル)
+    '2box',           # ワープエンタテインメントの総集編
+    '2clb',           # ワープエンタテインメントの総集編
+    '2koze',          # ローグ・プラネット（フェチ）/妄想族の総集編 (レンタル)
+    '2ptko',          # パツキン/ABCの総集編 (レンタル)
+    '2slba',          # スタイルアート/妄想族の総集編 (レンタル)
+    '2spbox',         # ワープエンタテインメントの総集編
+    '2swac',          # 湘南/妄想族の総集編 (レンタル)
+    '2tomn',          # TEPPANの総集編 (レンタル)
+    '2wpw',           # ワープエンタテインメントの総集編
+    '2wsp',           # ワープエンタテインメントの総集編
+    '2ycc',           # ワープエンタテインメントの総集編
+    '30dmbk',         # MAZO BOYS CLUB (未来フューチャー) の総集編
+    '30dsmo',         # BS (未来フューチャー) の総集編
+    '33awtb',         # AVS collector’sの総集編
+    '33avsb',         # AVS collector’sの総集編
+    '33avsw',         # AVS collector’sの総集編
+    '33nopc',         # AVS collector’sの総集編
+    '33acec',         # AVS collector’sの総集編
+    '33dphb',         # AVS collector’sの総集編
+    '33dphc',         # AVS collector’sの総集編
+    '33dpnw',         # AVS collector’sの総集編
+    '33dsfb',         # AVS collector’sの総集編
+    '33exbs',         # AVS collector’sの総集編
+    '33igub',         # AVS collector’sの総集編
+    '33ncgb',         # AVS collector’sの総集編
+    '33plzb',         # AVS collector’sの総集編
+    '33zosb',         # AVS collector’sの総集編
+    '3bmw',           # ワンズファクトリーの総集編
+    '3mmb',           # 桃太郎ベスト (レンタル)
+    '3naw',           # ワンズファクトリーの総集編
+    '3swf',           # ワンズファクトリーの総集編
+    '3veq',           # VENUSの総集編 (レンタル)
+    '434dfda',        # デジタルアークの総集編
+    '434dgtl',        # デジタルアークの総集編
+    '434gkdfda',      # デジタルアークの総集編
+    '434kcda',        # デジタルアークの総集編
+    '49cadv',         # クリスタル映像の総集編
+    '4atk',           # Attackers BEST 総集編専門レーベル (レンタル)
+    '4idb',           # アイポケの総集編 (レンタル)
+    '4jus',           # マドンナ/Madonnaの総集編 (レンタル)
+    '4kib',           # kira☆kiraの総集編 (レンタル)
+    '4kwb',           # kawaiiの総集編 (レンタル)
+    '4hndb',          # 本中の総集編 (レンタル)
+    '4mby',           # 溜池ゴローの総集編 (レンタル)
+    '4mib',           # ムーディーズの総集編 (レンタル)
+    '4mitb',          # 蜜月の総集編 (レンタル)
+    '4mkck',          # E-BODYの総集編 (レンタル)
+    '4mvb',           # エムズビデオグループの総集編 (レンタル)
+    '4obe',           # マドンナ/Obasanの総集編 (レンタル)
+    '4ons',           # S1の総集編 (レンタル)
+    '4pbd',           # プレミアムの総集編 (レンタル)
+    '4ppb',           # OPPAIの総集編 (レンタル)
+    '4tmbt',          # teamZEROの総集編 (レンタル)
+    '4tywd',          # 乱丸の総集編 (レンタル)
+    '4vvv',           # ヴィの総集編 (レンタル)
+    '51cma',          # シネマジックの総集編
+    '55boya',         # BO-YA TMAの総集編レーベル
+    '55hsrm',         # SCREAM 総集編専門レーベル
+    '55id',           # TMAの総集編
+    '5atk',           # Attackers BEST 総集編専門レーベル (レンタル)
+    '5cra',           # クロスの総集編 (レンタル)
+    '5krb',           # カルマ/BEST 総集編専門レーベル (レンタル)
+    '5mkck',          # E-BODYの総集編 (レンタル)
+    '83sbb',          # マルクス兄弟の総集編
+    '83scf',          # マルクス兄弟の総集編
+    '84bdhyaku',      # 100人 KMPの総集編レーベル
+    '84hyaku',        # 100人 KMPの総集編レーベル
+    '84hyas',         # 100人 KMPの総集編レーベル
+    '9onsd',          # S1の総集編(BD)
+    'abcb',           # ABC/妄想族の総集編
+    'anhd',           # アンナと花子の総集編
+    'atkd',           # Attackers BEST 総集編専門レーベル
+    'apao',           # オーロラプロジェクト・アネックスの総集編
+    'avsw',           # AVS collector’s の総集編
+    'bcdp',           # 総集編メーカー BACK DROP
+    'bijc',           # 美人魔女の総集編
+    'bomn',           # BoinBB/ABCの総集編
+    'bmw',            # ワンズファクトリーの総集編
+    'cnz',            # キャンディの総集編
+    'corb',           # たぶんCOREの総集編
+    'crad',           # クロスの総集編
+    'crmn',           # 痴ロモン/妄想族 総集編レーベル
+    'daid',           # ダイナマイトエンタープライズの総集編
+    'dazd',           # ダスッ！の総集編
+    'dgtl',           # デジタルアークの総中編
+    'emac',           # DX（エマニエル）の総集編
+    'fabs',           # FAプロの総集編
+    'h_066fabr',      # FAプロの総集編 (レンタル)
+    'h_066fabs',      # FAプロの総集編
+    'h_066rabs',      # FAプロ 竜二ベスト
+    'h_068mxsps',     # マキシングの総集編
+    'h_086abba',      # センタービレッジの総集編
+    'h_086cbox',      # センタービレッジの総集編
+    'h_086cvdx',      # センタービレッジの総集編
+    'h_086euudx',     # センタービレッジの総集編
+    'h_086ferax',     # センタービレッジの総集編
+    'h_086gomu',      # センタービレッジの総集編
+    'h_086hhedx',     # センタービレッジの総集編
+    'h_086hthdx',     # センタービレッジの総集編
+    'h_086honex',     # センタービレッジの総集編
+    'h_086iannx',     # センタービレッジの総集編
+    'h_086jrzdx',     # センタービレッジの総集編
+    'h_086oita',      # センタービレッジの総集編
+    'h_086qizzx',     # センタービレッジの総集編
+    'h_108mobsp',     # モブスターズの総集編
+    'h_127ytr',       # NONの総集編
+    'h_175dbeb',      # BabyEntertainmentの総集編
+    'h_175dxdb',      # BabyEntertainmentの総集編
+    'h_179dmdv',      # ゲインコーポレーションの総集編
+    'h_213agemix',    # SEX Agentの総集編 (レンタル)
+    'h_213ageom',     # SEX Agentの総集編
+    'h_237swat',      # シリーズ ○○三昧 プラネットプラスの総集編シリーズ
+    'h_254kanz',      # 完全盤 STAR PARADISEの総集編レーベル
+    'h_254mgdn',      # MEGADON STAR PARADISEの総集編レーベル
+    'h_254wnxg',      # VOLUME STAR PARADISEの総集編レーベル
+    'h_443hpr',       # 催眠研究所の総集編シリーズ
+    'h_479gah',       # GO AHEAD 総集編レーベル (GALLOP)
+    'h_479gfs',       # SPECIAL GIFT 総集編レーベル (GALLOP)
+    'h_479gft',       # GIFT 総集編レーベル (GALLOP)
+    'h_479gfx',       # GIFT DX 総集編レーベル (GALLOP)
+    'h_479gne',       # NEO GIFT 総集編レーベル (GALLOP)
+    'h_537odfg',      # ワンダフルの総集編
+    'h_540exta',      # エクストラ 総集編専門レーベル
+    'h_543rlod',      # 乱熟 総集編メーカー
+    'h_543rloh',      # 乱熟 総集編メーカー
+    'h_543rloj',      # 乱熟 総集編メーカー
+    'h_543rlok',      # 乱熟 総集編メーカー
+    'h_543rloi',      # 乱熟 総集編メーカー
+    'h_544yuyg',      # ケンシロウプロジェクトの総集編
+    'h_797impa',      # impact（サンワソフト）の総集編
+    'h_838chao',      # CHAOS（Pandora）総集編レーベル (Pandra)
+    'h_865jkn',       # 総集編シリーズ 完熟肉汁つゆだく交尾集
+    'hjbb',           # はじめ企画の総集編
+    'hndb',           # 本中の総集編
+    'hoob',           # AVS collector’sの総集編
+    'idbd',           # アイポケの総集編
+    'jfb',            # Fitchの総集編
+    'jomn',           # ABC/妄想族の総集編
+    'jusd',           # マドンナ/Madonnaの総集編
+    'kibd',           # kira☆kiraの総集編
+    'koze',           # ローグ・プラネット（フェチ）/妄想族の総集編
+    'krbv',           # カルマ/BEST 総集編専門レーベル
+    'kwbd',           # kawaiiの総集編
+    'mbyd',           # 溜池ゴローの総集編
+    'mibd',           # ムーディーズの総集編
+    'mitb',           # 蜜月の総集編
+    'mkck',           # E-BODYの総集編
+    'mmb',            # 桃太郎ベスト
+    'mvbd',           # エムズビデオグループの総集編
+    'n_1155dslb',     # グラッソの復刻版(?)
+    'obe',            # マドンナ/Obasanの総集編
+    'onsd',           # S1の総集編
+    'oomn',           # お母さん.com/ABCの総集編
+    'rbb',            # ROOKIEの総集編
+    'pbd',            # プレミアムの総集編
+    'ppbd',           # OPPAIの総集編
+    'ptko',           # パツキン/ABCの総集編
+    'rabs',           # FAプロ 竜二ベスト
+    'slba',           # スタイルアート/妄想族の総集編
+    'stol',           # 変態紳士倶楽部の総集編
+    'swac',           # 湘南/妄想族の総集編
+    'tmbt',           # teamZEROの総集編
+    'tomn',           # TEPPANの総集編
+    'tywd',           # 乱丸の総集編
+    'veq',            # VENUSの総集編
+    'vero',           # VENUSの総集編
+    'veve',           # VENUSの総集編
+    'vvvd',           # ヴィの総集編
 
-    '15awad12',      # 桃太郎映像出版の総集編作品
-    '15send167',     # 桃太郎映像出版の総集編作品
-    'bf249',         # BeFreeの総集編作品
-    'bf315',         # BeFreeの総集編作品
-    'bf392',         # BeFreeの総集編作品
-    'bnsps382',      # ながえSTYLEの総集編作品
-    'emaf324',       # フォーディメンション（エマニエル）の総集編か再利用作品
-    'h_254vnds3141', # ネクストイレブンの総集編作品
-    'h_606ylw4303',  # Yellow Moon (Mellow Moon) の総集編作品
-    'h_606ylw4308',  # Yellow Moon (Mellow Moon) の総集編作品
-    'h_746ssr051',   # SOSORUの総集編作品
-    'h_970kagh023',  # かぐや姫（メロウムーン）の総集編作品
-    'h_970kagh015',  # かぐや姫（メロウムーン）の総集編作品
+    '15awad12',       # 桃太郎映像出版の総集編作品
+    '15send167',      # 桃太郎映像出版の総集編作品
+    'bf249',          # BeFreeの総集編作品
+    'bf315',          # BeFreeの総集編作品
+    'bf392',          # BeFreeの総集編作品
+    'bnsps382',       # ながえSTYLEの総集編作品
+    'emaf324',        # フォーディメンション（エマニエル）の総集編か再利用作品
+    'h_254vnds3141',  # ネクストイレブンの総集編作品
+    'h_606ylw4303',   # Yellow Moon (Mellow Moon) の総集編作品
+    'h_606ylw4308',   # Yellow Moon (Mellow Moon) の総集編作品
+    'h_746ssr051',    # SOSORUの総集編作品
+    'h_970kagh023',   # かぐや姫（メロウムーン）の総集編作品
+    'h_970kagh015',   # かぐや姫（メロウムーン）の総集編作品
 )
 # 品番正規表現
 OMNI_PATTERN = (
@@ -648,8 +649,11 @@ def inprogress(msg):
         print('{}  '.format(msg), end='\r', file=_sys.stderr, flush=True)
 
 
-def gen_no_omits(no_omit):
-    return OMITTYPE[:no_omit]
+def gen_no_omits(*no_omit):
+    if len(no_omit) == 1:
+        return OMITTYPE[:no_omit[0]]
+    else:
+        return tuple(OMITTYPE[i] for i in no_omit)
 
 
 def le80bytes(string, encoding='euc_jisx0213'):
@@ -785,10 +789,14 @@ def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
         any(p.search(cid) for p in patn)
 
 
-p_omnivals = (_re.compile(r'(?:[2-9]\d|\d{3,})[人名]'),
+p_omnivals = (_re.compile(r'(?:[2-9]\d|\d{3,})(?:人[^目]?|名)'),
+              _re.compile(r'(?:[二弐][一二三四五六七八九十〇弐参拾百]+|[三四五六七八九][一二三四五六七八九十〇壱弐参拾百]+|[一二三四五六七八九壱弐参拾百][一二三四五六七八九十〇壱弐参拾百]{2,})(?:人[^目]?|名)'),
               _re.compile(r'(?:[5-9]\d|\d{3,})連?発'),
+              _re.compile(r'(?:[五六七八九][一二三四五六七八九十〇壱弐参拾百]+|[一二三四五六七八九百][一二三四五六七八九十〇]{2,})連?発'),
               _re.compile(r'(?:[4-9]|\d{2,})時間'),
-              _re.compile(r'(?:2[4-9]\d|[3-9]\d{2}|\d{4,})分'))
+              _re.compile(r'(?:[四五六七八九十][一二三四五六七八九十〇壱弐参拾百]*|[一二三四五六七八九十壱弐参拾百][一二三四五六七八九十〇壱弐参拾百]+)時間'),
+              _re.compile(r'(?:2[4-9]\d|[3-9]\d{2}|\d{4,})分'),
+              _re.compile(r'(?:[二弐][四五六七八九百][一二三四五六七八九十〇壱弐参]+|[三四五六七八九参][一二三四五六七八九十〇壱弐参拾百]{2}|[一二三四五六七八九十〇壱弐参拾百]{4,})分'))
 
 def check_omnivals(title):
     '''隠れ総集編チェック(関連数値編)'''
