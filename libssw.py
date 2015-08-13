@@ -858,13 +858,13 @@ def check_omit(title, cid, omit_suss=None, no_omits=()):
 
         # 総集編容疑メーカー
         if omit_suss:
-            hh, mmm = libssw.is_omnirookie(cid, title)
+            hh, mmm = is_omnirookie(cid, title)
             if hh or mmm:
                 return '総集編', omit_suss
 
     if 'イメージビデオ' not in no_omits:
         # 隠れIVチェック
-        if check_omitprfx(cid, _libssw.IV_PREFIX):
+        if check_omitprfx(cid, IV_PREFIX):
             return 'イメージビデオ', cid
 
 
