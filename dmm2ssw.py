@@ -388,14 +388,20 @@ OMITGENRE = {'6014': 'イメージビデオ',
 # メーカー
 OMIT_MAKER = {'6500': 'BACK DROP', }
 #             '45810': 'エクストラ'}
-OMIT_MAKER_SUSS = {'5665': 'ROOKIE', }
+OMIT_MAKER_SUSS = {
+    '5665': 'ROOKIE',
+    '6413': 'フォーディメンション/エマニエル',
+    '45216': 'なでしこ',
+    '45532': 'スターゲート',
+    '45883': 'Mellow Moon（メロウムーン）'}
 
-# レーベル
+# 総集編・再収録専門レーベル
 OMIT_LABEL = {'6010':  'ALL IN☆ ONE',
               '9164':  'オーロラプロジェクト・EX',
               '21231': 'DRAGON（ハヤブサ）',
-              '24230': '美少女（プレステージ）'}
-# シリーズ
+              '24230': '美少女（プレステージ）',
+              '25025': 'コリーダ'}
+# 総集編・再収録専門シリーズ
 OMIT_SERIES = {
     '2935':   'BEST（作品集）',
     '8750':   '微乳貧乳',
@@ -814,13 +820,12 @@ class __TrySMM:
     返り値:
     女優情報があった場合はその人名のリスト、なければ空のタプル
     '''
-    # 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 (2015-07-17現在)
-    _allhiraganas = ('あいら', 'あさみ', 'ありさ', 'くるみ', 'ここあ', 'さな',
-                     'さやか', 'しずく', 'すみれ', 'つくし', 'つばさ',
-                     'つぼみ', 'なおみ', 'なごみ', 'なつみ', 'ひなぎく',
-                     'まいら', 'まなか', 'まりか', 'みはる', 'みひろ',
-                     'めぐり', 'ももか', 'ゆいの', 'ゆう', 'ゆうみ',
-                     'ゆうゆう', 'りん', 'りんか', 'れんか')
+    # 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 (2015-08-13現在)
+    _allhiraganas = ('ありさ', 'くるみ', 'ここあ', 'さな', 'さやか', 'しずく',
+                     'すみれ', 'つくし', 'つばさ', 'つぼみ', 'なごみ',
+                     'ひなぎく', 'まなか', 'まりか', 'みはる', 'めぐり',
+                     'ももか', 'ゆいの', 'ゆうみ', 'ゆうゆう', 'りんか',
+                     'れんか')
 
     def __init__(self):
         self.title_smm = ''
@@ -991,11 +996,6 @@ class DMMParser:
         title_dmm = tdmm if not _normalize(title).startswith(_normalize(tdmm)) \
                     else ''
 
-        if __name__ == '__main__' and self._deeper:
-            # 除外チェック
-            for key, word in _libssw.check_omitword(title):
-                self._mark_omitted(key, word)
-
         return title, title_dmm
 
     def _ret_props(self, prop):
@@ -1165,20 +1165,6 @@ class DMMParser:
                     self._sm['pid']):
                 raise OmitTitleException('pid filtered', self._sm['pid'])
 
-            # 隠れ総集編チェック
-            if _libssw.check_omitprfx(data, _libssw.OMNI_PREFIX):
-                self._mark_omitted('総集編', data)
-
-            # ROOKIE総集編チェック
-            if self._omit_suss:
-                hh, mmm = _libssw.is_omnirookie(data, self._sm['title'])
-                if hh or mmm:
-                    self._mark_omitted('総集編', self._omit_suss)
-
-            # 隠れIVチェック
-            if _libssw.check_omitprfx(data, _libssw.IV_PREFIX):
-                self._mark_omitted('イメージビデオ', data)
-
         # 動画用
         elif tag == '名前：':
             # 素人動画のタイトルは後でページタイトルと年齢をくっつける
@@ -1232,9 +1218,9 @@ class DMMParser:
         el = self._he.get_element_by_id('performer', ())
         len_el = len(el)
         if len_el:
-            if self._omit_suss and len_el > 3:
-                # ROOKIE出演者数チェック
-                self._mark_omitted('総集編', self._omit_suss)
+            # if self._omit_suss and len_el > 3:
+            #     # ROOKIE出演者数チェック
+            #     self._mark_omitted('総集編', self._omit_suss)
 
             if el[-1].get('href') == '#':
                 # 「▼すべて表示する」があったときのその先の解析
@@ -1405,6 +1391,18 @@ class DMMParser:
         if not self._sm['title'] or self._sm['title'].startswith('__'):
             self._sm['title'], self._sm['title_dmm'] = self._ret_title(
                 getattr(args, 'longtitle', True))
+
+        # 除外作品チェック
+        omitinfo = _libssw.check_omit(self._sm['title'],
+                                      self._sm['cid'],
+                                      self._omit_suss,
+                                      no_omits=_libssw.OMITTYPE)
+        if omitinfo:
+            self._mark_omitted(*omitinfo)
+
+        if self._omit_suss and _libssw.extr_num(self._sm['time'])[0] >= '240':
+            # 総集編容疑メーカーで4時間以上
+            self._mark_omitted('総集編', self._omit_suss)
 
         if service == 'ama':
             # 素人動画の時のタイトル/副題の再作成

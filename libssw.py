@@ -47,6 +47,9 @@ BASEURL_SMM = 'http://supermm.jp'
 BASEURL_SSW = 'http://sougouwiki.com'
 BASEURL_ACT = 'http://actress.dmm.co.jp'
 
+ACTURL_BASE = 'http://actress.dmm.co.jp'
+ACTURL = ACTURL_BASE + '/-/detail/=/actress_id={}/'
+
 SVC_URL = {'http://www.dmm.co.jp/mono/dvd/':       'dvd',
            'http://www.dmm.co.jp/rental/':         'rental',
            'http://www.dmm.co.jp/digital/videoa/': 'video',
@@ -836,6 +839,35 @@ def is_omnirookie(cid, title):
         return None, None
 
 
+def check_omit(title, cid, omit_suss=None, no_omits=()):
+    '''除外対象かどうかチェック'''
+    #除外作品チェック (タイトル内の文字列から)
+    for key, word in check_omitword(title):
+        if key not in no_omits:
+            return key, word
+
+    if '総集編' not in no_omits:
+        # 隠れ総集編チェック(タイトル内の数値から)
+        omnivals = check_omnivals(title)
+        if omnivals:
+            return '総集編', omnivals
+
+        # 隠れ総集編チェック(cidから)
+        if check_omitprfx(cid):
+            return '総集編', cid
+
+        # 総集編容疑メーカー
+        if omit_suss:
+            hh, mmm = libssw.is_omnirookie(cid, title)
+            if hh or mmm:
+                return '総集編', omit_suss
+
+    if 'イメージビデオ' not in no_omits:
+        # 隠れIVチェック
+        if check_omitprfx(cid, _libssw.IV_PREFIX):
+            return 'イメージビデオ', cid
+
+
 class DMMTitleListParser:
     '''一覧ページの解析'''
     _sp_tsuffix = (_re.compile(r' - \S*( - DMM.R18)?$'), '')
@@ -877,33 +909,11 @@ class DMMTitleListParser:
         pid, cid = gen_pid(url, self._patn_pid)
         cid = cid.lstrip('79')
 
-        # 除外作品チェック (タイトルから)
-        for key, word in check_omitword(title):
-            if key not in self._no_omits:
-                omit(key, word)
-                return False, False
-
-        if '総集編' not in self._no_omits:
-            # 隠れ総集編チェック
-            if check_omitprfx(cid, OMNI_PREFIX):
-                omit('総集編', cid)
-                return False, False
-
-            omnival = check_omnivals(title)
-            if omnival:
-                omit('総集編', omnival)
-                return False, False
-
-            hh, mmm = is_omnirookie(cid, title)
-            if hh or mmm:
-                omit('ROOKIE', hh or mmm)
-                return False, False
-
-        if 'イメージビデオ' not in self._no_omits:
-            # 隠れIVチェック
-            if check_omitprfx(cid, IV_PREFIX):
-                omit('イメージビデオ', cid)
-                return False, False
+        # 除外作品チェック
+        omitinfo = check_omit(title, cid, no_omits=self._no_omits)
+        if omitinfo:
+            omit(*omitinfo)
+            return False, False
 
         return url, Summary(url=url, title=title, pid=pid, cid=cid)
 
