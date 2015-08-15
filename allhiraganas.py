@@ -57,7 +57,9 @@ def get_args():
 
 
 def select_allhiragana(ids, today, path, selfcheck):
-    dmmparser = dmm2ssw.DMMParser(no_omits=libssw.gen_no_omits(1),
+    no_omits = libssw.gen_no_omits(0, 4)
+
+    dmmparser = dmm2ssw.DMMParser(no_omits=no_omits,
                                   deeper=False,
                                   pass_bd=True,
                                   quiet=True)
@@ -79,9 +81,7 @@ def select_allhiragana(ids, today, path, selfcheck):
         sql += 'and last_release > ?'
         ph.append(ayearago)
 
-    print('sql:', sql, ph)
-
-    no_omits = libssw.gen_no_omits(0,3)
+    print('sql:', sql, ', ph:', ph)
 
     for aid, name, last_release in cur.execute(sql, ph):
 
@@ -101,12 +101,12 @@ def select_allhiragana(ids, today, path, selfcheck):
 
         resp, he = libssw.open_url(url)
 
-        info = he.find('.//td[@class="info_works1"]')
-        if info is None:
-            print('negative')
-            continue
-
         while he is not None:
+            info = he.find('.//td[@class="info_works1"]')
+            if info is None:
+                print('negative')
+                continue
+
             for tr in info.getparent().getparent()[1:]:
                 title = tr.find('td/a').text
                 verbose('title: ', title)
@@ -132,15 +132,20 @@ def select_allhiragana(ids, today, path, selfcheck):
                     verbose('Omitted: status=', status, ', values=', values)
                     continue
 
-                lastrel = date(*(int(d) for d in tr[7].text.split('-')))
+                last_web = tr[7].text.strip()
+                if last_release != last_web:
+                    print('last_rel is different (db:{} <=> web:{}), '.format(
+                        last_release, last_web),
+                    end='')
+                datelast = date(*(int(d) for d in last_web.split('-')))
 
-                if (today - lastrel).days < 366:
+                if (today - datelast).days < 366:
 
                     yield name
-                    print('positive ({})'.format(lastrel.year))
+                    print('\033[1;33mpositive ({})\033[0m'.format(last_web))
 
                 else:
-                    print('negative ({})'.format(lastrel.year))
+                    print('negative ({})'.format(last_web))
 
                 he = None
                 break
