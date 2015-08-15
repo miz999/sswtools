@@ -76,21 +76,24 @@ OMITWORDS = {'総集編':      '総集編',
              'コンプリート': '総集編',
              '総編版':      '総集編',
 
+             'アウトレット': 'アウトレット',
+             '廉価版':      'アウトレット',
+
+             '復刻版':       '復刻盤',
+             '復刻盤':       '復刻盤',
+
              'DMM初回限定':  '限定盤',
              'DMM限定':     '限定盤',
              '数量限定':     '限定盤',
              '枚限定':       '限定盤',
-             '初回限定版':    '限定盤',
-
-             'アウトレット': 'アウトレット',
-             '廉価版':      'アウトレット'}
+             '初回限定版':    '限定盤',}
 # 【混ぜるな危険】
 #  'コレクション'
 #  '保存版'
 #  '大全集'
 #  '全集'
 
-OMITTYPE = ('イメージビデオ', '総集編', 'アウトレット', '限定盤', 'UMD')
+OMITTYPE = ('イメージビデオ', '総集編', 'アウトレット', '復刻盤', '限定盤', 'UMD')
 
 # 総集編・再収録専門そうなやつ
 # 品番プレフィクス(URL上のもの)
@@ -316,7 +319,13 @@ OMNI_PREFIX = (
     'vvvd',           # ヴィの総集編
 
     '15awad12',       # 桃太郎映像出版の総集編作品
+    '15rawa012',      # 桃太郎映像出版の総集編作品 (レンタル)
+    '15rsen167',      # 桃太郎映像出版の総集編作品 (レンタル)
     '15send167',      # 桃太郎映像出版の総集編作品
+    '4bf249',         # BeFreeの総集編作品
+    '84okax014',      # おかず。の総集編作品
+    '84rokax014r',    # おかず。の総集編作品 (レンタル)
+    '84umso013',      # UMANAMIの総集編作品
     'bf249',          # BeFreeの総集編作品
     'bf315',          # BeFreeの総集編作品
     'bf374',          # BeFreeの総集編作品
@@ -327,9 +336,12 @@ OMNI_PREFIX = (
     'h_254vnds3141',  # ネクストイレブンの総集編作品
     'h_606ylw4303',   # Yellow Moon (Mellow Moon) の総集編作品
     'h_606ylw4308',   # Yellow Moon (Mellow Moon) の総集編作品
+    'h_746rssr051r',  # SOSORUの総集編作品 (レンタル)
     'h_746ssr051',    # SOSORUの総集編作品
     'h_970kagh023',   # かぐや姫（メロウムーン）の総集編作品
+    'h_970kagh023r',  # かぐや姫（メロウムーン）の総集編作品 (レンタル)
     'h_970kagh015',   # かぐや姫（メロウムーン）の総集編作品
+    'h_970kagh015r',  # かぐや姫（メロウムーン）の総集編作品 (レンタル)
 )
 # 品番正規表現
 OMNI_PATTERN = (
@@ -839,7 +851,7 @@ def is_omnirookie(cid, title):
         return None, None
 
 
-def check_omit(title, cid, omit_suss=None, no_omits=()):
+def check_omit(title, cid, omit_suss_4h=None, no_omits=()):
     '''除外対象かどうかチェック'''
     #除外作品チェック (タイトル内の文字列から)
     for key, word in check_omitword(title):
@@ -857,10 +869,10 @@ def check_omit(title, cid, omit_suss=None, no_omits=()):
             return '総集編', cid
 
         # 総集編容疑メーカー
-        if omit_suss:
+        if omit_suss_4h:
             hh, mmm = is_omnirookie(cid, title)
             if hh or mmm:
-                return '総集編', omit_suss
+                return '総集編', omit_suss_4h + '(4時間以上)'
 
     if 'イメージビデオ' not in no_omits:
         # 隠れIVチェック
@@ -1124,7 +1136,7 @@ def ret_numofpfmrs(etc):
 
 
 def cvt2int(item):
-    return int(item) if item else 0
+    return int(extr_num(item)[0]) if item else 0
 
 
 def from_tsv(files):

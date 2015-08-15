@@ -380,27 +380,66 @@ OMITGENRE = {'6014': 'イメージビデオ',
              '7407': '総集編',       # ベスト・総集編
              '6147': 'アウトレット',
              '6175': 'アウトレット',  # '激安アウトレット'
+             '6555': '復刻',
              '4104': 'UMD',
              }
 #  '6561': '限定盤'} # 特典対象
 
 # 総集編・再収録専門なのに作品にそうジャンル付けされないやつ
 # メーカー
-OMIT_MAKER = {'6500': 'BACK DROP', }
-#             '45810': 'エクストラ'}
-OMIT_MAKER_SUSS = {
+OMIT_MAKER = {
+    '6500': 'BACK DROP',
+    '6473': 'CHANGE',}
+#   '45810': 'エクストラ'}
+# 収録時間が4時間以上は総集編だけじゃないの?なメーカー
+OMIT_SUSS_4H = {
+    '1398': 'ドグマ',
+    '3784': 'エムズビデオグループ',
+    '4809': 'ミル',
+    '4835': 'TRANS CLUB',
+    '4836': 'SHEMALE a la carte',
+    '5061': 'オーロラプロジェクト・アネックス',
+    '5534': 'ABC/妄想族',
     '5665': 'ROOKIE',
+    '5699': 'VENUS',
     '6413': 'フォーディメンション/エマニエル',
+    '6426': '赤い弾丸/エマニエル',
+    '6495': 'MANJIRO/エマニエル',
+    '6381': 'CREAM PIE',
+    '40006': 'ワンズファクトリー',
+    '40014': 'グローリークエスト',
+    '40018': 'ルビー',
+    '40025': 'ドリームチケット',
+    '40035': 'クリスタル映像',
+    '40070': 'マルクス兄弟',
+    '40074': 'ジャネス',
+    '40077': 'AVS collector’s',
+    '40082': 'ラハイナ東海',
+    '40160': 'アテナ映像',
+    '45016': 'センタービレッジ',
+    '45017': 'ドリームステージ',
+    '45059': 'デジタルアーク',
+    '45099': '光夜蝶',
+    '45195': '小林興業',
     '45216': 'なでしこ',
+    '45340': 'BabyEntertainment',
+    '45371': 'ROCKET',
+    '45450': 'STAR PARADISE',
+    '45457': 'NEXT GROUP',
+    '45486': 'プリモ',
     '45532': 'スターゲート',
     '45883': 'Mellow Moon（メロウムーン）'}
 
 # 総集編・再収録専門レーベル
-OMIT_LABEL = {'6010':  'ALL IN☆ ONE',
-              '9164':  'オーロラプロジェクト・EX',
-              '21231': 'DRAGON（ハヤブサ）',
-              '24230': '美少女（プレステージ）',
-              '25025': 'コリーダ'}
+OMIT_LABEL = {
+    '2745':  'アタッカーズ アンソロジー',
+    '6010':  'ALL IN☆ ONE',
+    '7111':  'CRYSTAL EX',
+    '9164':  'オーロラプロジェクト・EX',
+    '21231': 'DRAGON（ハヤブサ）',
+    '24078': 'REBORN',
+    '24230': '美少女（プレステージ）',
+    '25025': 'コリーダ'}
 # 総集編・再収録専門シリーズ
 OMIT_SERIES = {
     '2935':   'BEST（作品集）',
@@ -433,6 +472,7 @@ OMIT_SERIES = {
     '213295': '麗しき若妻',
     '213420': 'キレイなお姉さんのパンモロ○○コレクション',
     '213604': 'ヌキサシバッチリ！！厳選センズリ専用ディルド＆指入れオナニー素材集',
+    '213714': '1万人のAVユーザーが選んだ○○',
     '213840': '癒しのじゅるじゅぽフェラCOLLECTION',
 }
 
@@ -820,12 +860,11 @@ class __TrySMM:
     返り値:
     女優情報があった場合はその人名のリスト、なければ空のタプル
     '''
-    # 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 (2015-08-13現在)
-    _allhiraganas = ('ありさ', 'くるみ', 'ここあ', 'さな', 'さやか', 'しずく',
-                     'すみれ', 'つくし', 'つばさ', 'つぼみ', 'なごみ',
-                     'ひなぎく', 'まなか', 'まりか', 'みはる', 'めぐり',
-                     'ももか', 'ゆいの', 'ゆうみ', 'ゆうゆう', 'りんか',
-                     'れんか')
+    # 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 (2015-08-15現在)
+    _allhiraganas = ('くるみ', 'さな', 'さやか', 'しずく', 'すみれ',
+                     'つばさ', 'つぼみ', 'なごみ', 'ひなぎく', 'まなか',
+                     'まりか', 'みはる', 'めぐり', 'ももか', 'ゆいの',
+                     'ゆうみ', 'ゆうゆう', 'りんか', 'れんか')
 
     def __init__(self):
         self.title_smm = ''
@@ -1046,8 +1085,8 @@ class DMMParser:
                 self._mark_omitted('総集編', OMIT_MAKER[mkid])
 
             # 総集編容疑メーカー
-            if mkid in OMIT_MAKER_SUSS:
-                self._omit_suss = OMIT_MAKER_SUSS[mkid]
+            if mkid in OMIT_SUSS_4H:
+                self._omit_suss_4h = OMIT_SUSS_4H[mkid]
 
             # 他のサービスを強制チェック
             if mkid in FORCE_CHK_SALE_MK:
@@ -1375,7 +1414,7 @@ class DMMParser:
         self._sm = sm
         self._ignore_pfmrs = ignore_pfmrs
         self._bluray = False
-        self._omit_suss = False
+        self._omit_suss_4h = False
         self._rental_pcdr = False
         self._force_chk_sale = False
 
@@ -1395,14 +1434,14 @@ class DMMParser:
         # 除外作品チェック
         omitinfo = _libssw.check_omit(self._sm['title'],
                                       self._sm['cid'],
-                                      self._omit_suss,
+                                      self._omit_suss_4h,
                                       no_omits=_libssw.OMITTYPE)
         if omitinfo:
             self._mark_omitted(*omitinfo)
 
-        if self._omit_suss and _libssw.extr_num(self._sm['time'])[0] >= '240':
+        if self._omit_suss_4h and _libssw.cvt2int(self._sm['time']) > 200:
             # 総集編容疑メーカーで4時間以上
-            self._mark_omitted('総集編', self._omit_suss)
+            self._mark_omitted('総集編', self._omit_suss_4h + '(4時間以上)')
 
         if service == 'ama':
             # 素人動画の時のタイトル/副題の再作成
