@@ -849,7 +849,6 @@ TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
                        # 'h_113se': _ret_plum_se, # 素人援交生中出し(プラム)
                        }
 
-
 class __TrySMM:
     '''
     SMMから出演者情報を得てみる
@@ -907,33 +906,41 @@ class __TrySMM:
         # SMMで検索(品番+タイトル)
         if not self._cookie:
             verbose('could not retrieve cookie')
-            return ()
+            return []
 
         search_url = '{}/search/image/-_-/cate/20/word/{}'.format(
             BASEURL_SMM, pid)
             # BASEURL_SMM, _up.quote('{} {}'.format(pid, title[:50])))
 
-        resp, he_search = _libssw.open_url(search_url, set_cookie=self._cookie)
+        for i in range(2):
+            resp, he_search = _libssw.open_url(search_url,
+                                               set_cookie=self._cookie)
 
-        if resp.status != 200:
-            verbose('smm search failed: url={}, status={}'.format(
-                search_url, resp.status))
-            return ()
+            if resp.status != 200:
+                verbose('smm search failed: url={}, status={}'.format(
+                    search_url, resp.status))
+                return []
 
-        # SMM上で年齢認証済みかどうかの確認
-        confirm = he_search.get_element_by_id('confirm', None)
-
-        if confirm is not None:
+            # SMM上で年齢認証済みかどうかの確認
+            confirm = he_search.get_element_by_id('confirm', None)
+            if confirm is not None:
+                # id='confirm' があるので未認証
+                self._cookie = _libssw.get_cookie()
+                if not self._cookie:
+                    emsg('W', 'SMMの年齢認証が完了していません。')
+                    return []
+            else:
+                break
+        else:
             emsg('W', 'SMMの年齢認証が完了していません。')
-            self._cookie = False
-            return ()
+            return []
 
         # 検索結果のタイトルは <img alt= から取得
         items = he_search.find_class('imgbox')
 
         if not len(items):
             verbose('smm: No search result')
-            return ()
+            return []
 
         # DMM、SMM各タイトルを正規化して比較、一致したらそのページを読み込んで
         # 出演者情報を取得

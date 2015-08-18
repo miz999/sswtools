@@ -95,7 +95,7 @@ def select_allhiragana(ids, today, path, selfcheck):
 
         if not selfcheck:
             # 自分でチェックしないなら名前を返すだけ
-            print('positive ({})'.format(last_release))
+            print('({})'.format(last_release))
             yield name
             continue
 
