@@ -667,9 +667,9 @@ def inprogress(msg):
         print('{}  '.format(msg), end='\r', file=_sys.stderr, flush=True)
 
 
-def gen_no_omits(*no_omit):
-    if len(no_omit) == 1:
-        return OMITTYPE[:no_omit[0]]
+def gen_no_omits(no_omit):
+    if isinstance(no_omit, int):
+        return OMITTYPE[:no_omit]
     else:
         return tuple(OMITTYPE[i] for i in no_omit)
 
