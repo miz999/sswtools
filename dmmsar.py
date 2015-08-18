@@ -5,7 +5,7 @@ dmm2ssw.pyのラッパー。
 指定されたIDやキーワード等でDMMから一覧を取得し、ウィキテキストを作成する。
 
 書式:
-dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
+dmmsar.py (-A|-S|-L|-K|-U) [キーワード ...] [オプション...]
 
 
 説明:
@@ -35,7 +35,7 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
 
 引数:
 キーワード(ID/URL/品番/ファイルパス)
-    -A/-S/-M/-L を指定した場合は取得するそれのIDか、その一覧ページのURLを
+    -A/-S/-K/-L を指定した場合は取得するそれのIDか、その一覧ページのURLを
     指定する。
     -U を指定した場合はDMM一覧ページのURLを指定する。
     --cid を指定した場合は cid の範囲を指定する(--cid オプションを参照)。
@@ -52,13 +52,13 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
 -A, --actress (女優IDで一覧取得)
 -S, --series  (シリーズIDで一覧取得)
 -L, --label   (レーベルIDで一覧取得)
--M, --maker   (メーカーIDで一覧取得)
+-K, --maker   (メーカーIDで一覧取得)
 -U, --url     (指定したURLのページからそのまま取得)
     検索方法。どれか一つだけ指定できる。
-    -A/-S/-M/-L で女優/シリーズ/メーカー/あるいはレーベルのいずれかの
+    -A/-S/-K/-L で女優/シリーズ/メーカー/あるいはレーベルのいずれかの
     DMM上のID(またはURL)指定で一覧を取得する。
     キーワードに女優/シリーズ/レーベル/メーカー一覧ページのURLを指定すると
-    -A/-S/-L/-M を自動判定する。
+    -A/-S/-L/-K を自動判定する。
     -U では、指定されたURLのページからそのまま取得する。
 
 -i, --from-tsv
@@ -130,7 +130,7 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
 
 --service {dvd,rental,video,ama,all}
     検索するサービスの種類を指定する。指定できるのは以下のうちどれか一つ。
-     dvd     DVD通販 (-A/-S/-M/-L のデフォルト)
+     dvd     DVD通販 (-A/-S/-K/-L のデフォルト)
      rental  DVDレンタル
      video   動画-ビデオ
      ama     動画-素人
@@ -204,7 +204,7 @@ dmmsar.py (-A|-S|-L|-M|-U) [キーワード ...] [オプション...]
     大文字小文字は区別しない。
 
 --not-in-series
-    シリーズに属していない作品のみ作成する(-L/-M/-U 指定時のみ)。
+    シリーズに属していない作品のみ作成する(-L/-K/-U 指定時のみ)。
     見つかったシリーズ名の一覧を最後に出力する。
 
 --row 行番号
@@ -462,7 +462,7 @@ def get_args(argv):
                            action='store_const',
                            dest='retrieval',
                            const='label')
-    retrieval.add_argument('-M', '--maker',
+    retrieval.add_argument('-K', '--maker',
                            help='メーカーIDで一覧取得',
                            action='store_const',
                            dest='retrieval',
@@ -576,7 +576,7 @@ def get_args(argv):
                          metavar='PATTERN')
 
     argparser.add_argument('--not-in-series',
-                           help='シリーズに所属していないもののみ作成(-M/-L/-U 指定時)',
+                           help='シリーズに所属していないもののみ作成(-K/-L/-U 指定時)',
                            action='store_true',
                            dest='n_i_s')
 
@@ -954,7 +954,7 @@ def main(argv=None):
         args.retrieval = extr_ids.retrieval or 'keyword'
     emsg('I', '対象: {}'.format(args.retrieval))
 
-    # -L, -M , -U 以外では --not-in-series は意味がない
+    # -L, -K , -U 以外では --not-in-series は意味がない
     if args.retrieval not in ('label', 'maker', 'url'):
         args.n_i_s = False
         verbose('force disabled n_i_s')

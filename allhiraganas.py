@@ -57,7 +57,7 @@ def get_args():
 
 
 def select_allhiragana(ids, today, path, selfcheck):
-    no_omits = libssw.gen_no_omits(0, 4)
+    no_omits = libssw.gen_no_omits((0, 4))
 
     dmmparser = dmm2ssw.DMMParser(no_omits=no_omits,
                                   deeper=False,
