@@ -91,18 +91,18 @@ def main():
     labels = p_label.findall(header)
     names = chain.from_iterable(a.split('／') for a in labels)
     names = tuple(libssw.p_inbracket.split(name)[0] for name in names)
-    verbose('names: ', names)
+    emsg('I', 'names: ', names)
 
     fd = open(args.out, writemode) if args.out else sys.stdout
     for name in names:
         if name == args.moves_to:
-            verbose('[[{0}>.+]] → [[{0}]]'.format(name))
+            emsg('I', '[[{0}>.+]] → [[{0}]]'.format(name))
             body = re.sub(r'\[\[{}>.+?\]\]'.format(name),
                           '[[{}]]'.format(name),
                           body)
         else:
-            verbose('[[{0}>.+]] → [[{0}>{1}]]'.format(name, args.moves_to))
-            verbose('[[{0}]] → [[{0}>{1}]]'.format(name, args.moves_to))
+            emsg('I', '[[{0}>.+]] → [[{0}>{1}]]'.format(name, args.moves_to))
+            emsg('I', '[[{0}]] → [[{0}>{1}]]'.format(name, args.moves_to))
             body = re.sub(r'\[\[{}>.+?\]\]'.format(name),
                           '[[{}>{}]]'.format(name, args.moves_to),
                           body)
