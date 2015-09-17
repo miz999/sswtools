@@ -799,8 +799,7 @@ class ExtractIDs:
 
             if k.startswith('http://'):
 
-                for i in libssw.get_id(k, is_cid, ignore=True):
-                    yield i
+                yield from libssw.get_id(k, is_cid, ignore=True)
 
                 if not self.retrieval:
                     try:

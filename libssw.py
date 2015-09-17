@@ -459,17 +459,18 @@ class OrderedDict2(_OrderedDict):
     最後のアイテムの値だけを返すメソッドlast()付きの
     OrderedDict
     '''
-    def head(self):
-        '''先頭のアイテムの値を返す'''
+    def __get(self, key):
         if not len(self):
             raise KeyError('データが0件です。')
-        return self[self._OrderedDict__root.next.key]
+        return self[key]
+
+    def head(self):
+        '''先頭のアイテムの値を返す'''
+        return self.__get(self._OrderedDict__root.next.key)
 
     def last(self):
         '''最後のアイテムの値を返す'''
-        if not len(self):
-            raise KeyError('データが0件です。')
-        return self[self._OrderedDict__root.prev.key]
+        return self.__get(self._OrderedDict__root.prev.key)
 
 
 # def copy2clipboard(string):
