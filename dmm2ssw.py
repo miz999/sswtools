@@ -908,7 +908,7 @@ class __TrySMM:
             verbose('could not retrieve cookie')
             return []
 
-        search_url = '{}/search/image/-_-/cate/20/word/{}'.format(
+        search_url = '{}/search/image/-_-/cate/6/word/{}'.format(
             BASEURL_SMM, pid)
             # BASEURL_SMM, _up.quote('{} {}'.format(pid, title[:50])))
 
