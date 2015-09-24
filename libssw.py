@@ -668,7 +668,7 @@ def inprogress(msg):
         print('{}  '.format(msg), end='\r', file=_sys.stderr, flush=True)
 
 
-def gen_no_omits(no_omit):
+def gen_no_omits(no_omit: 'int or tuple[int]'):
     if isinstance(no_omit, int):
         return OMITTYPE[:no_omit]
     else:
@@ -680,7 +680,7 @@ def le80bytes(string, encoding='euc_jisx0213'):
     return len(bytes(string, encoding)) <= 80
 
 
-def gen_ntfcols(tname, fsource):
+def gen_ntfcols(tname, fsource: 'sequence'):
     '''表形式ヘッダから名前付きタプルを作成'''
     if isinstance(fsource, str):
         fsource = ('TITLE' if c == 'SUBTITLE' else c
@@ -1705,7 +1705,7 @@ class _GetActName:
 get_actname = _GetActName()
 
 
-def fmt_name(director):
+def fmt_name(director: str):
     return ','.join(director.split('：')[-1].split('＋'))
 
 

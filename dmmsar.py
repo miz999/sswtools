@@ -792,7 +792,7 @@ def get_args(argv):
 
 class ExtractIDs:
     '''位置引数からIDと検索対象の抽出'''
-    def __call__(self, keywords, is_cid=False):
+    def __call__(self, keywords: tuple, is_cid=False):
         self.retrieval = None
 
         for k in keywords:
@@ -820,7 +820,7 @@ def makeproditem(cid, service, sp_pid):
     return url, libssw.Summary(url=url, title='__' + pid, cid=cid, pid=pid)
 
 
-def from_sequence(keywords, service, sp_pid):
+def from_sequence(keywords: tuple, service, sp_pid):
     '''連続した品番の生成ジェネレータ'''
     try:
         base, start, end = keywords[:3]
@@ -844,7 +844,7 @@ def fmtheader(atclinfo):
         '／'.join('[[{}>{}]]'.format(a, u) for a, u in atclinfo))
 
 
-def build_header_actress(actids):
+def build_header_actress(actids: tuple):
     '''女優名の再構成'''
     verbose('build_header_actress: {}'.format(actids))
 
