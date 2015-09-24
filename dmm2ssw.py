@@ -389,7 +389,8 @@ OMITGENRE = {'6014': 'イメージビデオ',
 # メーカー
 OMIT_MAKER = {
     '6500': 'BACK DROP',
-    '6473': 'CHANGE',}
+    '6473': 'CHANGE',
+}
 #   '45810': 'エクストラ'}
 # 収録時間が4時間以上は総集編だけじゃないの?なメーカー
 OMIT_SUSS_4H = {
@@ -870,6 +871,36 @@ class __TrySMM:
         # self._cookie = _libssw.get_cookie()
         self._cookie = 'afsmm=10163915; TONOSAMA_BATTA=0bf596e86b6853db3b7cc52cdd4ff239; ses_age=18'
 
+    def _search(self, cate, pid, title):
+        search_url = '{}/search/image/-_-/cate/{}/word/{}'.format(
+            BASEURL_SMM, cate, pid)
+            # BASEURL_SMM, _up.quote('{} {}'.format(pid, title[:50])))
+
+        for i in range(2):
+            resp, he_result = _libssw.open_url(search_url,
+                                               set_cookie=self._cookie)
+
+            if resp.status != 200:
+                verbose('smm search failed: url={}, status={}'.format(
+                    search_url, resp.status))
+                return
+
+            # SMM上で年齢認証済みかどうかの確認
+            confirm = he_result.get_element_by_id('confirm', None)
+            if confirm is not None:
+                # id='confirm' があるので未認証
+                # Firefox の cookie 情報を得てみる
+                self._cookie = _libssw.get_cookie()
+                if not self._cookie:
+                    emsg('W', 'SMMの年齢認証が完了していません。')
+                    return
+            else:
+                verbose('Age confirmed')
+                return he_result
+        else:
+            emsg('W', 'SMMの年齢認証が完了していません。')
+            return
+
     def _is_existent(self, name):
         '''その名前の女優が実際にいるかどうかDMM上でチェック'''
         verbose('is existent: ', name)
@@ -908,37 +939,16 @@ class __TrySMM:
             verbose('could not retrieve cookie')
             return []
 
-        search_url = '{}/search/image/-_-/cate/6/word/{}'.format(
-            BASEURL_SMM, pid)
-            # BASEURL_SMM, _up.quote('{} {}'.format(pid, title[:50])))
-
-        for i in range(2):
-            resp, he_search = _libssw.open_url(search_url,
-                                               set_cookie=self._cookie)
-
-            if resp.status != 200:
-                verbose('smm search failed: url={}, status={}'.format(
-                    search_url, resp.status))
-                return []
-
-            # SMM上で年齢認証済みかどうかの確認
-            confirm = he_search.get_element_by_id('confirm', None)
-            if confirm is not None:
-                # id='confirm' があるので未認証
-                self._cookie = _libssw.get_cookie()
-                if not self._cookie:
-                    emsg('W', 'SMMの年齢認証が完了していません。')
-                    return []
-            else:
+        for cate in 20, 6:
+            # 通販新品(動画よりリリースが早い) → 単品動画 (売り切れがない) で検索
+            he_search = self._search(cate, pid, title)
+            items = he_search.find_class('imgbox')
+            if len(items):
+                verbose('Found on smm (cate: {})'.format(cate))
                 break
+            else:
+                verbose('Not found on smm (cate: {})'.format(cate))
         else:
-            emsg('W', 'SMMの年齢認証が完了していません。')
-            return []
-
-        # 検索結果のタイトルは <img alt= から取得
-        items = he_search.find_class('imgbox')
-
-        if not len(items):
             verbose('smm: No search result')
             return []
 
