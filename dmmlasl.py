@@ -326,8 +326,10 @@ class RetrieveMembers:
             yield int(mid), mname, priurls[0], mprods.copy()
 
             for key in mprods:
-                if key in queue:
+                try:
                     queue.remove(key)
+                except ValueError:
+                    pass
 
 
 def count_prefixes(prods):

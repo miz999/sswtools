@@ -745,7 +745,11 @@ class __OpenUrl:
 
         for i in range(5):
 
-            if site in self.__wait and self.__wait[site].is_alive():
+            try:
+                self.__wait[site].is_alive()
+            except KeyError:
+                pass
+            else:
                 verbose('joinning wait_', site)
                 self.__wait[site].join()
 

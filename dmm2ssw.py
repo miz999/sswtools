@@ -1416,10 +1416,10 @@ class DMMParser:
         for rlitem in iterrltd:
             rlttl = rlitem.getparent().text_content().strip()
             verbose('rltd ttl: ', rlttl)
-            for key, word in _libssw.check_omitword(rlttl):
-                # 限定品の除外チェック
-                if key not in self._no_omits:
-                    break
+            # 限定品の除外チェック
+            if any(k not in self._no_omits
+                   for k, w in _libssw.check_omitword(rlttl)):
+                break
             else:
                 verbose('rltditem: ', rlitem.getparent().get('href'))
                 return _up.urljoin(BASEURL, rlitem.getparent().get('href'))
