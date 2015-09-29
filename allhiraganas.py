@@ -29,6 +29,7 @@ ACTURL = libssw.ACTURL
 
 def get_args():
     global VERBOSE
+    global verbose
 
     argparser = argparse.ArgumentParser()
     argparser.add_argument('-i', '--id',
@@ -51,7 +52,9 @@ def get_args():
     if args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = \
             dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = args.verbose - 1
-    verbose('verbose mode on')
+        verbose('verbose mode on')
+    else:
+        verbose = libssw.verbose = lambda *x: None
 
     return args
 

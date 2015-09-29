@@ -112,6 +112,7 @@ sp_datedelim = (re.compile(r'-/'), '.')
 
 def get_args():
     global VERBOSE
+    global verbose
 
     argparser = argparse.ArgumentParser(
         description='素人系総合wiki女優ページにない作品情報をDMMから補完する')
@@ -195,12 +196,14 @@ def get_args():
     if args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = \
             dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = args.verbose - 1
+        verbose('verbose mode on')
+    else:
+        verbose = libssw.verbose = lambda *x: None
 
     if args.fastest:
         for a in ('follow_rdr', 'check_rental', 'pass_bd', 'check_listpage'):
             setattr(args, a, False)
 
-    verbose('verbose mode on')
     verbose('args: ', args)
     return args
 

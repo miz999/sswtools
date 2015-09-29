@@ -104,7 +104,7 @@ dmmsar.py (-A|-S|-L|-K|-U) [キーワード ...] [オプション...]
 
 --cid-l
     --cid と同じだが、指定した品番の作品ページが見つからない場合は発売されなかった
-    あるいは発売が中止になったものとしてリンクを作成しない。
+    あるいは発売中止になったものとしてリンクを作成しない。
 
 -o, --out ファイル名のベース
     指定されたファイルに出力する。未指定時は標準出力に出力する。
@@ -442,6 +442,7 @@ p_actdelim = re.compile(r'[（、]')
 def get_args(argv):
     '''コマンドライン引数の解釈'''
     global VERBOSE
+    global verbose
 
     argparser = argparse.ArgumentParser(description='DMMから検索して作品一覧を作成する')
 
@@ -739,7 +740,9 @@ def get_args(argv):
     if args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = \
             dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = args.verbose - 1
-    verbose('Verbose mode on')
+        verbose('Verbose mode on')
+    else:
+        verbose = libssw.verbose = lambda *x: None
 
     libssw.RECHECK = args.recheck
 

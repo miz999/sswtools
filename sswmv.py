@@ -27,6 +27,7 @@ p_label = re.compile(r'\[\[(.+?)>')
 
 def get_args():
     global VERBOSE
+    global verbose
 
     argparser = argparse.ArgumentParser(
         description='素人系総合Wikiのページ移動用リンクの張替え')
@@ -61,7 +62,9 @@ def get_args():
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
     if args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
-    verbose('verbose mode on')
+        verbose('verbose mode on')
+    else:
+        verbose = libssw.verbose = lambda *x: None
 
     return args
 

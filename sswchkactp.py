@@ -89,6 +89,7 @@ p_ssw = re.compile(r'href="http://sougouwiki.com/d/([^/]+?)"')
 
 def get_args():
     global VERBOSE
+    global verbose
 
     argparser = argparse.ArgumentParser(
         description='素人系総合Wikiの一覧ページにあって女優ページにない作品の洗い出し')
@@ -151,7 +152,9 @@ def get_args():
     if args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = \
             dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = args.verbose - 1
-    verbose('verbose mode on')
+        verbose('verbose mode on')
+    else:
+        verbose = libssw.verbose = lambda *x: None
 
     args.start_pid = args.start_pid.upper()
 

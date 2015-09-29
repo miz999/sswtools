@@ -143,6 +143,7 @@ PREFIXES = True
 
 def get_args():
     global VERBOSE
+    global verbose
 
     argparser = argparse.ArgumentParser(
         description='メーカー配下の全レーベルの一覧、レーベル配下の全シリーズの一覧をウィキテキストで作成する')
@@ -220,8 +221,10 @@ def get_args():
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
     if args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
+        verbose('verbose mode on')
+    else:
+        verbose = libssw.verbose = lambda *x: None
 
-    verbose('verbose mode on')
     verbose('args: {}'.format(args))
     return args
 
@@ -252,6 +255,8 @@ class RetrieveMembers:
         self.ophans_prods = OrderedDict()
         self.ophans_prefix = Counter()
 
+        self.valerrs = 0
+
     def __call__(self, tier, newcomers, existings, last_pid):
         '''レーベル/シリーズ情報を返す'''
 
@@ -269,10 +274,10 @@ class RetrieveMembers:
 
         queue = list(newcomers.keys())
         while queue:
-            url = queue.pop()
+            url = queue[-1]
 
             if url in existings or url in self.ophans:
-                verbose('hit in existings: {}'.format(url))
+                queue.pop()
                 continue
 
             props = newcomers[url]
@@ -282,6 +287,7 @@ class RetrieveMembers:
             # 作品ページを開いて要素を取得
             el = get_elems(props)
             if not len(el):
+                queue.pop()
                 continue
 
             # レーベル/シリーズIDと名前
@@ -297,6 +303,7 @@ class RetrieveMembers:
                 if mreldate > self.ophans_latest:
                     self.ophans_latest = mreldate
                     verbose('ophans latest: {}'.format(self.ophans_latest))
+                queue.pop()
                 continue
 
             # 複数メーカーにまたがっていて扱いが面倒なレーベルは整理
@@ -304,6 +311,7 @@ class RetrieveMembers:
                ROOTID in IGNORE_PARES and \
                mid in IGNORE_PARES[ROOTID]:
                 verbose('ignore label: {}'.format(mname))
+                queue.pop()
                 continue
 
             priurls = libssw.join_priurls(tier, mid, service=self.service)
@@ -329,6 +337,8 @@ class RetrieveMembers:
                 try:
                     queue.remove(key)
                 except ValueError:
+                    self.valerrs += 1
+                    print('ValueError: {} ({})'.format(key, self.valerrs))
                     pass
 
 
@@ -566,7 +576,6 @@ def main():
                 sr_prods[sid] = sprods
             else:
                 for u in reversed(sprods):
-                    verbose('sid: {}, u: {}'.format(sid, u))
                     sr_prods[sid][u] = sprods[u]
             emsg('I', 'シリーズ: {} [id={}, 新規{}作品]'.format(
                 sname, sid, len(sprods)))

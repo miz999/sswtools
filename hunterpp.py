@@ -113,6 +113,7 @@ p_cid = re.compile(r'([A-Z]+)-(\d+)')
 
 def get_args():
     global VERBOSE
+    global verbose
 
     argparser = argparse.ArgumentParser(
         description='Hunter、Apache、ATOMの無駄に長いタイトル用プリプロセッサ')
@@ -158,7 +159,9 @@ def get_args():
 
     if args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
-    verbose('Verbose mode on')
+        verbose('Verbose mode on')
+    else:
+        verbose = libssw.verbose = lambda *x: None
 
     return args
 

@@ -42,6 +42,7 @@ p_heyzo_title = re.compile(r'の無修正アダルト動画「(.+)」のご案�
 
 def get_args():
     global VERBOSE
+    global verbose
 
     argparser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -71,7 +72,9 @@ def get_args():
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
     if args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
-    verbose('verbose mode on')
+        verbose('verbose mode on')
+    else:
+        verbose = libssw.verbose = lambda *x: None
 
     return args
 

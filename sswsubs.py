@@ -34,6 +34,7 @@ emsg = libssw.Emsg(OWNNAME)
 def get_args():
     '''コマンドライン引数の解釈'''
     global VERBOSE
+    global verbose
 
     argparser = argparse.ArgumentParser(
         description='ウィキテキスト(表形式)を補完または置き換え')
@@ -79,9 +80,12 @@ def get_args():
 
     args = argparser.parse_args()
 
-    VERBOSE = verbose.verbose = \
-        libssw.VERBOSE = libssw.verbose.verbose = args.verbose
-    verbose('verbose mode on')
+    verbose.verbose = VERBOSE = VERBOSE or args.verbose
+    if args.verbose > 1:
+        libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
+        verbose('verbose mode on')
+    else:
+        verbose = libssw.verbose = lambda *x: None
 
     verbose('args: ', (args))
     return args

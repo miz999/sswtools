@@ -507,6 +507,7 @@ def _get_args(argv, p_args):
     global VERBOSE
     global AUTOMODIFY
     global AUTOSTRIP
+    global verbose
 
     argparser = _argparse.ArgumentParser(
         description='DMMのURLから素人系総合wiki用ウィキテキストを作成する')
@@ -659,7 +660,9 @@ def _get_args(argv, p_args):
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
     if args.verbose > 1:
         _libssw.VERBOSE = _libssw.verbose.verbose = args.verbose - 1
-    verbose('verbose mode on')
+        verbose('verbose mode on')
+    else:
+        verbose = libssw.verbose = lambda *x: None
 
     if args.cache_info:
         size = sum(
