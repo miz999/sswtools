@@ -255,8 +255,6 @@ class RetrieveMembers:
         self.ophans_prods = OrderedDict()
         self.ophans_prefix = Counter()
 
-        self.valerrs = 0
-
     def __call__(self, tier, newcomers, existings, last_pid):
         '''レーベル/シリーズ情報を返す'''
 
@@ -337,8 +335,6 @@ class RetrieveMembers:
                 try:
                     queue.remove(key)
                 except ValueError:
-                    self.valerrs += 1
-                    print('ValueError: {} ({})'.format(key, self.valerrs))
                     pass
 
 
@@ -652,24 +648,28 @@ def main():
 
             if not args.only_label:
                 # シリーズ別出力
-                numoflboph = len(lb_ophans_prefix.get(lid, ()))
-                if lid in lb_series or numoflboph:
+                numofseries = len(lb_series.get(lid, ()))
+                numofoph = len(lb_ophans_prefix.get(lid, ()))
+                is_exist = numofseries or numofoph
+                if is_exist:
                     print('[+]', file=fd)
+                    print('シリーズ数:', numofseries, file=fd)
 
-                if lid in lb_series:
+                try:
                     print_serises(lb_series[lid],
                                   sr_name, sr_prefix, sr_url, sr_latest,
                                   args.dmm, args.latest, fd)
+                except KeyError:
+                    pass
 
-                if numoflboph:
+                if numofoph:
                     print('***{}その他'.format(lb_name[lid]), file=fd)
                     summ_prefixes(lb_ophans_prefix[lid], fd)
-
                     if args.latest:
                         print('-最新リリース: {}'.format(lb_ophans_latest[lid]),
                               file=fd)
 
-                if lid in lb_series or numoflboph:
+                if is_exist:
                     print('[END]', file=fd)
 
             print(file=fd)
