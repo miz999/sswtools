@@ -60,11 +60,12 @@ def get_args():
     args = argparser.parse_args()
 
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
-    if args.verbose > 1:
+
+    if not args.verbose:
+        verbose = libssw.verbose = lambda *x: None
+    elif args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
         verbose('verbose mode on')
-    else:
-        verbose = libssw.verbose = lambda *x: None
 
     return args
 

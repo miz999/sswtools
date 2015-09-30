@@ -744,12 +744,12 @@ def get_args(argv):
 
     verbose.verbose = VERBOSE = args.verbose
 
-    if args.verbose > 1:
+    if not args.verbose:
+        verbose = _libssw.verbose = lambda *x: None
+    elif args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = \
             dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = args.verbose - 1
         verbose('Verbose mode on')
-    else:
-        verbose = libssw.verbose = lambda *x: None
 
     libssw.RECHECK = args.recheck
 

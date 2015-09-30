@@ -667,11 +667,12 @@ def _get_args(argv, p_args):
 
     # dmmsar.py 側からVERBOSEが変更される場合があるため
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
-    if args.verbose > 1:
+
+    if not args.verbose:
+        verbose = _libssw.verbose = lambda *x: None
+    elif args.verbose > 1:
         _libssw.VERBOSE = _libssw.verbose.verbose = args.verbose - 1
         verbose('verbose mode on')
-    else:
-        verbose = _libssw.verbose = lambda *x: None
 
     if args.cache_info:
         size = sum(
