@@ -33,6 +33,12 @@ try:
 except ImportError:
     raise SystemExit('lxml(python3用)をインストールしてください。')
 
+try:
+    from pyperclip import copy as _ppccopy
+except ImportError:
+    pass
+
+
 __version__ = 20150512
 
 VERBOSE = 0
@@ -473,14 +479,12 @@ class OrderedDict2(_OrderedDict):
         return self.__get(self._OrderedDict__root.prev.key)
 
 
-# def copy2clipboard(string):
-#     '''クリップボードへコピー'''
-#     verbose('copy string: {}'.format(repr(string)))
-#     root = tkinter.Tk(screenName=':0.0')
-#     root.withdraw()
-#     root.clipboard_clear()
-#     root.clipboard_append(string)
-#     root.destroy()
+def copy2clipboard(string):
+    '''クリップボードへコピー'''
+    try:
+        _ppccopy(string)
+    except NameError:
+        emsg('W', 'Python pyperclip モジュールがインストールされていないためクリップボードにはコピーされません。')
 
 
 class Summary:
@@ -1799,12 +1803,12 @@ def get_cookie():
     return 'TONOSAMA_BATTA={}; afsmm={}; ses_age=18;'.format(batta, afsmm)
 
 
-def open_ssw(page):
+def open_ssw(*pages):
     '''wikiページをウェブブラウザで開く'''
-    if page:
+    for p in filter(None, pages):
         _webbrowser.open_new_tab(
             'http://seesaawiki.jp/w/sougouwiki/e/add?pagename={}'.format(
-                quote(page)))
+                quote(p)))
 
 
 sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),

@@ -355,8 +355,7 @@ def main():
                 print(data.wktxt_a)
 
                 if args.browser:
-                    for page in notfounds:
-                        libssw.open_ssw(page)
+                    libssw.open_ssw(notfounds)
 
 
 if __name__ == '__main__':

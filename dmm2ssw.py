@@ -108,6 +108,8 @@ RENTAL_PRECEDES = {
     [必須] python3.4以降, httplib2(python3用), lxml(python3用)
     [必須] libssw.py  このスクリプトと同じ場所、またはPYTHONPATHが通っている
     ところへおいておく。
+    [任意] pyperclip (python3用) 作成したウィキテキストをクリップボードへ
+          コピーする機能を使用する場合必要。
 
 
 注意:
@@ -286,11 +288,14 @@ DMM作品ページのURL
 --fastest
     処理時間に影響する(ウェブページにアクセスする)あらゆる補助処理を行わない。
 
+-c, --copy
+    作成したウィキテキストをクリップボードへコピーする。
+
 -b, --browser
     ウィキテキスト作成後、Wikiの女優、シリーズ一覧、あるいはレーベル一覧の
     ページをウェブブラウザで開く。
 
--c, --clear-cache
+-C, --clear-cache
     キャッシュを終了時に削除する(「説明」参照)。
 
 --cache-info
@@ -634,11 +639,15 @@ def _get_args(argv, p_args):
                            action='store_false',
                            default=True)
 
+    argparser.add_argument('-c', '--copy',
+                           help='作成したウィキテキストをクリップボードへコピーする',
+                           action='store_true')
+
     argparser.add_argument('-b', '--browser',
                            help='生成後、wikiのページをウェブブラウザで開く',
                            action='store_true')
 
-    argparser.add_argument('-c', '--clear-cache',
+    argparser.add_argument('-C', '--clear-cache',
                            help='プログラム終了時にキャッシュをクリアする',
                            action='store_true',
                            default=False)
@@ -662,7 +671,7 @@ def _get_args(argv, p_args):
         _libssw.VERBOSE = _libssw.verbose.verbose = args.verbose - 1
         verbose('verbose mode on')
     else:
-        verbose = libssw.verbose = lambda *x: None
+        verbose = _libssw.verbose = lambda *x: None
 
     if args.cache_info:
         size = sum(
@@ -2087,9 +2096,9 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
 
         print()
 
-        # if args.copy:
-        #     verbose('copy 2 clipboard')
-        #     _libssw.copy2clipboard(output)
+        if args.copy:
+            verbose('copy 2 clipboard')
+            _libssw.copy2clipboard(wikitext_a + wikitext_t + '\n')
 
         if args.browser:
             # wikiのページを開く
