@@ -31,7 +31,9 @@ VERBOSE = 0
 
 OWNNAME = libssw.ownname(__file__)
 
-FOLLOW_RDR = None
+FOLLOW_RDR = True
+COPY = False
+BROWSER = False
 
 verbose = libssw.Verbose(OWNNAME, VERBOSE)
 emsg = libssw.Emsg(OWNNAME)
@@ -43,6 +45,9 @@ p_heyzo_title = re.compile(r'の無修正アダルト動画「(.+)」のご案�
 def get_args():
     global VERBOSE
     global verbose
+    global FOLLOW_RDR
+    global COPY
+    global BROWSER
 
     argparser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -58,6 +63,14 @@ def get_args():
                            dest='follow_rdr',
                            action='store_false',
                            default=True)
+
+    argparser.add_argument('-c', '--copy',
+                           help='作成したウィキテキストをクリップボードへコピーする',
+                           action='store_true')
+    argparser.add_argument('-b', '--browser',
+                           help='生成後、wikiのページをウェブブラウザで開く',
+                           action='store_true')
+
     argparser.add_argument('-v', '--verbose',
                            help='デバッグ用情報を出力する',
                            action='count',
@@ -70,11 +83,17 @@ def get_args():
     args = argparser.parse_args()
 
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
+
+    if not args.verbose:
+        verbose = libssw.verbose = lambda *x: None
+
     if args.verbose > 1:
         libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
         verbose('verbose mode on')
-    else:
-        verbose = libssw.verbose = lambda *x: None
+
+    FOLLOW_RDR = args.follow_rdr
+    COPY = args.copy
+    BROWSER = args.browser
 
     return args
 
@@ -90,16 +109,25 @@ def uncensored(url, release, title, studio, performers, note):
     verbose('studio: ', studio)
     verbose('performers: ', performers)
 
-    if release:
-        print('//{0[0]}.{0[1]:0>2}.{0[2]:0>2}'.format(release))
+    wtxt = []
 
-    print('-[[{}（{}）>{}]]{}'.format(title, studio, url, note))
+    if release:
+        wtxt.append('//{0[0]}.{0[1]:0>2}.{0[2]:0>2}'.format(release))
+
+    wtxt.append('-[[{}（{}）>{}]]{}'.format(title, studio, url, note))
 
     if len(performers) > 1:
         # 出演者情報の作成
         pfmstr, anum = libssw.stringize_performers(
             performers, number=0, follow=FOLLOW_RDR)
-        print('--出演者：{}'.format(pfmstr))
+        wtxt.append('--出演者：{}'.format(pfmstr))
+
+    wtxt = '\n'.join(wtxt)
+    print(wtxt)
+    if COPY:
+        libssw.copy2clipboard(wtxt)
+    if BROWSER:
+        libssw.open_ssw(*(p[1] or p[0] for p in performers))
 
 
 def censored(url, release, title, studio, performers, img_s, img_l, note):
@@ -109,8 +137,10 @@ def censored(url, release, title, studio, performers, img_s, img_l, note):
     verbose('studio: ', studio)
     verbose('performers: ', performers)
 
+    wtxt = []
+
     if release:
-        print('//{0[0]}.{0[1]:0>2}.{0[2]:0>2}'.format(release))
+        wtxt.append('//{0[0]}.{0[1]:0>2}.{0[2]:0>2}'.format(release))
 
     print('[[{}（{}）>{}]]'.format(title, studio, url))
     print('[[{}>{}]]'.format(img_s, img_l))
@@ -119,10 +149,17 @@ def censored(url, release, title, studio, performers, img_s, img_l, note):
         # 出演者情報の作成
         pfmstr, anum = libssw.stringize_performers(
             performers, number=0, follow=FOLLOW_RDR)
-        print('--出演者：{}'.format(pfmstr))
+        wtxt.append('--出演者：{}'.format(pfmstr))
 
     if note:
-        print(note)
+        wtxt.append(note)
+
+    wtxt = '\n'.join(wtxt)
+    print(wtxt)
+    if COPY:
+        libssw.copy2clipboard(wtxt)
+    if BROWSER:
+        libssw.open_ssw(*(p[1] or p[0] for p in performers))
 
 
 def japorn(he, url):
@@ -202,13 +239,14 @@ def ipondo(he, url):
 def caribbean(he, netloc, url):
     if netloc == 'www.caribbeancom.com':
         studio = 'カリビアンコム'
-        title = he.xpath('//span[@class="movie-title"]/h1')[0].text.strip()
+        title = he.find('.//h1[@itemprop="name"]').text.strip()
+        release = libssw.extr_num(
+            he.find('.//dd[@itemprop="uploadDate"]').text)
     else:
         studio = 'カリビアンコム プレミアム'
         title = he.find_class('video-detail')[0].xpath('.//h1')[0].text.strip()
-
-    release = libssw.extr_num(
-        he.find_class('movie-info')[0].xpath('dl[3]/dd')[0].text)
+        release = libssw.extr_num(
+            he.find('.//div[@class="movie-info"]/dl[3]/dd[1]').text)
 
     performers = he.find_class(
         'movie-info')[0].xpath('dl[1]/dd')[0].text_content().split()
@@ -339,11 +377,8 @@ def hitodumagiri(he, url):
 
 
 def main():
-    global FOLLOW_RDR
 
     args = get_args()
-
-    FOLLOW_RDR = args.follow_rdr
 
     urls = ('http://' + u if not u.startswith('http://') else u
             for u in args.url)

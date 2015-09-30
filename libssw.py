@@ -1816,7 +1816,11 @@ sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
            (_re.compile(r'nowrap="nowrap"'), ''))
 
 def show_diff(flines, tlines, fdesc, tdesc, context=True):
-    '''差分をとってブラウザで開く'''
+    '''
+    差分をとってブラウザで開く
+    open_new_tab() のパラメータは実在するuriでなければならないので
+    ファイルライクオブジェクトはNG
+    '''
     diff = _HtmlDiff().make_file(flines,
                                  tlines,
                                  fdesc,
