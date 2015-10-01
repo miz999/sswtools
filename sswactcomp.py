@@ -194,11 +194,11 @@ def get_args():
     # dmmsar.py 側からVERBOSEが変更される場合があるため
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
 
-    if not args.verbose:
+    if not VERBOSE:
         verbose = libssw.verbose = lambda *x: None
-    elif args.verbose > 1:
+    elif VERBOSE > 1:
         libssw.VERBOSE = libssw.verbose.verbose = \
-            dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = args.verbose - 1
+            dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = VERBOSE - 1
         verbose('verbose mode on')
 
     if args.fastest:

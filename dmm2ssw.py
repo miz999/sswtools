@@ -668,10 +668,10 @@ def _get_args(argv, p_args):
     # dmmsar.py 側からVERBOSEが変更される場合があるため
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
 
-    if not args.verbose:
+    if not VERBOSE:
         verbose = _libssw.verbose = lambda *x: None
-    elif args.verbose > 1:
-        _libssw.VERBOSE = _libssw.verbose.verbose = args.verbose - 1
+    elif VERBOSE > 1:
+        _libssw.VERBOSE = _libssw.verbose.verbose = VERBOSE - 1
         verbose('verbose mode on')
 
     if args.cache_info:
@@ -1606,12 +1606,8 @@ def search_listpage(url, listname, listtype, pid):
 
         if not found:
             # 次のページがあったらそちらで再度探す
-            pagin = he.find('.//div[@class="paging-top"]/a[last()]')
-            if pagin is not None and pagin.text.strip() == '次の20件':
-                nextp = pagin.get('href')
-                resp, he = _libssw.open_url(_up.urljoin(BASEURL_SSW, nextp),
-                                            cache=False)
-            else:
+            he = _libssw.ssw_nextpage(he)
+            if he is None:
                 break
 
 

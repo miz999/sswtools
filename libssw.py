@@ -941,18 +941,12 @@ class DMMTitleListParser:
     def _ret_nextpage(self, he):
         '''ページネーション処理'''
         try:
-            pagins = he.find_class('list-boxpagenation')[0].find('ul')
+            pagin = he.find_class(
+                'list-boxpagenation')[0].xpath('.//a[text()="次へ"]')
         except IndexError:
             return False
 
-        for a in reversed(pagins.xpath('li/a')):
-            if a.text == '次へ':
-                nextpath = a.get('href')
-                break
-        else:
-            nextpath = False
-
-        return nextpath and _up.urljoin(BASEURL, nextpath)
+        return _up.urljoin(BASEURL, pagin[0].get('href')) if pagin else False
 
     def __call__(self, he):
         '''解析実行'''
@@ -1801,6 +1795,15 @@ def get_cookie():
     cur.close()
 
     return 'TONOSAMA_BATTA={}; afsmm={}; ses_age=18;'.format(batta, afsmm)
+
+
+def ssw_nextpage(el):
+    '''Wiki検索ページの次ページがあれば取得'''
+    pagin = el.xpath('.//div[@class="paging-top"]/a[text()="次の20件"]')
+    if pagin:
+        nextp = pagin[0].get('href')
+        resp, he = open_url(_up.urljoin(BASEURL_SSW, nextp), cache=False)
+        return he
 
 
 def open_ssw(*pages):

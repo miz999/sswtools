@@ -149,12 +149,12 @@ def get_args():
     args = argparser.parse_args()
 
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
-    if args.verbose > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = \
-            dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = args.verbose - 1
-        verbose('verbose mode on')
-    else:
+    if not VERBOSE:
         verbose = libssw.verbose = lambda *x: None
+    elif VERBOSE > 1:
+        libssw.VERBOSE = libssw.verbose.verbose = \
+            dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = VERBOSE - 1
+        verbose('verbose mode on')
 
     args.start_pid = args.start_pid.upper()
 
@@ -181,12 +181,8 @@ def searchwiki_by_url(url):
             yield a.get('href'), a.text
 
         # 次のページがあったらそちらで再度探す
-        pagin = he.find_class('paging-top')[0].xpath('a[last()]')
-        if len(pagin) and pagin[0].text.strip() == '次の20件':
-            nextp = pagin[0].get('href')
-            resp, he = libssw.open_url(up.urljoin(BASEURL_SSW, nextp),
-                                       cache=False)
-        else:
+        he = libssw.ssw_nextpage(he)
+        if he is None:
             break
 
 

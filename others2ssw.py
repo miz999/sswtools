@@ -84,10 +84,10 @@ def get_args():
 
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
 
-    if not args.verbose:
+    if not VERBOSE:
         verbose = libssw.verbose = lambda *x: None
-    elif args.verbose > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = args.verbose - 1
+    elif VERBOSE > 1:
+        libssw.VERBOSE = libssw.verbose.verbose = VERBOSE - 1
         verbose('verbose mode on')
 
     FOLLOW_RDR = args.follow_rdr
