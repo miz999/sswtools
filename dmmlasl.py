@@ -481,7 +481,7 @@ def main():
 
     try:
         last_pid = next(reversed(existings.values()))['pid']
-    except AttributeError:
+    except StopIteration:
         last_pid = None
 
     # メーカーの新規作品情報の取得
