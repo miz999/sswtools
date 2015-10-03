@@ -339,12 +339,16 @@ OMNI_PREFIX = (
     'bf375',          # BeFreeの総集編作品
     'bf392',          # BeFreeの総集編作品
     'bnsps382',       # ながえSTYLEの総集編作品
+    'h_093r18306',    # チェリーズの総集編作品
+    'h_093r18308',    # チェリーズの総集編作品
     'emaf324',        # フォーディメンション（エマニエル）の総集編か再利用作品
     'h_254vnds3141',  # ネクストイレブンの総集編作品
     'h_606ylw4303',   # Yellow Moon (Mellow Moon) の総集編作品
     'h_606ylw4308',   # Yellow Moon (Mellow Moon) の総集編作品
     'h_746rssr051r',  # SOSORUの総集編作品 (レンタル)
+    'h_746rssr081r',  # SOSORUの総集編作品 (レンタル)
     'h_746ssr051',    # SOSORUの総集編作品
+    'h_746ssr081',    # SOSORUの総集編作品
     'h_970kagh023',   # かぐや姫（メロウムーン）の総集編作品
     'h_970kagh023r',  # かぐや姫（メロウムーン）の総集編作品 (レンタル)
     'h_970kagh015',   # かぐや姫（メロウムーン）の総集編作品
@@ -655,6 +659,7 @@ def extr_num(string):
 
 p_list_article = _re.compile(r'/article=(.+?)/')
 
+
 def get_article(url):
     return p_list_article.findall(url)[0]
 
@@ -839,6 +844,7 @@ p_omnivals = (
     _re.compile(r'(?:2[4-9]\d|[3-9]\d{2}|\d{4,})分'),
     _re.compile(r'(?:[二弐][四五六七八九百][一二三四五六七八九十〇壱弐参]+|[三四五六七八九参][一二三四五六七八九十〇壱弐参拾百]{2}|[一二三四五六七八九十〇壱弐参拾百]{4,})分'))
 
+
 def check_omnivals(title):
     '''隠れ総集編チェック(関連数値編)'''
     def pick(title):
@@ -854,6 +860,7 @@ def check_omnivals(title):
 
 p_ge4h = _re.compile(r'(?:[4-9]|\d{2,})時間')
 p_ge200m = _re.compile(r'(?:[2-9]\d{2}|\d{4,})分')
+
 
 def is_omnirookie(cid, title):
     '''ROOKIE隠れ総集編チェック'''
@@ -1037,6 +1044,7 @@ class NotKeyIdYet:
 
 sp_wikis = (_re.compile(r' "target="_blank"'), r'" target="_blank"')
 
+
 def from_dmm(listparser, priurls, pages_last=0,
              key_id=None, key_type=None, idattr='pid',
              ignore=False, show_info=True):
@@ -1100,6 +1108,7 @@ def from_dmm(listparser, priurls, pages_last=0,
 p_name = _re.compile(
     r'(?P<fore>[\w>]*)?(?P<paren>[(（][\w>]*[）)])?(?P<back>[\w>]*)?')
 
+
 def parse_names(name):
     '''
     出演者情報の解析(rawテキスト)
@@ -1133,6 +1142,7 @@ def parse_names(name):
 
 
 p_etc = _re.compile(r'ほか\w*?計(\d+)名')
+
 
 def ret_numofpfmrs(etc):
     number = None
@@ -1626,6 +1636,7 @@ def stringize_performers(pfmrs, number, follow):
 
 p_base_url = _re.compile(r'(.*/)-/')
 
+
 def resolve_service(url):
     '''サービスの決定'''
     verbose('Resolving service...')
@@ -1639,6 +1650,7 @@ def resolve_service(url):
 
 p_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
 p_id = _re.compile(r'/id=([\d,]+?)/')
+
 
 def get_id(url, cid=False, ignore=False):
     '''URLからIDを取得'''
@@ -1826,6 +1838,7 @@ def open_ssw(*pages):
 sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
            (_re.compile(r'Courier'), 'Sans'),
            (_re.compile(r'nowrap="nowrap"'), ''))
+
 
 def show_diff(flines, tlines, fdesc, tdesc, context=True):
     '''
