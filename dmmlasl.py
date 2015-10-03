@@ -86,7 +86,7 @@ IDまたはURL
 --regen-pid
     一旦生成した品番を再生成する。
 
--c, --clear-cache
+-C, --clear-cache
     プログラム終了時にHTTPキャッシュをクリアする。
 
 -v, --verbose
@@ -153,7 +153,8 @@ def get_args():
 
     argparser.add_argument('-t', '--target',
                            help='IDがメーカーかレーベルかを指定する',
-                           choices=('maker', 'label'))
+                           choices=('maker', 'label'),
+                           default='maker')
 
     argparser.add_argument('--service',
                            help='取得するサービスを指定する',
@@ -176,6 +177,11 @@ def get_args():
     only.add_argument('-s', '--only-series',
                       help='シリーズ一覧だけ出力する',
                       action='store_true')
+
+    argparser.add_argument('--sort-key',
+                           help='ソートキー',
+                           choices=('release', 'name', 'number'),
+                           default='release')
 
     argparser.add_argument('-u', '--unsuppress',
                            help='シリーズ一覧を作成しないよう指定されているレーベルに'
@@ -204,7 +210,7 @@ def get_args():
                            help='品番を再作成する',
                            action='store_true')
 
-    argparser.add_argument('-c', '--clear-cache',
+    argparser.add_argument('-C', '--clear-cache',
                            help='プログラム終了時にHTTPキャッシュをクリアする',
                            action='store_true')
     argparser.add_argument('-v', '--verbose',
@@ -361,13 +367,21 @@ def summ_prefixes(prefixes, fd):
     print('-{}作品: {}'.format(total, pfxstr), file=fd)
 
 
-def print_serises(keys, name, prefix, url, latest, withdmm, withlatest, fd):
+def print_serises(keys, name, prefix, prods, url, latest, withdmm, withlatest,
+                  sort_key, fd):
     '''シリーズ情報の出力'''
-    keyiter = sorted(((k, latest[k]) for k in keys),
-                     key=itemgetter(1),
-                     reverse=True)
+    if sort_key == 'release':
+        kiter = tuple((k, latest[k]) for k in keys)
+        rev = True
+    elif sort_key == 'name':
+        kiter = tuple((k, name[k]) for k in keys)
+        rev = False
+    elif sort_key == 'number':
+        kiter = tuple((k, len(prods[k])) for k in keys)
+        rev = True
 
-    for n, item in enumerate(keyiter, start=1):
+    for n, item in enumerate(sorted(kiter, key=itemgetter(1), reverse=rev),
+                             start=1):
         sid = item[0]
         print('***{}.[[{}]]'.format(n, name[sid]), file=fd)
         summ_prefixes(prefix[sid], fd)
@@ -454,6 +468,14 @@ def main():
              mk_ophans_prods,
              mk_ophans_latest) = pickle.load(f)
 
+    exist_set = set()
+    exist_add = exist_set.add
+    for i in existings:
+        if i in exist_set:
+            emsg('W', 'Duplication found: ', i)
+        else:
+            exist_add(i)
+
     # 新規追加分を取得
     priurls = libssw.join_priurls(target, ROOTID, service=service)
 
@@ -468,7 +490,7 @@ def main():
                                         key_type='last',
                                         idattr='pid',
                                         ignore=True):
-        if nurl not in existings:
+        if nurl not in exist_set:
             newcomers[nurl] = dict(nprops)
 
     nc_num = len(newcomers)
@@ -493,16 +515,19 @@ def main():
         article_name, ROOTID, nc_num, total))
 
     # まずレーベル別にまとめ
+    lb_set = set()
+    lb_set_add = lb_set.add
     for lid, lname, lurl, lprods in ret_members('label',
                                                 newcomers,
-                                                existings,
+                                                exist_set,
                                                 last_pid):
-        if lid not in lb_name:
+        if lid not in lb_set:
             # 新規レーベル
             lb_name[lid] = lname
             lb_url[lid] = lurl
             lb_prods[lid] = lprods
             lb_series[lid] = []
+            lb_set_add(lid)
         else:
             # 既知レーベルの新規作品
             for u in reversed(lprods):
@@ -562,14 +587,17 @@ def main():
         emsg('I', 'レーベル「{}」のシリーズ'.format(lb_name[lid]))
 
         verbose('exising ophans: {}'.format(len(lb_ophans.get(lid, ()))))
+        sr_set = set()
+        sr_set_add = sr_set.add
         for sid, sname, surl, sprods in ret_members('series',
                                                     lprods,
-                                                    existings,
+                                                    exist_set,
                                                     last_pid):
-            if sid not in sr_name:
+            if sid not in sr_set:
                 sr_name[sid] = sname
                 sr_url[sid] = surl
                 sr_prods[sid] = sprods
+                sr_set_add(sid)
             else:
                 for u in reversed(sprods):
                     sr_prods[sid][u] = sprods[u]
@@ -632,9 +660,19 @@ def main():
         summ_prefixes(mk_prefix, fd)
     print(time.strftime('(%Y年%m月%d日現在)'), file=fd)
 
+    if args.sort_key == 'release':
+        keyiter = lb_latest.items()
+        reverse = True
+    elif args.sort_key == 'name':
+        keyiter = lb_name.items()
+        reverse = False
+    elif args.sort_key == 'number':
+        keyiter = tuple((lid, len(lb_prods[lid])) for lid in lb_prods)
+        reverse = True
+
     if not args.only_series:
         for n, item in enumerate(
-                sorted(lb_latest.items(), key=itemgetter(1), reverse=True),
+                sorted(keyiter, key=itemgetter(1), reverse=reverse),
                 start=1):
             lid = item[0]
             print('**{}.[[{}]]'.format(n, lb_name[lid]), file=fd)
@@ -657,8 +695,9 @@ def main():
 
                 try:
                     print_serises(lb_series[lid],
-                                  sr_name, sr_prefix, sr_url, sr_latest,
-                                  args.dmm, args.latest, fd)
+                                  sr_name, sr_prefix, sr_prods, sr_url,
+                                  sr_latest,
+                                  args.dmm, args.latest, args.sort_key, fd)
                 except KeyError:
                     pass
 
@@ -683,8 +722,8 @@ def main():
 
     elif not args.only_label:
         '''only-series'''
-        print_serises(sr_name, sr_name, sr_prefix, sr_url, sr_latest,
-                      args.dmm, args.latest, fd)
+        print_serises(sr_name, sr_name, sr_prefix, sr_prods, sr_url, sr_latest,
+                      args.dmm, args.latest, args.sort_key, fd)
 
     fd.close()
 
