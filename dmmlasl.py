@@ -351,7 +351,7 @@ def count_prefixes(prods):
 
 def get_latest(prods):
     '''最新リリース作品のリリース日を返す'''
-    item = prods[prods._OrderedDict__root.next.key]
+    item = next(iter(prods.values()))
     mel = get_elems(item)
     return libssw.getnext_text(mel[1])
 
@@ -480,7 +480,7 @@ def main():
     priurls = libssw.join_priurls(target, ROOTID, service=service)
 
     try:
-        last_pid = existings[existings._OrderedDict__root.prev.key]['pid']
+        last_pid = next(reversed(existings.values()))['pid']
     except AttributeError:
         last_pid = None
 

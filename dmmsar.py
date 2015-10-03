@@ -412,6 +412,7 @@ import io
 import argparse
 from operator import attrgetter
 from itertools import zip_longest
+from collections import OrderedDict
 
 import libssw
 import dmm2ssw
@@ -745,7 +746,7 @@ def get_args(argv):
     verbose.verbose = VERBOSE = args.verbose
 
     if not VERBOSE:
-        verbose = _libssw.verbose = lambda *x: None
+        verbose = libssw.verbose = lambda *x: None
     elif VERBOSE > 1:
         libssw.VERBOSE = libssw.verbose.verbose = \
             dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = VERBOSE - 1
@@ -1189,12 +1190,12 @@ def main(argv=None):
 
     # 作品情報の取り込み
     # 新着順
-    products = libssw.OrderedDict2((u, p) for u, p in p_gen)
+    products = OrderedDict((u, p) for u, p in p_gen)
     emsg('I', '一覧取得完了')
 
     if not args.service:
         # TSVやウィキテキスト入力の場合の作品情報からサービス判定
-        args.service = libssw.resolve_service(products.head().url)
+        args.service = libssw.resolve_service(next(iter(products)))
 
     total = len(products)
     if not total:
