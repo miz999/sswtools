@@ -181,7 +181,7 @@ def searchwiki_by_url(url):
             yield a.get('href'), a.text
 
         # 次のページがあったらそちらで再度探す
-        he = libssw.ssw_nextpage(he)
+        he = libssw.ssw_searchnext(he)
         if he is None:
             break
 

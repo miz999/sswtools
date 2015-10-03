@@ -92,7 +92,8 @@ OMITWORDS = {'総集編':      '総集編',
              'DMM限定':     '限定盤',
              '数量限定':     '限定盤',
              '枚限定':       '限定盤',
-             '初回限定版':    '限定盤',}
+             '初回限定版':    '限定盤',
+}
 # 【混ぜるな危険】
 #  'コレクション'
 #  '保存版'
@@ -377,12 +378,19 @@ HIDE_NAMES = {'1023995': '立花恭子',
               '1024279': '藤崎かすみ',
               '1026305': '北野ひな'}
 
+HIDE_NAMES_V = HIDE_NAMES.values()
 
+
+p_number = _re.compile(r'\d+')
 p_delim = _re.compile(r'[/／,、]')
 p_inbracket = _re.compile(r'[(（]')
+p_interlink = _re.compile(r'(\[\[.+?\]\])')
 p_linkpare = _re.compile(r'\[\[(.+?)(?:>(.+?))?\]\]')
 p_hiragana = _re.compile(r'[ぁ-ゞー]')
 p_neghirag = _re.compile(r'[^ぁ-ゞー]')
+
+p_splitpid1 = _re.compile(r'[+-]')
+p_splitpid2 = _re.compile(r'([a-z]+)(\d+)', _re.I)
 
 sp_pid = (_re.compile(r'^(?:[hn]_)?\d*([a-z]+)(\d+).*', _re.I), r'\1-\2')
 
@@ -641,8 +649,6 @@ def rm_hyphen(string):
     return string.translate(t_pidsep)
 
 
-p_number = _re.compile(r'\d+')
-
 def extr_num(string):
     return p_number.findall(string)
 
@@ -656,7 +662,7 @@ def get_article(url):
 def files_exists(mode, *files):
     '''同名のファイルが存在するかどうかチェック'''
     for f in files:
-        if f in (_sys.stdin, _sys.stdout):
+        if f in {_sys.stdin, _sys.stdout}:
             continue
         verbose('file: ', f)
         isexist = _os.path.exists(f)
@@ -674,9 +680,9 @@ def inprogress(msg):
 
 def gen_no_omits(no_omit: 'int or tuple[int]'):
     if isinstance(no_omit, int):
-        return OMITTYPE[:no_omit]
+        return set(OMITTYPE[:no_omit])
     else:
-        return tuple(OMITTYPE[i] for i in no_omit)
+        return set(OMITTYPE[i] for i in no_omit)
 
 
 def le80bytes(string, encoding='euc_jisx0213'):
@@ -780,7 +786,7 @@ class __OpenUrl:
 
             # HTTPステータスがサーバ/ゲートウェイの一時的な問題でなければ終了
             if resp.status and not 500 <= resp.status <= 504:
-                if resp.status not in (200, 404):
+                if resp.status not in {200, 404}:
                     emsg('W', 'HTTP status: ', resp.status)
                 break
 
@@ -835,13 +841,13 @@ p_omnivals = (
 
 def check_omnivals(title):
     '''隠れ総集編チェック(関連数値編)'''
-    title = norm_uc(title)
-    def pick():
+    def pick(title):
         for p in p_omnivals:
             m = p.findall(title)
             if m:
                 yield m[0]
-    hit = tuple(pick())
+
+    hit = tuple(pick(norm_uc(title)))
     if len(hit) > 1:
         return hit
 
@@ -860,9 +866,9 @@ def is_omnirookie(cid, title):
         return None, None
 
 
-def check_omit(title, cid, omit_suss_4h=None, no_omits=()):
+def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
     '''除外対象かどうかチェック'''
-    #除外作品チェック (タイトル内の文字列から)
+    # 除外作品チェック (タイトル内の文字列から)
     for key, word in check_omitword(title):
         if key not in no_omits:
             return key, word
@@ -893,7 +899,7 @@ class DMMTitleListParser:
     '''一覧ページの解析'''
     _sp_tsuffix = (_re.compile(r' - \S*( - DMM.R18)?$'), '')
 
-    def __init__(self, no_omits=OMITTYPE, patn_pid=None, show_info=True):
+    def __init__(self, no_omits=set(OMITTYPE), patn_pid=None, show_info=True):
         self._no_omits = no_omits
         self._patn_pid = patn_pid
         self._show_info = show_info
@@ -914,7 +920,7 @@ class DMMTitleListParser:
 
         return article
 
-    def _ret_titles(self, ttl):
+    def _ret_titles(self, titles):
         '''作品タイトルとURLの取得'''
         def omit(key, word):
             if self._show_info or VERBOSE:
@@ -922,21 +928,22 @@ class DMMTitleListParser:
                     cid, 'reason=("{}", "{}")'.format(key, word)))
             self.omitted += 1
 
-        t_el = ttl.find('a')
-        title = t_el.text
-        path = t_el.get('href')
-        url = _up.urljoin(BASEURL, path)
+        for ttl in titles:
+            t_el = ttl.find('a')
+            title = t_el.text
+            path = t_el.get('href')
+            url = _up.urljoin(BASEURL, path)
 
-        pid, cid = gen_pid(url, self._patn_pid)
-        cid = cid.lstrip('79')
+            pid, cid = gen_pid(url, self._patn_pid)
+            cid = cid.lstrip('79')
 
-        # 除外作品チェック
-        omitinfo = check_omit(title, cid, no_omits=self._no_omits)
-        if omitinfo:
-            omit(*omitinfo)
-            return False, False
+            # 除外作品チェック
+            omitinfo = check_omit(title, cid, no_omits=self._no_omits)
+            if omitinfo:
+                omit(*omitinfo)
+                yield False, False
 
-        return url, Summary(url=url, title=title, pid=pid, cid=cid)
+            yield url, Summary(url=url, title=title, pid=pid, cid=cid)
 
     def _ret_nextpage(self, he):
         '''ページネーション処理'''
@@ -954,13 +961,17 @@ class DMMTitleListParser:
 
         self.nexturl = self._ret_nextpage(he)
 
-        return (self._ret_titles(ttl) for ttl in he.find_class('ttl'))
+        return self._ret_titles(he.find_class('ttl'))
 
-
-p_splitid = _re.compile(r'([a-z]+)[+-]?(\d+)', _re.I)
 
 def split_pid(pid):
-    return p_splitid.findall(pid)[0]
+    '''品番をプレフィクスと連番に分離'''
+    try:
+        prefix, serial = p_splitpid1.split(pid)
+    except ValueError:
+        prefix, serial = p_splitpid2.findall(pid)[0]
+
+    return prefix, serial
 
 
 def sort_by_id(products, reverse=False):
@@ -970,8 +981,8 @@ def sort_by_id(products, reverse=False):
     def _make_items(products, maxdigit):
         '''URL(キー)と桁を揃えた品番'''
         for url in products:
-            prefix, number = split_pid(products[url].pid)
-            yield url, '{0}{1:0>{2}}'.format(prefix, number, maxdigit)
+            prefix, serial = split_pid(products[url].pid)
+            yield url, '{0}{1:0>{2}}'.format(prefix, serial, maxdigit)
 
     maxdigit = max(extr_num(products[p].pid)[0] for p in products)
 
@@ -983,8 +994,8 @@ def sort_by_id(products, reverse=False):
 class NotKeyIdYet:
     '''品番が key_id になるまで True を返す'''
     def _is_start_pid(self, pid):
-        prefix, number = split_pid(pid)
-        return prefix == self._key_id[0] and number < self._key_id[1]
+        prefix, serial = split_pid(pid)
+        return prefix == self._key_id[0] and serial < self._key_id[1]
 
     def __init__(self, key_id, key_type, attr, if_inactive=False):
         if not key_id:
@@ -1180,8 +1191,6 @@ def from_tsv(files):
 
 class _FromWiki:
     '''タイトル一覧をウィキテキスト(表形式)からインポート'''
-    _p_interlink = _re.compile(r'(\[\[.+?\]\])')
-
     def __init__(self):
         self.article = ''
 
@@ -1189,7 +1198,7 @@ class _FromWiki:
         '''出演者情報の解析(ウィキテキスト)'''
         shown = dest = parened = ''
 
-        for e in self._p_interlink.split(name):
+        for e in p_interlink.split(name):
 
             if not e:
                 continue
@@ -1584,7 +1593,7 @@ def stringize_performers(pfmrs, number, follow):
     def _build_performerslink(pfmrs, follow):
         '''女優リンクの作成'''
         for shown, dest, parened in pfmrs:
-            if shown in HIDE_NAMES.values():
+            if shown in HIDE_NAMES_V:
                 shown, dest, parened = '', '', '(削除依頼対応)'
             elif follow and shown and not dest:
                 # 名前が無かったり既にリダイレクト先があったらスルー
@@ -1758,7 +1767,7 @@ def get_cookie():
     elif _sys.platform == 'darwin':
         fx_dir = _Path(_os.environ['HOME']).joinpath(
             'Library/Application Support/Firefox/Profiles')
-    elif _sys.platform in ('os2', 'os2emx'):
+    elif _sys.platform in {'os2', 'os2emx'}:
         return False
     else:
         fx_dir = _Path(_os.environ['HOME']).joinpath('.mozilla/firefox')
@@ -1797,7 +1806,7 @@ def get_cookie():
     return 'TONOSAMA_BATTA={}; afsmm={}; ses_age=18;'.format(batta, afsmm)
 
 
-def ssw_nextpage(el):
+def ssw_searchnext(el):
     '''Wiki検索ページの次ページがあれば取得'''
     pagin = el.xpath('.//div[@class="paging-top"]/a[text()="次の20件"]')
     if pagin:

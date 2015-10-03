@@ -67,7 +67,7 @@ Wiki女優ページのウィキテキストのファイル名
     厳密には元のウィキテキストそのものとの差分ではなく、テキストを解析した後の
     作品情報単位での差分。
 
--c, --clear-cache
+-C, --clear-cache
     HTTPキャッシュを終了時に削除する。
 
 -v, --verbose
@@ -177,7 +177,7 @@ def get_args():
                            help='データ追加前と後の差分をウェブブラウザで表示する',
                            action='store_true')
 
-    argparser.add_argument('-c', '--clear-cache',
+    argparser.add_argument('-C', '--clear-cache',
                            help='プログラム終了時にHTTPキャッシュをクリアする',
                            action='store_true')
     argparser.add_argument('-v', '--verbose',

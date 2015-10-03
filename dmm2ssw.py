@@ -748,8 +748,8 @@ def _ret_apache(cid, pid):
     '''Apacheのタイトルの長いやつ'''
     verbose('Checking Apache title...')
 
-    number = cid.replace('h_701ap', '')
-    url = 'http://www.apa-av.jp/list_detail/detail_{}.html'.format(number)
+    serial = cid.replace('h_701ap', '')
+    url = 'http://www.apa-av.jp/list_detail/detail_{}.html'.format(serial)
 
     resp, he = _libssw.open_url(url)
 
@@ -776,8 +776,8 @@ class _RetrieveTitleSCOOP:
         verbose('Checking SCOOP title...')
 
         prefix = cid[2:6]
-        number = cid[6:]
-        url = 'http://www.km-produce.com/works/{}-{}'.format(prefix, number)
+        serial = cid[6:]
+        url = 'http://www.km-produce.com/works/{}-{}'.format(prefix, serial)
 
         while True:
             verbose('cookie: ', self._cookie)
@@ -824,10 +824,10 @@ class _RetrieveTitlePlum:
     def __call__(self, cid, pid):
         verbose('Checking Plum title...')
 
-        number = cid.replace(self._prefix, '')
-        if len(number) < 3:
-            number = '{:0>3}'.format(number)
-        url = 'http://www.plum-web.com/?view=detail&ItemCD=SE{}&label=SE'.format(number)
+        serial = cid.replace(self._prefix, '')
+        if len(serial) < 3:
+            serial = '{:0>3}'.format(number)
+        url = 'http://www.plum-web.com/?view=detail&ItemCD=SE{}&label=SE'.format(serial)
 
         cookie = ''
         for i in range(5):
@@ -1013,7 +1013,7 @@ class DMMParser:
     p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
     # p_genre = _re.compile(r'/article=keyword/id=(6003|6147|6561)/')
 
-    def __init__(self, no_omits=_libssw.OMITTYPE,
+    def __init__(self, no_omits=set(_libssw.OMITTYPE),
                  start_date=None, start_pid_s=None, filter_pid_s=None,
                  pass_bd=False, n_i_s=False, deeper=True, quiet=False):
         self._sm = _libssw.Summary()
@@ -1465,7 +1465,7 @@ class DMMParser:
         omitinfo = _libssw.check_omit(self._sm['title'],
                                       self._sm['cid'],
                                       self._omit_suss_4h,
-                                      no_omits=_libssw.OMITTYPE)
+                                      no_omits=set(_libssw.OMITTYPE))
         if omitinfo:
             self._mark_omitted(*omitinfo)
 
@@ -1606,7 +1606,7 @@ def search_listpage(url, listname, listtype, pid):
 
         if not found:
             # 次のページがあったらそちらで再度探す
-            he = _libssw.ssw_nextpage(he)
+            he = _libssw.ssw_searchnext(he)
             if he is None:
                 break
 
