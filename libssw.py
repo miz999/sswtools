@@ -471,14 +471,6 @@ class Emsg:
 emsg = Emsg(OWNNAME)
 
 
-def copy2clipboard(string):
-    '''クリップボードへコピー'''
-    try:
-        _ppccopy(string)
-    except NameError:
-        emsg('W', 'Python pyperclip モジュールがインストールされていないためクリップボードにはコピーされません。')
-
-
 class Summary:
     '''作品情報格納用'''
     __slots__ = ('url',
@@ -610,6 +602,14 @@ def sub(p_list, string, n=False):
     '''re.sub()、re.subn()ラッパー'''
     return p_list[0].subn(p_list[1], string) if n \
         else p_list[0].sub(p_list[1], string)
+
+
+def copy2clipboard(string):
+    '''クリップボードへコピー'''
+    try:
+        _ppccopy(string)
+    except NameError:
+        emsg('W', 'Python pyperclip モジュールがインストールされていないためクリップボードにはコピーされません。')
 
 
 def quote(string, safe='/', encoding='euc_jisx0213', errors=None):

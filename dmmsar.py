@@ -408,10 +408,9 @@ dmmsar.py (-A|-S|-L|-K|-U) [キーワード ...] [オプション...]
 '''
 import sys
 import re
-import io
 import argparse
 from operator import attrgetter
-from itertools import zip_longest
+from itertools import zip_longest, compress
 from collections import OrderedDict
 
 import libssw
@@ -908,148 +907,122 @@ def truncate_th(cols):
             yield ''
 
 
-def print_header(fd, article, header, page):
+def number_header(article, page):
     '''ページヘッダの出力'''
-    article_name = article + (' {}'.format(page) if page > 1 else '')
-    verbose('prt header article name: ', article_name)
-    print('\n{}'.format(article_name),
-          file=fd)
-    print(header, file=fd)
-    return article_name
+    return article + (' {}'.format(page) if page > 1 else '')
 
 
-def print_srchstr(titles, fd):
-    '''検索用にDMM上のタイトルをコメントで残す(一覧ページ)'''
-    print('\n// 検索用', end='', file=fd)
-    yield '\n// 検索用'
-    for tdmm in titles:
-        print('\n//', tdmm, end='', file=fd)
-        yield '\n//' + tdmm
+class FinishBuild(Exception):
+    pass
 
 
-def finalize(wikitexts, article_name, article_header, outf_act, outf_tbl,
-             suffix, writemode, args):
+class BuildPage:
+    '''ウィキテキスト生成(ページごと)'''
+    def __init__(self, wikitexts, split, a_name, t_hdr):
+        self._wikitexts = wikitexts
+        self._split = split
+        self._a_name = a_name
+        self._t_hdr = t_hdr
+
+        self._page_names = set()
+
+    def reset(self, start):
+        self.no = start - 1
+
+    def _yield_tail(self, tdmms):
+        # DMM上のタイトルを変更している作品のDMMタイトルをコメントで残す
+        yield '\n■関連ページ'
+        yield '-[[]]\n'
+
+        # DMM上のタイトルを変更している作品のDMMタイトルをコメントで残す
+        if tdmms:
+            yield '//検索用'
+            for tdmm in tdmms:
+                yield '//' + tdmm
+
+    def open_browser(self, browser):
+        if browser and self._page_names:
+            # ブラウザで開く
+            libssw.open_ssw(*self._page_names)
+
+    def __call__(self, is_table=False):
+        '''ウィキテキスト生成(ページごと)'''
+
+        attr = 'wktxt_t' if is_table else 'wktxt_a'
+        titles_dmm = []
+
+        # ページヘッダの出力
+        pagen = (self.no // self._split + 1) if self.no >= 0 else 0
+        page_header = number_header(self._a_name, pagen)
+        yield '\n' + page_header + '\n'
+        yield self._t_hdr.format('NO')
+        self._page_names.add(page_header)
+
+        while True:
+            # for j, item in enumerate(wikitexts, start=args.row - 1):
+            verbose('Row #', self.no)
+
+            try:
+                item = self._wikitexts[self.no]
+            except IndexError:
+                yield from self._yield_tail(titles_dmm)
+                raise FinishBuild
+
+            remainder = self.no % self._split
+
+            if self._split and self.no and not remainder:
+                # ページ切り替え処理
+                yield from self._yield_tail(titles_dmm)
+                raise StopIteration
+
+            if self._t_hdr and remainder and not self.no % 10:
+                # 10件ごとの表ヘッダの出力
+                yield self._t_hdr.format(remainder)
+                verbose('Header: ', self.no)
+
+            # 作品情報の出力
+            yield getattr(item, attr)
+
+            if is_table and item.title_dmm:
+                titles_dmm.append(item.title_dmm)
+
+            self.no += 1
+
+
+def finalize(wikitexts, article_name, article_header, args):
     '''最終的なウィキテキスト出力'''
-    page_names = set()
 
     if args.add_column:
         add_header = '|'.join(c.split(':')[0] for c in args.add_column) + '|'
         args.add_column = tuple(truncate_th(args.add_column))
     else:
         add_header = ''
-    verbose('add header: ', add_header)
-    verbose('add column: ', args.add_column)
+    verbose('add header: {}\nadd column: {}'.format(add_header,
+                                                    args.add_column))
 
-    # ヘッダ文字列の作成
-    if args.header and args.table:
-        table_header = \
-            '|~{{}}|PHOTO|{}|ACTRESS|{}{}RELEASE|NOTE|'.format(
-                'SUBTITLE' if args.retrieval == 'series' else 'TITLE',
-                'DIRECTOR|' if args.dir_col else '',
-                add_header if add_header else '')
+    if args.table and args.header:
+        table_header = '|~{{}}|PHOTO|{}|ACTRESS|{}{}RELEASE|NOTE|'.format(
+            'SUBTITLE' if args.retrieval == 'series' else 'TITLE',
+            'DIRECTOR|' if args.dir_col else '',
+            add_header)
+    else:
+        table_header = ''
 
-    if args.table:
-        # table形式
+    build_page = BuildPage(wikitexts, args.split, article_name, table_header)
 
-        titles_dmm = []
+    for is_table in compress((True, False), (args.table, args.table != 1)):
 
-        if args.split and (args.row - 1) % args.split:
-            fd, pagen = open_outfile(writemode, args.split,
-                                     outf_tbl, args.row - 1, suffix)
-        else:
-            fd = io.IOBase()  # Dummy
+        build_page.reset(args.row)
 
-        for j, item in enumerate(wikitexts, start=args.row - 1):
-            verbose('Row #', j)
+        try:
+            while True:
+                yield from build_page(is_table)
+                build_page.no += 1
+        except FinishBuild:
+            verbose('wikitexts finished')
+            break
 
-            if args.split and not j % args.split:
-                # ページ切り替え処理
-
-                # DMM上のタイトルを変更している作品のDMMタイトルをコメントで残す
-                if titles_dmm:
-                    yield from print_srchstr(titles_dmm, fd)
-                    titles_dmm.clear()
-
-                if args.out:
-                    fd.close()
-
-                fd, pagen = open_outfile(writemode, args.split,
-                                         outf_tbl, j, suffix)
-
-                # ページヘッダの出力
-                phdr = print_header(fd, article_name, article_header, pagen)
-                page_names.add(phdr)
-                yield phdr + '\n'
-
-            if not j % 10:
-                # 10件ごとの表ヘッダの出力
-                remainder = j % args.split
-                thdr = table_header.format(remainder if remainder else 'NO')
-                print(thdr, file=fd)
-                yield thdr + '\n'
-                verbose('Header: ', j)
-
-            # 作品情報の出力
-            print(item.wktxt_t, file=fd)
-            yield item.wktxt_t + '\n'
-
-            if item.title_dmm:
-                titles_dmm.append(item.title_dmm)
-
-        print('\n■関連ページ', file=fd)
-        print('-[[]]', file=fd)
-        yield '\n■関連ページ\n'
-        yield '-[[]]\n'
-
-        if titles_dmm:
-            yield from print_srchstr(titles_dmm, fd)
-
-        if args.out:
-            fd.close()
-
-    print()
-    yield '\n'
-
-    if args.table != 1:
-        # 女優ページ
-
-        if args.split and (args.row - 1) % args.split:
-            fd, pagen = open_outfile(writemode, args.split,
-                                     outf_act, args.row - 1, suffix)
-        else:
-            fd = io.IOBase()  # Dummy
-
-        for j, item in enumerate(wikitexts, start=args.row - 1):
-            verbose('Item #', j)
-
-            if not item.url:
-                verbose('Empty entry')
-                continue
-
-            if args.split and not j % args.split:
-                # ページ切り替え処理
-
-                if args.out:
-                    fd.close()
-
-                fd, pagen = open_outfile(writemode, args.split,
-                                         outf_act, j, suffix)
-
-                # ページヘッダの出力
-                phdr = print_header(fd, article_name, article_header, pagen)
-                page_names.add(phdr)
-                yield phdr + '\n'
-
-            # 作品情報の出力
-            print(item.wktxt_a, file=fd)
-            yield item.wktxt_a + '\n'
-
-        if args.out:
-            fd.close()
-
-    if args.browser and page_names:
-        # ブラウザで開く
-        libssw.open_ssw(*page_names)
+    build_page.open_browser(args.browser)
 
 
 def main(argv=None):
@@ -1344,6 +1317,20 @@ def main(argv=None):
 
             verbose('Call dmm2ssw')
             b, status, data = dmm2ssw.main(props, args, dmmparser)
+            # 返り値:
+            # b -> Bool
+            # status -> url if b is True else http status
+            # data -> ReturnVal(release,
+            #                   pid,
+            #                   title,
+            #                   title_dmm,
+            #                   url,
+            #                   time,
+            #                   ('maker', 'maker_id'),
+            #                   ('label', 'label_id'),
+            #                   ('series', 'series_id'),
+            #                   wikitext_a,
+            #                   wikitext_t)
             verbose('Return from dmm2ssw: {}, {}, {}'.format(
                 b, status, data))
             # 除外対象だったとき、data は (key, hue) のタプルになる。
@@ -1428,14 +1415,15 @@ def main(argv=None):
 
         print()
 
+        result = tuple(finalize(wikitexts, article_name, article_header, args))
+        print(*result, sep='\n')
+
+        # if args.split and (args.row - 1) % args.split:
+        #     fd, pagen = open_outfile(writemode, args.split,
+        #                              outf_act, args.row - 1, suffix)
+
         if args.copy:
-            libssw.copy2clipboard(''.join(
-                finalize(wikitexts, article_name, article_header,
-                         outf_act, outf_tbl, suffix, writemode, args)))
-        else:
-            for dumy in finalize(wikitexts, article_name, article_header,
-                                 outf_act, outf_tbl, suffix, writemode, args):
-                pass
+            libssw.copy2clipboard('\n'.join(result))
 
     else:
         # タブ区切り一覧の書き出し

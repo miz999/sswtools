@@ -2085,18 +2085,20 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                             wikitext_t)
     else:
         # 書き出す
-        print()
+        output = []
         if wikitext_a:
-            print(wikitext_a)
+            output.append(wikitext_a)
 
         if wikitext_t:
-            print(wikitext_t)
+            output.append(wikitext_t)
 
-        print()
+        output += '\n'
+
+        print('\n', output, sep='')
 
         if args.copy:
             verbose('copy 2 clipboard')
-            _libssw.copy2clipboard(wikitext_a + wikitext_t + '\n')
+            _libssw.copy2clipboard(output + '\n')
 
         if args.browser:
             # wikiのページを開く
