@@ -1193,13 +1193,13 @@ def main(argv=None):
     products = OrderedDict((u, p) for u, p in p_gen)
     emsg('I', '一覧取得完了')
 
-    if not args.service:
-        # TSVやウィキテキスト入力の場合の作品情報からサービス判定
-        args.service = libssw.resolve_service(next(iter(products)))
-
     total = len(products)
     if not total:
         emsg('E', '検索結果は0件でした。')
+
+    if not args.service:
+        # TSVやウィキテキスト入力の場合の作品情報からサービス判定
+        args.service = libssw.resolve_service(next(iter(products)))
 
     join_d = dict()
 
