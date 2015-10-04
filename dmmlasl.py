@@ -468,13 +468,7 @@ def main():
              mk_ophans_prods,
              mk_ophans_latest) = pickle.load(f)
 
-    exist_set = set()
-    exist_add = exist_set.add
-    for i in existings:
-        if i in exist_set:
-            emsg('W', 'Duplication found: ', i)
-        else:
-            exist_add(i)
+    exist_set = set(existings)
 
     # 新規追加分を取得
     priurls = libssw.join_priurls(target, ROOTID, service=service)
@@ -515,7 +509,7 @@ def main():
         article_name, ROOTID, nc_num, total))
 
     # まずレーベル別にまとめ
-    lb_set = set()
+    lb_set = set(lb_name)
     lb_set_add = lb_set.add
     for lid, lname, lurl, lprods in ret_members('label',
                                                 newcomers,
@@ -587,7 +581,7 @@ def main():
         emsg('I', 'レーベル「{}」のシリーズ'.format(lb_name[lid]))
 
         verbose('exising ophans: {}'.format(len(lb_ophans.get(lid, ()))))
-        sr_set = set()
+        sr_set = set(sr_name)
         sr_set_add = sr_set.add
         for sid, sname, surl, sprods in ret_members('series',
                                                     lprods,
