@@ -1181,8 +1181,7 @@ def finalize(wikitexts, article_name, article_header, args):
                 yield from build_page(is_table)
                 build_page.no += 1
         except FinishBuild:
-            verbose('wikitexts finished')
-            break
+            pass
 
     build_page.open_browser(args.browser)
 
