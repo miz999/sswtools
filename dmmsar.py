@@ -411,7 +411,7 @@ import re
 import argparse
 from operator import attrgetter
 from itertools import zip_longest, compress
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 import libssw
 import dmm2ssw
@@ -800,6 +800,64 @@ def get_args(argv):
     return args
 
 
+OutFile = namedtuple('OutFile', 'actr,tbl,suffix,writemode')
+
+
+def parse_outfile(args):
+    if args.out:
+        # ファイル名に拡張子があったら分割
+        split, suffix = (args.out.rsplit('.', 1) + [''])[:2]
+
+        outf_actr = split + '_actress'
+        outf_tbl = split + '_table'
+
+        if args.replace:
+            writemode = 'w'
+        else:
+            chk = []
+            if not args.wikitext:
+                chk.append(args.out)
+            else:
+                if args.table:
+                    chk.append(outf_tbl)
+                if args.table != 1:
+                    chk.append(outf_act)
+
+            libssw.files_exists('w', *chk)
+            writemode = 'x'
+    else:
+        outf_actr = '_actress'
+        outf_tbl = '_table'
+        suffix = ''
+        writemode = None
+
+    return OutFile(actr=outf_actr, tbl=outf_tbl, suffix=suffix, writemode=writemode)
+
+
+def det_filterpatn(args):
+    '''フィルター用パターンの決定'''
+    if args.filter_pid:
+        return re.compile(args.filter_pid, re.I), 'pid'
+    elif args.filter_cid:
+        return re.compile(args.filter_cid, re.I), 'cid'
+    else:
+        return None, ''
+
+
+def det_keyinfo(args):
+    '''start/last-p/cidキー情報の決定'''
+    if args.start_pid:
+        return args.start_pid, 'start', 'pid'
+    elif args.start_cid:
+        return args.start_cid, 'start', 'cid'
+    elif args.last_pid:
+        return libssw.rm_hyphen(args.last_pid), 'last', 'pid'
+    elif args.last_cid:
+        return args.last_cid, 'last', 'cid'
+    else:
+        return None, None, 'pid'
+
+
 class ExtractIDs:
     '''位置引数からIDと検索対象の抽出'''
     def __call__(self, keywords: tuple, is_cid=False):
@@ -848,6 +906,68 @@ def from_sequence(keywords: tuple, service, sp_pid):
         yield makeproditem(cid, service, sp_pid)
 
 
+def make_pgen(args, ids, listparser, priurls, sp_pid,
+              key_id, key_type, kidattr):
+    '''作品情報作成ジェネレータの作成'''
+    if args.from_tsv:
+        # TSVファイルから一覧をインポート
+        verbose('Import from_tsv()')
+        p_gen = libssw.from_tsv(args.keyword)
+    elif args.from_wiki:
+        # ウィキテキストから一覧をインポート
+        verbose('Import from_wiki()')
+        p_gen = libssw.from_wiki(args.keyword)
+    elif args.cid or args.cid_l:
+        # 品番指定
+        if '{}' in ids[0]:
+            # '品番基準' 開始番号 終了番号 ステップ
+            p_gen = from_sequence(ids, args.service, sp_pid)
+        else:
+            # 各cidからURLを作成
+            p_gen = (makeproditem(c, args.service, sp_pid) for c in ids)
+    else:
+        # DMMから一覧を検索/取得
+        verbose('Call from_dmm()')
+        if args.retrieval in ('url', 'keyword'):
+            priurls = args.keyword
+        else:
+            priurls = libssw.join_priurls(args.retrieval,
+                                          *ids,
+                                          service=args.service)
+        p_gen = libssw.from_dmm(listparser, priurls,
+                                pages_last=args.pages_last,
+                                key_id=key_id,
+                                key_type=key_type,
+                                idattr=kidattr)
+
+    return p_gen
+
+
+def ret_joindata(join_d, args):
+    if args.join_tsv:
+        # join データ作成(tsv)
+        verbose('join tsv')
+        join_d.update((k, p) for k, p in libssw.from_tsv(args.join_tsv))
+
+    if args.join_wiki:
+        # join データ作成(wiki)
+        verbose('join wiki')
+        for k, p in libssw.from_wiki(args.join_wiki):
+            if k in join_d:
+                join_d[k].merge(p)
+            else:
+                join_d[k] = p
+
+    if args.join_html:
+        # jon データ作成(url)
+        verbose('join html')
+        for k, p in libssw.from_html(args.join_html, service=args.service):
+            if k in join_d:
+                join_d[k].merge(p)
+            else:
+                join_d[k] = p
+
+
 def fmtheader(atclinfo):
     '''ヘッダ整形'''
     return '\n*{}'.format(
@@ -888,6 +1008,48 @@ def build_header(articles):
 def build_header_listpage(retrieval, service, name, lstid):
     url = libssw.join_priurls(retrieval, lstid, service=service)[0]
     return build_header(((name, url),))
+
+
+def det_articlename(args, ids, wikitexts, listparser):
+    '''アーティクル名の決定およびヘッダの作成'''
+    if args.retrieval == 'actress':
+        # 女優ID指定:
+        article_name, article_header = build_header_actress(ids)
+    else:
+        # その他
+        if libssw.from_wiki.article:
+            article_name, article_header = build_header(
+                libssw.from_wiki.article)
+        elif args.retrieval == 'series':
+            article_name, article_header = build_header_listpage(
+                args.retrieval, args.service, *wikitexts[0].series)
+        elif args.retrieval == 'label':
+            article_name, article_header = build_header_listpage(
+                args.retrieval, args.service, *wikitexts[0].label)
+        elif args.retrieval == 'maker':
+            article_name, article_header = build_header_listpage(
+                args.retrieval, args.service, *wikitexts[0].maker)
+        elif listparser.article:
+            article_name, article_header = build_header(
+                listparser.article)
+        else:
+            article_name = article_header = ''
+
+    return article_name, article_header
+
+
+def set_sortkeys(sort_key):
+    '''ソートキーの設定'''
+    if sort_key == 'title':
+        # 第1キー:タイトル、第2キー:リリース日
+        return 'release', 'title'
+    elif sort_key == 'release':
+        # 第1キー:リリース日、第2キー:品番
+        return 'pid', 'release'
+    elif sort_key == 'pid':
+        return 'release', 'pid'
+    else:
+        return ()
 
 
 def open_outfile(writemode, split, stem, num, suffix):
@@ -1029,39 +1191,13 @@ def main(argv=None):
 
     args = get_args(argv or sys.argv[1:])
 
-    if args.out:
-
-        # ファイル名に拡張子があったら分割
-        split, suffix = (args.out.rsplit('.', 1) + [''])[:2]
-
-        outf_act = split + '_actress'
-        outf_tbl = split + '_table'
-
-        if args.replace:
-            writemode = 'w'
-        else:
-            chk = []
-            if not args.wikitext:
-                chk.append(args.out)
-            else:
-                if args.table:
-                    chk.append(outf_tbl)
-                if args.table != 1:
-                    chk.append(outf_act)
-
-            libssw.files_exists('w', *chk)
-            writemode = 'x'
-    else:
-        outf_act = '_actress'
-        outf_tbl = '_table'
-        suffix = ''
-        writemode = None
+    outfile = parse_outfile(args)
 
     ids = tuple(extr_ids(args.keyword, args.cid))
     verbose('ids: ', ids)
 
     if not args.retrieval:
-        args.retrieval = extr_ids.retrieval or 'keyword'
+        args.retrieval = extr_ids.retrieval
     emsg('I', '対象: {}'.format(args.retrieval))
 
     # -L, -K , -U 以外では --not-in-series は意味がない
@@ -1070,11 +1206,10 @@ def main(argv=None):
         verbose('force disabled n_i_s')
 
     if args.retrieval == 'actress':
-        for i in ids:
-            if i in libssw.HIDE_NAMES:
-                emsg('W', '削除依頼が出されている女優です: {}'.format(
-                    libssw.HIDE_NAMES[i]))
-                ids.remove(i)
+        for i in filter(lambda i: i in libssw.HIDE_NAMES, ids):
+            emsg('W', '削除依頼が出されている女優です: {}'.format(
+                libssw.HIDE_NAMES[i]))
+            ids.remove(i)
 
     # 除外対象
     no_omits = libssw.gen_no_omits(args.no_omit)
@@ -1088,40 +1223,13 @@ def main(argv=None):
                   args.subtitle_regex[1]) if args.subtitle_regex else None
 
     # フィルター用パターン
-    if args.filter_pid:
-        filter_id = re.compile(args.filter_pid, re.I)
-        fidattr = 'pid'
-    elif args.filter_cid:
-        filter_id = re.compile(args.filter_cid, re.I)
-        fidattr = 'cid'
-    else:
-        filter_id = None
-        fidattr = ''
+    filter_id, fidattr = det_filterpatn(args)
 
     p_filter_pid_s = args.filter_pid_s and re.compile(args.filter_pid_s, re.I)
     p_filter_ttl = args.filter_title and re.compile(args.filter_title, re.I)
 
     # 作成開始品番
-    if args.start_pid:
-        key_id = args.start_pid
-        key_type = 'start'
-        kidattr = 'pid'
-    elif args.start_cid:
-        key_id = args.start_cid
-        key_type = 'start'
-        kidattr = 'cid'
-    elif args.last_pid:
-        key_id = libssw.rm_hyphen(args.last_pid)
-        key_type = 'last'
-        kidattr = 'pid'
-    elif args.last_cid:
-        key_id = args.last_cid
-        key_type = 'last'
-        kidattr = 'cid'
-    else:
-        key_id = None
-        key_type = None
-        kidattr = 'pid'
+    key_id, key_type, kidattr = det_keyinfo(args)
 
     not_key_id = libssw.NotKeyIdYet(key_id, key_type, kidattr)
 
@@ -1130,36 +1238,8 @@ def main(argv=None):
 
     # 作品情報取得用イテラブルの作成
     priurls = ''
-    if args.from_tsv:
-        # TSVファイルから一覧をインポート
-        verbose('Import from_tsv()')
-        p_gen = libssw.from_tsv(args.keyword)
-    elif args.from_wiki:
-        # ウィキテキストから一覧をインポート
-        verbose('Import from_wiki()')
-        p_gen = libssw.from_wiki(args.keyword)
-    elif args.cid or args.cid_l:
-        # 品番指定
-        if '{}' in ids[0]:
-            # '品番基準' 開始番号 終了番号 ステップ
-            p_gen = from_sequence(ids, args.service, sp_pid)
-        else:
-            # 各cidからURLを作成
-            p_gen = (makeproditem(c, args.service, sp_pid) for c in ids)
-    else:
-        # DMMから一覧を検索/取得
-        verbose('Call from_dmm()')
-        if args.retrieval in ('url', 'keyword'):
-            priurls = args.keyword
-        else:
-            priurls = libssw.join_priurls(args.retrieval,
-                                          *ids,
-                                          service=args.service)
-        p_gen = libssw.from_dmm(listparser, priurls,
-                                pages_last=args.pages_last,
-                                key_id=key_id,
-                                key_type=key_type,
-                                idattr=kidattr)
+    p_gen = make_pgen(args, ids, listparser, priurls, sp_pid,
+                      key_id, key_type, kidattr)
 
     # 作品情報の取り込み
     # 新着順
@@ -1175,29 +1255,7 @@ def main(argv=None):
         args.service = libssw.resolve_service(next(iter(products)))
 
     join_d = dict()
-
-    if args.join_tsv:
-        # join データ作成(tsv)
-        verbose('join tsv')
-        join_d.update((k, p) for k, p in libssw.from_tsv(args.join_tsv))
-
-    if args.join_wiki:
-        # join データ作成(wiki)
-        verbose('join wiki')
-        for k, p in libssw.from_wiki(args.join_wiki):
-            if k in join_d:
-                join_d[k].merge(p)
-            else:
-                join_d[k] = p
-
-    if args.join_html:
-        # jon データ作成(url)
-        verbose('join html')
-        for k, p in libssw.from_html(args.join_html, service=args.service):
-            if k in join_d:
-                join_d[k].merge(p)
-            else:
-                join_d[k] = p
+    ret_joindata(join_d, args)
 
     if (args.join_tsv or args.join_wiki or args.join_html) and not len(join_d):
         emsg('E', '--join-* オプションで読み込んだデータが0件でした。')
@@ -1369,29 +1427,8 @@ def main(argv=None):
         verbose('Writing wikitext')
 
         # アーティクル名の決定
-        if args.retrieval == 'actress':
-            # 女優ID指定:
-            article_name, article_header = build_header_actress(ids)
-        else:
-            # その他
-            if libssw.from_wiki.article:
-                article_name, article_header = build_header(
-                    libssw.from_wiki.article)
-            elif args.retrieval == 'series':
-                article_name, article_header = build_header_listpage(
-                    args.retrieval, args.service, *wikitexts[0].series)
-            elif args.retrieval == 'label':
-                article_name, article_header = build_header_listpage(
-                    args.retrieval, args.service, *wikitexts[0].label)
-            elif args.retrieval == 'maker':
-                article_name, article_header = build_header_listpage(
-                    args.retrieval, args.service, *wikitexts[0].maker)
-            elif listparser.article:
-                article_name, article_header = build_header(
-                    listparser.article)
-            else:
-                article_name = article_header = ''
-
+        article_name, article_header = det_articlename(args, ids, wikitexts,
+                                                       listparser)
         verbose('article name: ', article_name)
         verbose('article header: ', repr(article_header))
 
@@ -1399,17 +1436,7 @@ def main(argv=None):
             emsg('W', 'ページ名が80バイトを超えています')
 
         # ソート
-        if args.sort_key == 'title':
-            # 第1キー:タイトル、第2キー:リリース日
-            sortkeys = 'release', 'title'
-        elif args.sort_key == 'release':
-            # 第1キー:リリース日、第2キー:品番
-            sortkeys = 'pid', 'release'
-        elif args.sort_key == 'pid':
-            sortkeys = 'release', 'pid'
-        else:
-            sortkeys = ()
-
+        sortkeys = set_sortkeys(args.sort_key)
         for k in sortkeys:
             wikitexts.sort(key=attrgetter(k))
 

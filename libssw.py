@@ -16,7 +16,7 @@ import unicodedata as _unicodedata
 # import tkinter
 from operator import itemgetter as _itemgetter
 from multiprocessing import Process as _Process
-from collections import namedtuple as _namedtuple, OrderedDict as _OrderedDict
+from collections import namedtuple as _namedtuple
 from tempfile import gettempdir as _gettempdir, mkstemp as _mkstemp
 from shutil import rmtree as _rmtree
 from difflib import HtmlDiff as _HtmlDiff
@@ -800,10 +800,9 @@ def norm_uc(string):
 
 def check_omitword(title):
     '''タイトル内の除外キーワードチェック'''
-    for key in OMITWORDS:
-        if key in title:
-            verbose('omit key, word: {}, {}'.format(key, OMITWORDS[key]))
-            yield OMITWORDS[key], key
+    for key in filter(lambda k: k in title, OMITWORDS):
+        verbose('omit key, word: {}, {}'.format(key, OMITWORDS[key]))
+        yield OMITWORDS[key], key
 
 
 def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
@@ -827,13 +826,9 @@ p_omnivals = (
 
 def check_omnivals(title):
     '''隠れ総集編チェック(関連数値編)'''
-    def pick(title):
-        for p in p_omnivals:
-            m = p.findall(title)
-            if m:
-                yield m[0]
 
-    hit = tuple(pick(norm_uc(title)))
+    hit = tuple(norm_uc(t[0])
+                for t in filter(lambda p: p.findall(title), p_omnivals))
     if len(hit) > 1:
         return hit
 
@@ -856,9 +851,9 @@ def is_omnirookie(cid, title):
 def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
     '''除外対象かどうかチェック'''
     # 除外作品チェック (タイトル内の文字列から)
-    for key, word in check_omitword(title):
-        if key not in no_omits:
-            return key, word
+    for key, word in filter(lambda k: k[0] not in no_omits,
+                            check_omitword(title)):
+        return key, word
 
     if '総集編' not in no_omits:
         # 隠れ総集編チェック(タイトル内の数値から)
@@ -928,9 +923,8 @@ class DMMTitleListParser:
             omitinfo = check_omit(title, cid, no_omits=self._no_omits)
             if omitinfo:
                 omit(*omitinfo)
-                yield False, False
-
-            yield url, Summary(url=url, title=title, pid=pid, cid=cid)
+            else:
+                yield url, Summary(url=url, title=title, pid=pid, cid=cid)
 
     def _ret_nextpage(self, he):
         '''ページネーション処理'''
@@ -1063,14 +1057,13 @@ def from_dmm(listparser, priurls, pages_last=0,
 
             # HTMLの解析
             for url, prop in listparser(he):
-                if url:
 
-                    yield url, prop
+                yield url, prop
 
-                    if not match_key_id(getattr(prop, idattr)):
-                        p = pages + 1
-                        pages_last = min((pages_last, p)) if pages_last else p
-                        verbose('set pages last: ', pages_last)
+                if not match_key_id(getattr(prop, idattr)):
+                    p = pages + 1
+                    pages_last = min((pages_last, p)) if pages_last else p
+                    verbose('set pages last: ', pages_last)
 
             pages += 1
             verbose('Pages : {} > {}'.format(pages, pages_last))
@@ -1188,10 +1181,7 @@ class _FromWiki:
         '''出演者情報の解析(ウィキテキスト)'''
         shown = dest = parened = ''
 
-        for e in p_interlink.split(name):
-
-            if not e:
-                continue
+        for e in filter(None, p_interlink.split(name)):
 
             # いったん丸カッコ括りを解く
             elem = e.strip().strip('()')
@@ -1306,9 +1296,8 @@ class _FromHtml:
             else:
                 # アンカーあり
                 fores = p_delim.split(foretxt)
-                for ph in fores:
-                    if ph:
-                        yield '', '', self._enclose(ph)
+                for ph in filter(None, fores):
+                    yield '', '', self._enclose(ph)
 
         if not len(td):
             # リテラルだけだったら終了

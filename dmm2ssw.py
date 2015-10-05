@@ -809,9 +809,8 @@ class _RetrieveTitlePlum:
 
     def _parse_cookie(self, cookie):
         verbose('parse cookie: ', cookie)
-        for c in (i.split(';')[0].strip() for i in cookie.split(',')):
-            if '=' not in c:
-                continue
+        for c in filter(lambda c: '=' in c,
+                        (i.split(';')[0].strip() for i in cookie.split(','))):
             lhs, rhs = c.split('=')
             if rhs == 'deleted':
                 self._ssid = lhs
@@ -922,10 +921,9 @@ class __TrySMM:
                                                    _up.quote(name))
         while True:
             resp, he = _libssw.open_url(url)
-            for a in he.iterfind('.//tr[@class="list"]'):
-                cand = a.find('td[2]/a').text.strip()
-                if name == cand:
-                    return True
+            if any(name == a.find('td[2]/a').text.strip()
+                   for a in he.iterfind('.//tr[@class="list"]')):
+                return True
 
             pagin = he.find('.//td[@class="line"]/a[last()]')
             if pagin is not None and pagin.text == '次へ':
@@ -1041,10 +1039,10 @@ class DMMParser:
     def _ret_title(self, chk_longtitle):
         '''タイトルの採取'''
         def _det_longtitle_maker():
-            for key in TITLE_FROM_OFFICIAL:
-                if self._sm['cid'].startswith(key):
-                    verbose('title from maker: ', key)
-                    return TITLE_FROM_OFFICIAL[key]
+            for key in filter(lambda k: self._sm['cid'].startswith(k),
+                              TITLE_FROM_OFFICIAL):
+                verbose('title from maker: ', key)
+                return TITLE_FROM_OFFICIAL[key]
 
         tdmm = self._he.find('.//img[@class="tdmm"]').get('alt')
         verbose('title dmm: ', tdmm)
@@ -1376,8 +1374,8 @@ class DMMParser:
             title_nr = _normalize(self._sm['title'])
             verbose('title norm: ', title_nr)
 
-            ttl_el = he_rel.iterfind('.//p[@class="ttl"]/a')
-            others = (t for t in ttl_el if _compare_title(t.text, title_nr))
+            others = filter(lambda t: _compare_title(t.text, title_nr),
+                            he_rel.iterfind('.//p[@class="ttl"]/a'))
             opath = _chooselink(others, service)
 
         return _up.urljoin(BASEURL, opath) if opath else False
@@ -1486,7 +1484,7 @@ class DMMParser:
         sale_data = None
         # if self.deeper and service != 'ama' and __name__ != '__main__':
         if self._deeper and service != 'ama':
-            if self._rental_pcdr and args._check_rental:
+            if self._rental_pcdr and args.check_rental:
                 # レンタル先行メーカーチェック
                 if service != 'rental':
                     # レンタル先行メーカーなのにレンタル版のURLじゃなかったらレンタル版を
@@ -2085,7 +2083,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                             wikitext_t)
     else:
         # 書き出す
-        output = []
+        output = ['']
         if wikitext_a:
             output.append(wikitext_a)
 
@@ -2094,11 +2092,11 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
 
         output += '\n'
 
-        print('\n', output, sep='')
+        print(*output, sep='\n')
 
         if args.copy:
             verbose('copy 2 clipboard')
-            _libssw.copy2clipboard(output + '\n')
+            _libssw.copy2clipboard(''.join(output))
 
         if args.browser:
             # wikiのページを開く
