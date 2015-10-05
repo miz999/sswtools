@@ -22,6 +22,7 @@ from shutil import rmtree as _rmtree
 from difflib import HtmlDiff as _HtmlDiff
 from http.client import HTTPException as _HTTPException
 from pathlib import Path as _Path
+from itertools import chain as _chain
 
 try:
     import httplib2 as _httplib2
@@ -839,8 +840,8 @@ p_omnivals = (
 
 def check_omnivals(title):
     '''隠れ総集編チェック(関連数値編)'''
-
-    hit = tuple(filter(None, (p.findall(norm_uc(title)) for p in p_omnivals)))
+    title = norm_uc(title)
+    hit = tuple(_chain.from_iterable(p.findall(title) for p in p_omnivals))
     if len(hit) > 1:
         return hit
 
