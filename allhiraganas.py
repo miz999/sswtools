@@ -50,7 +50,7 @@ def get_args():
     verbose.verbose = VERBOSE = args.verbose
 
     if not VERBOSE:
-        verbose = _libssw.verbose = lambda *x: None
+        verbose = libssw.verbose = lambda *x: None
     elif VERBOSE > 1:
         libssw.VERBOSE = libssw.verbose.verbose = \
             dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = VERBOSE - 1
@@ -86,11 +86,9 @@ def select_allhiragana(ids, today, path, selfcheck):
 
     print('sql:', sql, ', ph:', ph)
 
-    for aid, name, last_release in cur.execute(sql, ph):
-
-        if libssw.p_neghirag.search(name) or len(name) > 4:
-            continue
-
+    for aid, name, last_release in filter(
+            lambda n: not libssw.p_neghirag.search(n[1]) and len(n[1]) < 5,
+            cur.execute(sql, ph)):
         verbose(aid, name)
         print(aid, name + ': ', end='')
         url = 'http://actress.dmm.co.jp/-/detail/=/actress_id={}/'.format(aid)
@@ -139,7 +137,7 @@ def select_allhiragana(ids, today, path, selfcheck):
                 if last_release != last_web:
                     print('last_rel is different (db:{} <=> web:{}), '.format(
                         last_release, last_web),
-                    end='')
+                          end='')
                 datelast = date(*(int(d) for d in last_web.split('-')))
 
                 if (today - datelast).days < 366:
