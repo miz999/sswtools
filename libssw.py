@@ -814,8 +814,8 @@ def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
 p_omnivals = (
     _re.compile(r'(?:[2-9]\d|\d{3,})(?:人[^目]?|名)'),
     _re.compile(r'(?:[二弐][一二三四五六七八九十〇壱弐参拾百]+|[三四五六七八九参][一二三四五六七八九十〇壱弐参拾百]+|[一二三四五六七八九壱弐参百][一二三四五六七八九十〇壱弐参拾百]{2,})(?:人[^目]?|名)'),
-    _re.compile(r'(?:[5-9]\d|\d{3,})連?発'),
-    _re.compile(r'(?:[五六七八九][一二三四五六七八九十〇壱弐参拾百]+|[一二三四五六七八九百][一二三四五六七八九十〇]{2,})連?発'),
+    _re.compile(r'(?:[5-9]\d|\d{3,})連?[発射]'),
+    _re.compile(r'(?:[五六七八九][一二三四五六七八九十〇壱弐参拾百]+|[一二三四五六七八九百][一二三四五六七八九十〇]{2,})連?[発射]'),
     _re.compile(r'(?:1[5-9]|[2-9]\d|\d{3,})本番'),
     _re.compile(r'(?:[一十拾][五六七八九]|[二三四五六七八九弐参百][一二三四五六七八九十〇壱弐参拾百]|[一二三四五六七八九壱弐参拾百][一二三四五六七八九十〇壱弐参拾百]{2,})本番'),
     _re.compile(r'(?:[4-9]|\d{2,})時間'),
@@ -827,8 +827,7 @@ p_omnivals = (
 def check_omnivals(title):
     '''隠れ総集編チェック(関連数値編)'''
 
-    hit = tuple(norm_uc(t[0])
-                for t in filter(lambda p: p.findall(title), p_omnivals))
+    hit = tuple(filter(None, (p.findall(norm_uc(title)) for p in p_omnivals)))
     if len(hit) > 1:
         return hit
 
