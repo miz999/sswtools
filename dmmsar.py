@@ -1050,17 +1050,6 @@ def set_sortkeys(sort_key):
         return ()
 
 
-def open_outfile(of, is_table, pagen):
-    '''指定した出力ファイル名を指定のモードでオープン'''
-    if not of:
-        return sys.stdout
-
-    stem = of.tbl if is_table else of.actr
-    fd = open('.'.join('{}'.format(p) for p in (stem, pagen, of.suffix) if p),
-              of.writemode)
-    return fd
-
-
 def truncate_th(cols):
     for col in cols:
         try:
@@ -1072,6 +1061,17 @@ def truncate_th(cols):
 def number_header(article, page):
     '''ページヘッダの出力'''
     return article + (' {}'.format(page) if page > 1 else '')
+
+
+def open_outfile(of, is_table, pagen):
+    '''指定した出力ファイル名を指定のモードでオープン'''
+    if not of:
+        return sys.stdout
+
+    stem = of.tbl if is_table else of.actr
+    fd = open('.'.join('{}'.format(p) for p in (stem, pagen, of.suffix) if p),
+              of.writemode)
+    return fd
 
 
 class BuildPage:
@@ -1180,6 +1180,8 @@ def finalize(build_page, row, make, outfile):
 
             fd = open_outfile(outfile, is_table, build_page.pagen)
             print(per_page, file=fd)
+            if outfile:
+                fd.close()
 
 
 def main(argv=None):
