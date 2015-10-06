@@ -361,6 +361,9 @@ ReturnVal = _namedtuple('ReturnVal',
                         ('release', 'pid', 'title', 'title_dmm', 'url', 'time',
                          'maker', 'label', 'series', 'wktxt_a', 'wktxt_t'))
 
+NiS = _namedtuple('NiS', 'sid,name')
+
+
 p_more = _re.compile(r"url: '(.*?)'")
 p_related = _re.compile(r'var url = "(.*)"')
 p_age = _re.compile(r'(\(\d+?\))$')
@@ -1157,7 +1160,7 @@ class DMMParser:
 
             if self._n_i_s:
                 verbose('not in series')
-                raise OmitTitleException('series', (srid, sr.text))
+                raise OmitTitleException('series', NiS(sid=srid, name=sr.text))
 
             # 隠れ総集編シリーズチェック
             if srid in OMIT_SERIES:
@@ -1662,9 +1665,7 @@ class ResolveListpage:
 
         list_type = ''
 
-        for attr, typ in (('series', 'シリーズ'),
-                          ('label', 'レーベル'),
-                          ('maker', 'メーカー')):
+        for attr in ('series', 'label', 'maker'):
 
             list_page = summ[attr]
 
@@ -1673,7 +1674,7 @@ class ResolveListpage:
                     continue
                 elif _libssw.le80bytes(list_page):
                     list_attr = attr
-                    list_type = typ
+                    list_type = _libssw.RETLABEL[attr]
                     break
                 else:
                     emsg('W',

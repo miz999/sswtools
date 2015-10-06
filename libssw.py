@@ -74,6 +74,10 @@ SERVICEDIC = {
                'digital/videoc')
 }
 
+RETLABEL = {'series': 'シリーズ',
+           'label':  'レーベル',
+           'maker':  'メーカー'}
+
 # 除外キーワード
 OMITWORDS = {'総集編':      '総集編',
              'BEST':       '総集編',
