@@ -20,8 +20,8 @@ dmmsar.py (-A|-S|-L|-K|-U) [キーワード ...] [オプション...]
     ・品番のプレフィクスがあらかじめ登録されている総集編のものと一致
     ・ジャンルに総集編がある
     ・タイトルに「総集編」「BEST」などの関連ワードがある
-    ・タイトルに「20人/名」以上/「15本番」以上/「50(連)発」以上/「4時間」以上/「240分」以上のうち
-    2つ以上含まれている
+    ・タイトルに「20人/名」以上/「15本番」以上/「50(連)発/射」以上/「4時間」以上/
+    「240分」以上/「(全)(n)タイトル」のうち2つ以上含まれている
     ・収録時間が約4時間以上(200分超)なら総集編しかなさそうなメーカーの作品
 
 
@@ -442,6 +442,10 @@ SPLIT_DEFAULT = 200
 p_actdelim = re.compile(r'[（、]')
 
 
+MakeType = namedtuple('MakeType', 'actress,table')
+OutFile = namedtuple('OutFile', 'actr,tbl,suffix,writemode')
+
+
 def get_args(argv):
     '''コマンドライン引数の解釈'''
     global VERBOSE
@@ -800,36 +804,30 @@ def get_args(argv):
     return args
 
 
-OutFile = namedtuple('OutFile', 'actr,tbl,suffix,writemode')
+def parse_outfile(args, make):
+    if not args.out:
+        return
 
+    # ファイル名に拡張子があったら分割
+    split, suffix = (args.out.rsplit('.', 1) + [''])[:2]
 
-def parse_outfile(args):
-    if args.out:
-        # ファイル名に拡張子があったら分割
-        split, suffix = (args.out.rsplit('.', 1) + [''])[:2]
+    outf_actr = split + '_actress'
+    outf_tbl = split + '_table'
 
-        outf_actr = split + '_actress'
-        outf_tbl = split + '_table'
-
-        if args.replace:
-            writemode = 'w'
-        else:
-            chk = []
-            if not args.wikitext:
-                chk.append(args.out)
-            else:
-                if args.table:
-                    chk.append(outf_tbl)
-                if args.table != 1:
-                    chk.append(outf_act)
-
-            libssw.files_exists('w', *chk)
-            writemode = 'x'
+    if args.replace:
+        writemode = 'w'
     else:
-        outf_actr = '_actress'
-        outf_tbl = '_table'
-        suffix = ''
-        writemode = None
+        chk = []
+        if not args.wikitext:
+            chk.append(args.out)
+        else:
+            if make.table:
+                chk.append(outf_tbl + '.' + suffix)
+            if make.actress:
+                chk.append(outf_actr + '.' + suffix)
+
+        libssw.files_exists('w', *chk)
+        writemode = 'x'
 
     return OutFile(actr=outf_actr, tbl=outf_tbl, suffix=suffix, writemode=writemode)
 
@@ -1052,13 +1050,15 @@ def set_sortkeys(sort_key):
         return ()
 
 
-def open_outfile(writemode, split, stem, num, suffix):
+def open_outfile(of, is_table, pagen):
     '''指定した出力ファイル名を指定のモードでオープン'''
-    pagen = (num // split + 1) if num >= 0 else 0
-    verbose('num: ', num, ', split: ', split, ', pagn: ', pagen)
-    fd = open('.'.join('{}'.format(p) for p in (stem, pagen, suffix) if p),
-              writemode) if writemode else sys.stdout
-    return fd, pagen
+    if not of:
+        return sys.stdout
+
+    stem = of.tbl if is_table else of.actr
+    fd = open('.'.join('{}'.format(p) for p in (stem, pagen, of.suffix) if p),
+              of.writemode)
+    return fd
 
 
 def truncate_th(cols):
@@ -1074,32 +1074,53 @@ def number_header(article, page):
     return article + (' {}'.format(page) if page > 1 else '')
 
 
-class FinishBuild(Exception):
-    pass
-
-
 class BuildPage:
     '''ウィキテキスト生成(ページごと)'''
-    def __init__(self, wikitexts, split, a_name, t_hdr):
+    def __init__(self, wikitexts, split, a_name, a_hdr, t_hdr):
         self._wikitexts = wikitexts
         self._split = split
         self._a_name = a_name
+        self._a_hdr = a_hdr
         self._t_hdr = t_hdr
 
+        self._length = len(wikitexts)
         self._page_names = set()
 
-    def reset(self, start):
-        self.no = start - 1
+    def start(self, row, is_table):
+        self._no = 0
+        self._row = row - 1
+        self._is_table = is_table
+        self.done = False
 
-    def _yield_tail(self, tdmms):
+        if is_table:
+            self._attr = 'wktxt_t'
+        else:
+            self._attr = 'wktxt_a'
+            self._wikitexts.reverse()
+
+        verbose('wktxt attr: ', self._attr)
+
+    def _header(self):
+        '''ページヘッダの出力'''
+        self.pagen = (self._row // self._split + 1) if self._row >= 0 else 0
+        page_name = number_header(self._a_name, self.pagen)
+        yield '\n' + page_name + '\n'
+        yield self._a_hdr + '\n'
+
+        if self._is_table and self._t_hdr and not self._row % 10:
+            yield self._t_hdr.format('NO')
+
+        self._page_names.add(page_name)
+
+    def _tail(self):
         # DMM上のタイトルを変更している作品のDMMタイトルをコメントで残す
         yield '\n■関連ページ'
         yield '-[[]]\n'
 
         # DMM上のタイトルを変更している作品のDMMタイトルをコメントで残す
-        if tdmms:
+        if self._titles_dmm:
             yield '//検索用'
-            for tdmm in tdmms:
+            for tdmm in self._titles_dmm:
                 yield '//' + tdmm
 
     def open_browser(self, browser):
@@ -1107,90 +1128,68 @@ class BuildPage:
             # ブラウザで開く
             libssw.open_ssw(*self._page_names)
 
-    def __call__(self, is_table=False):
+    def __call__(self):
         '''ウィキテキスト生成(ページごと)'''
 
-        attr = 'wktxt_t' if is_table else 'wktxt_a'
-        titles_dmm = []
+        self._titles_dmm = []
 
-        # ページヘッダの出力
-        pagen = (self.no // self._split + 1) if self.no >= 0 else 0
-        page_header = number_header(self._a_name, pagen)
-        yield '\n' + page_header + '\n'
-        yield self._t_hdr.format('NO')
-        self._page_names.add(page_header)
+        yield from self._header()
 
-        while True:
+        while self._no < self._length:
             # for j, item in enumerate(wikitexts, start=args.row - 1):
-            verbose('Row #', self.no)
+            verbose('Row #', self._row)
 
-            try:
-                item = self._wikitexts[self.no]
-            except IndexError:
-                yield from self._yield_tail(titles_dmm)
-                raise FinishBuild
+            item = self._wikitexts[self._no]
 
-            remainder = self.no % self._split
+            remainder = self._row % self._split
 
-            if self._split and self.no and not remainder:
-                # ページ切り替え処理
-                yield from self._yield_tail(titles_dmm)
-                raise StopIteration
-
-            if self._t_hdr and remainder and not self.no % 10:
+            if self._t_hdr and remainder and not self._row % 10:
                 # 10件ごとの表ヘッダの出力
                 yield self._t_hdr.format(remainder)
-                verbose('Header: ', self.no)
+                verbose('Header: ', self._no)
 
             # 作品情報の出力
-            yield getattr(item, attr)
+            yield getattr(item, self._attr)
 
-            if is_table and item.title_dmm:
-                titles_dmm.append(item.title_dmm)
+            if self._is_table and item.title_dmm:
+                self._titles_dmm.append(item.title_dmm)
 
-            self.no += 1
+            self._no += 1
+            self._row += 1
+
+            if self._split and not self._row % self._split:
+                # 1ページ分終了
+                break
+        else:
+            self.done = True
+            verbose('All done.')
+
+        yield from self._tail()
 
 
-def finalize(wikitexts, article_name, article_header, args):
+def finalize(build_page, row, make, outfile):
     '''最終的なウィキテキスト出力'''
+    for is_table in compress((True, False), (make.table, make.actress)):
+        verbose('is_table: ', is_table)
 
-    if args.add_column:
-        add_header = '|'.join(c.split(':')[0] for c in args.add_column) + '|'
-        args.add_column = tuple(truncate_th(args.add_column))
-    else:
-        add_header = ''
-    verbose('add header: {}\nadd column: {}'.format(add_header,
-                                                    args.add_column))
+        build_page.start(row, is_table)
 
-    if args.table and args.header:
-        table_header = '|~{{}}|PHOTO|{}|ACTRESS|{}{}RELEASE|NOTE|'.format(
-            'SUBTITLE' if args.retrieval == 'series' else 'TITLE',
-            'DIRECTOR|' if args.dir_col else '',
-            add_header)
-    else:
-        table_header = ''
+        while not build_page.done:
+            per_page = '\n'.join(build_page())
+            yield per_page
 
-    build_page = BuildPage(wikitexts, args.split, article_name, table_header)
-
-    for is_table in compress((True, False), (args.table, args.table != 1)):
-
-        build_page.reset(args.row)
-
-        try:
-            while True:
-                yield from build_page(is_table)
-                build_page.no += 1
-        except FinishBuild:
-            pass
-
-    build_page.open_browser(args.browser)
+            fd = open_outfile(outfile, is_table, build_page.pagen)
+            print(per_page, file=fd)
 
 
 def main(argv=None):
 
     args = get_args(argv or sys.argv[1:])
 
-    outfile = parse_outfile(args)
+    make = MakeType(actress=args.table != 1, table=args.table)
+    verbose('make: ', make)
+    outfile = parse_outfile(args, make)
+    verbose('outfile: ', outfile)
 
     ids = tuple(extr_ids(args.keyword, args.cid))
     verbose('ids: ', ids)
@@ -1229,7 +1228,6 @@ def main(argv=None):
 
     # 作成開始品番
     key_id, key_type, kidattr = det_keyinfo(args)
-
     not_key_id = libssw.NotKeyIdYet(key_id, key_type, kidattr)
 
     listparser = libssw.DMMTitleListParser(no_omits=no_omits, patn_pid=sp_pid)
@@ -1264,10 +1262,8 @@ def main(argv=None):
         verbose('existings html')
         existings = set(k for k, p in libssw.from_html(args.existings_html,
                                                        service=args.service))
-
         if not existings:
             emsg('E', '--existings-* オプションで読み込んだデータが0件でした。')
-
     else:
         existings = set()
 
@@ -1278,8 +1274,8 @@ def main(argv=None):
 
     wikitexts = []
     title_list = []
-    series_set = set()
-    series_urls = []
+    nis_series_names = set()  # 発見したシリーズ名 (n_i_s用)
+    nis_series_urls = set()  # 発見したシリーズ一覧のURL (n_i_s用)
     rest = total
     omitted = listparser.omitted
     before = True if key_id else False
@@ -1348,7 +1344,7 @@ def main(argv=None):
             continue
 
         # 既知のシリーズ物のURLならスキップ (--not-in-series)
-        if props.url in series_urls:
+        if props.url in nis_series_urls:
             emsg('I', '作品を除外しました: title="{}" (known series)'.format(
                 props.title))
             omitted += 1
@@ -1376,18 +1372,21 @@ def main(argv=None):
             b, status, data = dmm2ssw.main(props, args, dmmparser)
             # 返り値:
             # b -> Bool
-            # status -> url if b is True else http status
-            # data -> ReturnVal(release,
-            #                   pid,
-            #                   title,
-            #                   title_dmm,
-            #                   url,
-            #                   time,
-            #                   ('maker', 'maker_id'),
-            #                   ('label', 'label_id'),
-            #                   ('series', 'series_id'),
-            #                   wikitext_a,
-            #                   wikitext_t)
+            # status -> url if b else http status or 'Omitted'
+            # data -> if b:
+            #             ReturnVal(release,
+            #                       pid,
+            #                       title,
+            #                       title_dmm,
+            #                       url,
+            #                       time,
+            #                       ('maker', 'maker_id'),
+            #                       ('label', 'label_id'),
+            #                       ('series', 'series_id'),
+            #                       wikitext_a,
+            #                       wikitext_t)
+            #         else:
+            #             (Omit_type, Omit_keyword) or empty ReturnVal (404)
             verbose('Return from dmm2ssw: {}, {}, {}'.format(
                 b, status, data))
             # 除外対象だったとき、data は (key, hue) のタプルになる。
@@ -1403,11 +1402,11 @@ def main(argv=None):
                 if args.n_i_s and data[0] == 'series':
                     # no-in-series用シリーズ作品先行取得
                     verbose('Retriving series products...')
-                    series_set.add(data[1])
+                    nis_series_names.add(data[1])
                     priurls = libssw.join_priurls('series',
                                                   data[1][0],
                                                   service=args.service)
-                    series_urls.extend(
+                    nis_series_urls.update(
                         u for u, p in libssw.from_dmm(seriesparser, priurls))
                 omitted += 1
 
@@ -1439,22 +1438,38 @@ def main(argv=None):
         for k in sortkeys:
             wikitexts.sort(key=attrgetter(k))
 
+        if args.add_column:
+            add_header = '|'.join(c.split(':')[0] for c in args.add_column) + '|'
+            args.add_column = tuple(truncate_th(args.add_column))
+        else:
+            add_header = ''
+        verbose('add header: {}\nadd column: {}'.format(add_header,
+                                                        args.add_column))
+
+        if make.table and args.header:
+            table_header = '|~{{}}|PHOTO|{}|ACTRESS|{}{}RELEASE|NOTE|'.format(
+                'SUBTITLE' if args.retrieval == 'series' else 'TITLE',
+                'DIRECTOR|' if args.dir_col else '',
+                add_header)
+        else:
+            table_header = ''
+
+        build_page = BuildPage(wikitexts, args.split, article_name,
+                               article_header, table_header)
+
         print()
 
-        result = tuple(finalize(wikitexts, article_name, article_header, args))
-        print(*result, sep='\n')
+        result = '\n'.join(finalize(build_page, args.row, make, outfile))
 
-        # if args.split and (args.row - 1) % args.split:
-        #     fd, pagen = open_outfile(writemode, args.split,
-        #                              outf_act, args.row - 1, suffix)
+        build_page.open_browser(args.browser)
 
         if args.copy:
-            libssw.copy2clipboard('\n'.join(result))
+            libssw.copy2clipboard(result)
 
     else:
         # タブ区切り一覧の書き出し
 
-        fd = open(args.out, writemode) if args.out else sys.stdout
+        fd = open(args.out, outfile.writemode) if args.out else sys.stdout
 
         print(*title_list, sep='\n', file=fd)
 
@@ -1463,8 +1478,7 @@ def main(argv=None):
 
     if args.n_i_s:
         print('** 見つかったシリーズ一覧(順不同)')
-        for i, s in series_set:
-            print('-[[{}]]'.format(s))
+        print(*('-[[{}]]'.format(s) for i, s in nis_series_names), sep='\n')
 
     # キャッシュディレクトリの削除
     if args.clear_cache:

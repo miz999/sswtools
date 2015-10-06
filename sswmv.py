@@ -13,7 +13,7 @@ import argparse
 from itertools import chain
 import libssw
 
-__version__ = 20140812
+__version__ = 20151006
 
 VERBOSE = 0
 
@@ -97,7 +97,6 @@ def main():
     names = tuple(libssw.p_inbracket.split(name)[0] for name in names)
     emsg('I', 'names: ', names)
 
-    fd = open(args.out, writemode) if args.out else sys.stdout
     for name in names:
         if name == args.moves_to:
             emsg('I', '[[{0}>.+]] → [[{0}]]'.format(name))
@@ -113,6 +112,8 @@ def main():
             body = re.sub(r'\[\[{}\]\]'.format(name),
                           '[[{}>{}]]'.format(name, args.moves_to),
                           body)
+
+    fd = open(args.out, writemode) if args.out else sys.stdout
     print(header, file=fd, end='')
     print(body, file=fd)
     if args.out:

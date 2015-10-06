@@ -200,12 +200,7 @@ def check_actrpage(actr_url, listp, prod_url):
         return False, 404, False
 
     # 女優ページ内の各行をチェックしDMMの作品ページURLがあればその行を取得
-    for line in html.split('\n'):
-
-        if prod_url not in line:
-            continue
-
-        verbose('prod entry: ', line)
+    for line in filter(lambda x: prod_url in x, html.split('\n'):
 
         link2list = p_ssw.findall(line)
         verbose('link to listpage: ', link2list)
