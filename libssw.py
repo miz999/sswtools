@@ -398,33 +398,11 @@ p_linkpare = _re.compile(r'\[\[(.+?)(?:>(.+?))?\]\]')
 p_hiragana = _re.compile(r'[ぁ-ゞー]')
 p_neghirag = _re.compile(r'[^ぁ-ゞー]')
 
-p_splitpid1 = _re.compile(r'[+-]')
-p_splitpid2 = _re.compile(r'([a-z]+)(\d+)', _re.I)
-
 sp_pid = (_re.compile(r'^(?:[hn]_)?\d*([a-z]+)(\d+).*', _re.I), r'\1-\2')
-
-# 品番変換個別対応
-sp_pid_indv = (
-    (_re.compile(r'^125ud(\d+).*'), r'ud\1r'),           # LEOのレンタル
-    (_re.compile(r'^h_093r18(\d+)'), r'r18-\1'),         # チェリーズの一部レーベル
-    (_re.compile(r'^h_066fad(\d+).*'), r'fad\1'),        # FAプロのレンタルの一部
-    (_re.compile(r'^h_066rhtr(\d+).*'), r'rhtr\1'),      # FAプロのレンタルの一部
-    (_re.compile(r'^55t28(\d+)'), r't28-\1'),            # TMAの一部
-    (_re.compile(r'^\d{2}id(\d{2})(\d+)'), r'\1id-\2'),  # TMAの一部
-    (_re.compile(r'^117?((?:tk)?arm[a-z]?)0?(\d{3}).*'), r'\1-\2'),  # アロマ企画の一部
-    (_re.compile(r'^d1(\d+)'), r'd1-\1'),                # ドグマのD1 CLIMAXレーベル
-    (_re.compile(r'^ad1(\d+)'), r'ad1-\1'),              # ドグマのAD1 CLIMAXレーベル
-    (_re.compile(r'^h_308aoz(\d+z?)'), r'aoz-\1'),       # 青空ソフト
-    (_re.compile(r'^(?:h_102)?bnsps(\d+).*'), r'nsps-\1'),  # ながえスタイルのセル版の一部
-    (_re.compile(r'^21psd(\d+)'), r'psd+\1'),             # アウダースの一部
-    (_re.compile(r'^\d*d1clymax00(\d+)'), r'd1clymax-\1'),  # D1グランプリ
-)
 
 
 t_wikisyntax = str.maketrans('[]~', '［］～')
 t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
-t_nl = str.maketrans('', '', '\r\n')
-t_pidsep = str.maketrans('', '', '+-')
 
 
 DummyResp = _namedtuple('DummyResp', 'status,fromcache')
@@ -433,7 +411,7 @@ DummyResp = _namedtuple('DummyResp', 'status,fromcache')
 def ownname(path):
     return _Path(path).stem
 
-OWNNAME = ownname(__file__)
+_OWNNAME = ownname(__file__)
 
 
 class Verbose:
@@ -448,7 +426,7 @@ class Verbose:
             print('({0}): >>> {1}'.format(self._ownname, msg),
                   file=_sys.stderr, flush=True)
 
-verbose = Verbose(OWNNAME, VERBOSE)
+verbose = Verbose(_OWNNAME, VERBOSE)
 
 
 class Emsg:
@@ -473,7 +451,7 @@ class Emsg:
             # エラーなら終了
             raise SystemExit()
 
-emsg = Emsg(OWNNAME)
+_emsg = Emsg(_OWNNAME)
 
 
 class Summary:
@@ -614,7 +592,7 @@ def copy2clipboard(string):
     try:
         _ppccopy(string)
     except NameError:
-        emsg('W', 'Python pyperclip モジュールがインストールされていないためクリップボードにはコピーされません。')
+        _emsg('W', 'Python pyperclip モジュールがインストールされていないためクリップボードにはコピーされません。')
 
 
 def quote(string, safe='/', encoding='euc_jisx0213', errors=None):
@@ -626,16 +604,22 @@ def unquote(string, encoding='euc_jisx0213', errors='replace'):
     return _up.unquote(string, encoding=encoding, errors=errors)
 
 
-def clip_pname(url):
+def _clip_pname(url):
     return unquote(url.rsplit('/', 1)[-1])
 
 
+_t_nl = str.maketrans('', '', '\r\n')
+
+
 def rm_nlcode(string):
-    return string.translate(t_nl)
+    return string.translate(_t_nl)
+
+
+_t_pidsep = str.maketrans('', '', '+-')
 
 
 def rm_hyphen(string):
-    return string.translate(t_pidsep)
+    return string.translate(_t_pidsep)
 
 
 def extr_num(string):
@@ -657,9 +641,9 @@ def files_exists(mode, *files):
         verbose('file: ', f)
         isexist = _os.path.exists(f)
         if mode == 'r' and not isexist:
-            emsg('E', 'ファイルが見つかりません: ', f)
+            _emsg('E', 'ファイルが見つかりません: ', f)
         elif mode == 'w' and isexist:
-            emsg('E', '同名のファイルが存在します (-r で上書きします): ', f)
+            _emsg('E', '同名のファイルが存在します (-r で上書きします): ', f)
 
 
 def inprogress(msg):
@@ -703,9 +687,9 @@ class __OpenUrl:
 
     def _url_openerror(self, name, info, url):
         """URLオープン時のエラーメッセージ"""
-        emsg('E',
-             'URLを開く時にエラーが発生しました ({})。詳細: {}, url={}'.format(
-                 name, info, url))
+        _emsg('E',
+              'URLを開く時にエラーが発生しました ({})。詳細: {}, url={}'.format(
+                  name, info, url))
 
     def _resolve_charset(self, resp, html):
         """文字エンコーディングの解決"""
@@ -731,7 +715,7 @@ class __OpenUrl:
 
         site = _up.urlparse(url).netloc
         if not site:
-            emsg('E', '不正なURL?: ', url)
+            _emsg('E', '不正なURL?: ', url)
 
         if cache:
             maxage = '7200' if site == 'sougouwiki.com' else '86400'
@@ -762,7 +746,7 @@ class __OpenUrl:
             except _HTTPException as e:
                 if e == 'got more than 100 headers':
                     if '/limit=60/' in url:
-                        emsg('E', '(おそらくサーバー側に問題のある)HTTP例外です。')
+                        _emsg('E', '(おそらくサーバー側に問題のある)HTTP例外です。')
                     else:
                         url = url.replace('/limit=120/', '/limit=60/')
                 resp = DummyResp(status=0, fromcache=False)
@@ -777,7 +761,7 @@ class __OpenUrl:
             # HTTPステータスがサーバ/ゲートウェイの一時的な問題でなければ終了
             if resp.status and not 500 <= resp.status <= 504:
                 if resp.status not in {200, 404}:
-                    emsg('W', 'HTTP status: ', resp.status)
+                    _emsg('W', 'HTTP status: ', resp.status)
                 break
 
         else:
@@ -791,7 +775,7 @@ class __OpenUrl:
             try:
                 html = html.decode(encoding, 'ignore')
             except UnboundLocalError:
-                emsg('E', 'HTMLの読み込みに失敗しました: resp=', resp)
+                _emsg('E', 'HTMLの読み込みに失敗しました: resp=', resp)
 
         return resp, _fromstring(html) if to_elems else html
 
@@ -816,7 +800,7 @@ def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
         any(p.search(cid) for p in patn)
 
 
-p_omnivals = (
+_p_omnivals = (
     # 「20人/名」以上
     _re.compile(r'(?:[2-9]\d|\d{3,})(?:人[^目]?|名)'),
     _re.compile(r'(?:[二弐][一二三四五六七八九十〇壱弐参拾百千万億兆]+|[三四五六七八九参百千][一二三四五六七八九十〇壱弐参拾百千万億兆]+|[一二三四五六七八九壱弐参百千][一二三四五六七八九十〇壱弐参拾百千万億兆]{2,})(?:人[^目]?|名)'),
@@ -845,21 +829,21 @@ p_omnivals = (
 def check_omnivals(title):
     """隠れ総集編チェック(関連数値編)"""
     title = norm_uc(title)
-    hit = tuple(_chain.from_iterable(p.findall(title) for p in p_omnivals))
+    hit = tuple(_chain.from_iterable(p.findall(title) for p in _p_omnivals))
     if len(hit) > 1:
         return hit
 
 
-p_ge4h = _re.compile(r'(?:[4-9]|\d{2,})時間')
-p_ge200m = _re.compile(r'(?:[2-9]\d{2}|\d{4,})分')
+_p_ge4h = _re.compile(r'(?:[4-9]|\d{2,})時間')
+_p_ge200m = _re.compile(r'(?:[2-9]\d{2}|\d{4,})分')
 
 
 def is_omnirookie(cid, title):
     """ROOKIE隠れ総集編チェック"""
     if check_omitprfx(cid, ROOKIE):
         # ROOKIEチェック
-        hh = p_ge4h.findall(title)
-        mmm = p_ge200m.findall(title)
+        hh = _p_ge4h.findall(title)
+        mmm = _p_ge200m.findall(title)
         return hh, mmm
     else:
         return None, None
@@ -923,7 +907,7 @@ class DMMTitleListParser:
         """作品タイトルとURLの取得"""
         def omit(key, word):
             if self._show_info or VERBOSE:
-                emsg('I', 'ページを除外しました: cid={}, {:<20}'.format(
+                _emsg('I', 'ページを除外しました: cid={}, {:<20}'.format(
                     cid, 'reason=("{}", "{}")'.format(key, word)))
             self.omitted += 1
 
@@ -962,12 +946,16 @@ class DMMTitleListParser:
         return self._ret_titles(he.find_class('ttl'))
 
 
+_p_splitpid1 = _re.compile(r'[+-]')
+_p_splitpid2 = _re.compile(r'([a-z]+)(\d+)', _re.I)
+
+
 def split_pid(pid):
     """品番をプレフィクスと連番に分離"""
     try:
-        prefix, serial = p_splitpid1.split(pid)
+        prefix, serial = _p_splitpid1.split(pid)
     except ValueError:
-        prefix, serial = p_splitpid2.findall(pid)[0]
+        prefix, serial = _p_splitpid2.findall(pid)[0]
 
     return prefix, serial
 
@@ -1033,9 +1021,6 @@ class NotKeyIdYet:
         return self._match(cand)
 
 
-sp_wikis = (_re.compile(r' "target="_blank"'), r'" target="_blank"')
-
-
 def from_dmm(listparser, priurls, pages_last=0,
              key_id=None, key_type=None, idattr='pid',
              ignore=False, show_info=True):
@@ -1061,16 +1046,13 @@ def from_dmm(listparser, priurls, pages_last=0,
                 return ((False, False),)
 
             if resp.status == 404:
-                emsg('E',
-                     '指定した条件でページは見つかりませんでした: url=',
-                     searchurl)
+                _emsg('E',
+                      '指定した条件でページは見つかりませんでした: url=',
+                      searchurl)
             elif resp.status != 200:
-                emsg('E',
-                     'URLを開く際にエラーが発生しました: staus=',
-                     resp.status)
-
-            # 構文ミスの修正
-            # html = sub(sp_wikis, html)
+                _emsg('E',
+                      'URLを開く際にエラーが発生しました: staus=',
+                      resp.status)
 
             # HTMLの解析
             for url, prop in listparser(he):
@@ -1095,7 +1077,7 @@ def from_dmm(listparser, priurls, pages_last=0,
     verbose('Parsing list pages finished')
 
 
-p_name = _re.compile(
+_p_name = _re.compile(
     r'(?P<fore>[\w>]*)?(?P<paren>[(（][\w>]*[）)])?(?P<back>[\w>]*)?')
 
 
@@ -1107,7 +1089,7 @@ def parse_names(name):
     verbose('Parsing name...')
 
     # カッコ括りの付記の分割
-    m = p_name.search(name)
+    m = _p_name.search(name)
 
     if any(m.groups()):
         shown = m.group('fore') or m.group('back')
@@ -1131,13 +1113,13 @@ def parse_names(name):
     return shown, dest, parened
 
 
-p_etc = _re.compile(r'ほか\w*?計(\d+)名')
+_p_etc = _re.compile(r'ほか\w*?計(\d+)名')
 
 
 def ret_numofpfmrs(etc):
     number = None
 
-    m = p_etc.findall(etc)
+    m = _p_etc.findall(etc)
 
     if m:
         number = int(m[0])
@@ -1167,7 +1149,7 @@ def from_tsv(files):
             try:
                 actress = p_delim.split(row[3]) if row[3] else []
             except IndexError:
-                emsg('E', '正しいインポートファイル形式ではないようです。')
+                _emsg('E', '正しいインポートファイル形式ではないようです。')
 
             # 処理用に女優名を要素解析
             actress = list(parse_names(a) for a in actress)
@@ -1273,8 +1255,8 @@ class _FromWiki:
                                    note=note)
 
             if Cols is None:
-                emsg('E', '素人系総合Wikiの一覧ページのウィキテキストではないようです: ',
-                     _fileinput.filename())
+                _emsg('E', '素人系総合Wikiの一覧ページのウィキテキストではないようです: ',
+                      _fileinput.filename())
 
 
 from_wiki = _FromWiki()
@@ -1289,7 +1271,7 @@ class _FromHtml:
         url = el.get('href')
         if not url.startswith(BASEURL_SSW):
             return url
-        return clip_pname(el.get('href'))
+        return _clip_pname(el.get('href'))
 
     def _enclose(self, ph):
         return ph if ph.startswith('(') else '({})'.format(ph)
@@ -1390,7 +1372,7 @@ class _FromHtml:
             if wurl.startswith('http://'):
                 resp, he = open_url(wurl, cache=cache)
                 if resp.status == 404:
-                    emsg('E', 'ページが見つかりません: ', wurl)
+                    _emsg('E', 'ページが見つかりません: ', wurl)
             else:
                 with open(wurl, 'rb') as f:
                     he = _fromstring(f.read())
@@ -1399,7 +1381,7 @@ class _FromHtml:
                 self.article = he.find(
                     './/div[@id="page-header-inner"]//h2').text.strip()
             except AttributeError:
-                emsg('E', '素人系総合Wiki一覧ページのHTMLではないようです: ', wurl)
+                _emsg('E', '素人系総合Wiki一覧ページのHTMLではないようです: ', wurl)
 
             userarea = he.find_class('user-area')[0]
 
@@ -1501,33 +1483,33 @@ def _rdrparser(page, he):
     for el in userarea:
         if el.tail and el.tail.strip() == 'リダイレクト：':
             rdr_flg = True
-            dest = clip_pname(el.getnext().get('href'))
+            dest = _clip_pname(el.getnext().get('href'))
             verbose('rdr dest: ', dest)
 
             if dest:
                 return dest
                 # if len(dest) > 1:
-                #     emsg('W',
+                #     _emsg('W',
                 #          '"{}"のリダイレクト先を特定できません。もしかして…'.format(
                 #              page))
                 #     for cand in dest:
-                #         emsg('W', '⇒  ', cand)
+                #         _emsg('W', '⇒  ', cand)
                 # else:
                 #     return dest[0]
 
     if rdr_flg:
-        emsg('W', '"{}"のリダイレクト先が見つからないか特定できません。'.format(page))
+        _emsg('W', '"{}"のリダイレクト先が見つからないか特定できません。'.format(page))
         cands = userarea.xpath('.//a//text()')
 
         if len(cands) == 1:
-            emsg('W', 'とりあえず"{}"にしておきました。'.format(cands[0]))
+            _emsg('W', 'とりあえず"{}"にしておきました。'.format(cands[0]))
             return cands[0]
         elif len(cands):
-            emsg('W', 'もしかして…')
+            _emsg('W', 'もしかして…')
             for cand in cands:
-                emsg('W', '⇒  ', cand)
+                _emsg('W', '⇒  ', cand)
         else:
-            emsg('W', 'リダイレクトページのようですがリダイレクト先が見つかりません。')
+            _emsg('W', 'リダイレクトページのようですがリダイレクト先が見つかりません。')
 
     return ''
 
@@ -1616,32 +1598,50 @@ def stringize_performers(pfmrs, number, follow):
     return pfmrsstr, pnum
 
 
-p_base_url = _re.compile(r'(.*/)-/')
+_p_base_url = _re.compile(r'(.*/)-/')
 
 
 def resolve_service(url):
     """サービスの決定"""
     verbose('Resolving service...')
-    base = p_base_url.findall(url)[0]
+    base = _p_base_url.findall(url)[0]
 
     if not base or base not in SVC_URL:
-        emsg('E', '未サポートのURLです。')
+        _emsg('E', '未サポートのURLです。')
     else:
         return SVC_URL[base]
 
 
-p_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
-p_id = _re.compile(r'/id=([\d,]+?)/')
+_p_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
+_p_id = _re.compile(r'/id=([\d,]+?)/')
 
 
 def get_id(url, cid=False, ignore=False):
     """URLからIDを取得"""
     try:
-        return p_cid.findall(url) if cid else p_id.findall(url)[0].split(',')
+        return _p_cid.findall(url) if cid else _p_id.findall(url)[0].split(',')
     except IndexError:
         if ignore:
             return ()
-        emsg('E', 'IDを取得できません: ', url)
+        _emsg('E', 'IDを取得できません: ', url)
+
+
+# 品番変換個別対応
+_sp_pid_indv = (
+    (_re.compile(r'^125ud(\d+).*'), r'ud\1r'),           # LEOのレンタル
+    (_re.compile(r'^h_093r18(\d+)'), r'r18-\1'),         # チェリーズの一部レーベル
+    (_re.compile(r'^h_066fad(\d+).*'), r'fad\1'),        # FAプロのレンタルの一部
+    (_re.compile(r'^h_066rhtr(\d+).*'), r'rhtr\1'),      # FAプロのレンタルの一部
+    (_re.compile(r'^55t28(\d+)'), r't28-\1'),            # TMAの一部
+    (_re.compile(r'^\d{2}id(\d{2})(\d+)'), r'\1id-\2'),  # TMAの一部
+    (_re.compile(r'^117?((?:tk)?arm[a-z]?)0?(\d{3}).*'), r'\1-\2'),  # アロマ企画の一部
+    (_re.compile(r'^d1(\d+)'), r'd1-\1'),                # ドグマのD1 CLIMAXレーベル
+    (_re.compile(r'^ad1(\d+)'), r'ad1-\1'),              # ドグマのAD1 CLIMAXレーベル
+    (_re.compile(r'^h_308aoz(\d+z?)'), r'aoz-\1'),       # 青空ソフト
+    (_re.compile(r'^(?:h_102)?bnsps(\d+).*'), r'nsps-\1'),  # ながえスタイルのセル版の一部
+    (_re.compile(r'^21psd(\d+)'), r'psd+\1'),             # アウダースの一部
+    (_re.compile(r'^\d*d1clymax00(\d+)'), r'd1clymax-\1'),  # D1グランプリ
+)
 
 
 def gen_pid(cid, pattern=None):
@@ -1653,7 +1653,7 @@ def gen_pid(cid, pattern=None):
         pid, m = sub(pattern, cid, True)
     else:
         # 個別対応パターン
-        for sp in sp_pid_indv:
+        for sp in _sp_pid_indv:
             pid, m = sub(sp, cid, True)
             if m:
                 break
@@ -1744,7 +1744,7 @@ def ret_apacheinfo(elems):
         if not director:
             missings.append('監督')
 
-        emsg('E', 'Apacheサイトから「{}」を取得できませんでした。'.format(
+        _emsg('E', 'Apacheサイトから「{}」を取得できませんでした。'.format(
             'と'.join(missings)))
 
     return pid, actress, director
@@ -1817,9 +1817,9 @@ def open_ssw(*pages):
                 quote(p)))
 
 
-sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
-           (_re.compile(r'Courier'), 'Sans'),
-           (_re.compile(r'nowrap="nowrap"'), ''))
+_sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
+            (_re.compile(r'Courier'), 'Sans'),
+            (_re.compile(r'nowrap="nowrap"'), ''))
 
 
 def show_diff(flines, tlines, fdesc, tdesc, context=True):
@@ -1833,7 +1833,7 @@ def show_diff(flines, tlines, fdesc, tdesc, context=True):
                                  fdesc,
                                  tdesc,
                                  context=context)
-    for p in sp_diff:
+    for p in _sp_diff:
         diff = sub(p, diff)
     dummy, tmpf = _mkstemp(suffix='.html', dir=str(CACHEDIR))
     with open(tmpf, 'w') as f:
@@ -1864,7 +1864,7 @@ def save_cache(target, stem):
         else:
             break
     else:
-        emsg('E', 'キャッシュファイルが10秒以上ロック状態にあります: ', lockfile)
+        _emsg('E', 'キャッシュファイルが10秒以上ロック状態にあります: ', lockfile)
 
     ctrlc = False
 
