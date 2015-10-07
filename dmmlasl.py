@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+"""
 指定したメーカーのレーベルおよびシリーズの一覧情報をDMMから取得しウィキテキストを作成する
 
 書式:
@@ -97,7 +97,7 @@ IDまたはURL
 
 -h, --help
     ヘルプメッセージを表示して終了する。
-'''
+"""
 import argparse
 import pickle
 import time
@@ -247,7 +247,7 @@ def get_elems(props):
 
 
 def ret_idname(el):
-    '''作品の所属するレーベル/シリーズのIDと名称を返す'''
+    """作品の所属するレーベル/シリーズのIDと名称を返す"""
     e = el.getnext().xpath('a')
     return (libssw.get_id(e[0].get('href'))[0], e[0].text.strip()) if e \
         else (None, '')
@@ -262,7 +262,7 @@ class RetrieveMembers:
         self.ophans_prefix = Counter()
 
     def __call__(self, tier, newcomers, existings, last_pid):
-        '''レーベル/シリーズ情報を返す'''
+        """レーベル/シリーズ情報を返す"""
 
         if tier == 'label':
             rname = 'メーカー'
@@ -345,19 +345,19 @@ class RetrieveMembers:
 
 
 def count_prefixes(prods):
-    '''品番プレフィクスの集計'''
+    """品番プレフィクスの集計"""
     return Counter(libssw.split_pid(prods[p]['pid'])[0] for p in prods)
 
 
 def get_latest(prods):
-    '''最新リリース作品のリリース日を返す'''
+    """最新リリース作品のリリース日を返す"""
     item = next(iter(prods.values()))
     mel = get_elems(item)
     return libssw.getnext_text(mel[1])
 
 
 def summ_prefixes(prefixes, fd):
-    '''品番プレフィクスのまとめ'''
+    """品番プレフィクスのまとめ"""
     if not PREFIXES:
         return
 
@@ -369,7 +369,7 @@ def summ_prefixes(prefixes, fd):
 
 def print_serises(keys, name, prefix, prods, url, latest, withdmm, withlatest,
                   sort_key, fd):
-    '''シリーズ情報の出力'''
+    """シリーズ情報の出力"""
     if sort_key == 'release':
         kiter = tuple((k, latest[k]) for k in keys)
         rev = True
@@ -715,7 +715,7 @@ def main():
                 print('-最新リリース: {}'.format(mk_ophans_latest), file=fd)
 
     elif not args.only_label:
-        '''only-series'''
+        """only-series"""
         print_serises(sr_name, sr_name, sr_prefix, sr_prods, sr_url, sr_latest,
                       args.dmm, args.latest, args.sort_key, fd)
 

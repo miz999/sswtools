@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+"""
 素人系Wikiの女優ページにない作品情報をDMMから取得して補完
 
 書式:
@@ -78,7 +78,7 @@ Wiki女優ページのウィキテキストのファイル名
 
 -h, --help
     ヘルプメッセージを表示して終了する。
-'''
+"""
 import sys
 import argparse
 import re
@@ -225,10 +225,10 @@ def add_actid(g_actid, actids):
 
 
 def get_existing(g_actid, files):
-    '''
+    """
     Wikiテキストをファイルから読み込んで作品ごとの情報を返すジェネレータ
     ついでに引数で女優IDが与えられていないときに自動取得を試みる。
-    '''
+    """
     item = []
     key = None
     url = None

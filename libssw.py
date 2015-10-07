@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+"""
 素人Wiki用スクリプト用ライブラリ
-'''
+"""
 import os as _os
 import sys as _sys
 import re as _re
@@ -437,7 +437,7 @@ OWNNAME = ownname(__file__)
 
 
 class Verbose:
-    '''デバッグ用情報の出力'''
+    """デバッグ用情報の出力"""
     def __init__(self, ownname, verbose):
         self._ownname = ownname
         self.verbose = verbose
@@ -452,7 +452,7 @@ verbose = Verbose(OWNNAME, VERBOSE)
 
 
 class Emsg:
-    '''標準エラー出力へメッセージ出力'''
+    """標準エラー出力へメッセージ出力"""
     _msglevel = {'E': 'ERROR',
                  'W': 'WARN',
                  'I': 'INFO'}
@@ -477,7 +477,7 @@ emsg = Emsg(OWNNAME)
 
 
 class Summary:
-    '''作品情報格納用'''
+    """作品情報格納用"""
     __slots__ = ('url',
                  'media',
                  'release',
@@ -604,13 +604,13 @@ class Summary:
 
 
 def sub(p_list, string, n=False):
-    '''re.sub()、re.subn()ラッパー'''
+    """re.sub()、re.subn()ラッパー"""
     return p_list[0].subn(p_list[1], string) if n \
         else p_list[0].sub(p_list[1], string)
 
 
 def copy2clipboard(string):
-    '''クリップボードへコピー'''
+    """クリップボードへコピー"""
     try:
         _ppccopy(string)
     except NameError:
@@ -650,7 +650,7 @@ def get_article(url):
 
 
 def files_exists(mode, *files):
-    '''同名のファイルが存在するかどうかチェック'''
+    """同名のファイルが存在するかどうかチェック"""
     for f in files:
         if f in {_sys.stdin, _sys.stdout}:
             continue
@@ -663,7 +663,7 @@ def files_exists(mode, *files):
 
 
 def inprogress(msg):
-    '''「{}中...」メッセージ'''
+    """「{}中...」メッセージ"""
     if not VERBOSE:
         print('{}  '.format(msg), end='\r', file=_sys.stderr, flush=True)
 
@@ -676,12 +676,12 @@ def gen_no_omits(no_omit: 'int or tuple[int]'):
 
 
 def le80bytes(string, encoding='euc_jisx0213'):
-    '''Wikiページ名最大長(80バイト)チェック'''
+    """Wikiページ名最大長(80バイト)チェック"""
     return len(bytes(string, encoding)) <= 80
 
 
 def gen_ntfcols(tname, fsource: 'sequence'):
-    '''表形式ヘッダから名前付きタプルを作成'''
+    """表形式ヘッダから名前付きタプルを作成"""
     if isinstance(fsource, str):
         fsource = ('TITLE' if c == 'SUBTITLE' else c
                    for c in fsource.replace('~', '').split('|'))
@@ -689,7 +689,7 @@ def gen_ntfcols(tname, fsource: 'sequence'):
 
 
 class __OpenUrl:
-    '''URLを開いて読み込む'''
+    """URLを開いて読み込む"""
     _p_charset = _re.compile(r'charset=([a-zA-Z0-9_-]+);?')
 
     def __init__(self):
@@ -702,13 +702,13 @@ class __OpenUrl:
         _time.sleep(5)
 
     def _url_openerror(self, name, info, url):
-        '''URLオープン時のエラーメッセージ'''
+        """URLオープン時のエラーメッセージ"""
         emsg('E',
              'URLを開く時にエラーが発生しました ({})。詳細: {}, url={}'.format(
                  name, info, url))
 
     def _resolve_charset(self, resp, html):
-        '''文字エンコーディングの解決'''
+        """文字エンコーディングの解決"""
         # HTTPレスポンスから取得
         c_type = self._p_charset.findall(resp['content-type'])
         if c_type:
@@ -799,19 +799,19 @@ open_url = __OpenUrl()
 
 
 def norm_uc(string):
-    '''unicode正規化'''
+    """unicode正規化"""
     return _unicodedata.normalize('NFKC', string)
 
 
 def check_omitword(title):
-    '''タイトル内の除外キーワードチェック'''
+    """タイトル内の除外キーワードチェック"""
     for key in filter(lambda k: k in title, OMITWORDS):
         verbose('omit key, word: {}, {}'.format(key, OMITWORDS[key]))
         yield OMITWORDS[key], key
 
 
 def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
-    '''隠れ総集編チェック(プレフィクス版)'''
+    """隠れ総集編チェック(プレフィクス版)"""
     return any(cid.startswith(p) for p in prefix) or \
         any(p.search(cid) for p in patn)
 
@@ -821,8 +821,8 @@ p_omnivals = (
     _re.compile(r'(?:[2-9]\d|\d{3,})(?:人[^目]?|名)'),
     _re.compile(r'(?:[二弐][一二三四五六七八九十〇壱弐参拾百千万億兆]+|[三四五六七八九参百千][一二三四五六七八九十〇壱弐参拾百千万億兆]+|[一二三四五六七八九壱弐参百千][一二三四五六七八九十〇壱弐参拾百千万億兆]{2,})(?:人[^目]?|名)'),
 
-    # 「50(連)発/射」以上
-    _re.compile(r'(?:[5-9]\d|\d{3,})連?[発射]'),
+    # 「50(連)(発/射|SEX)」以上
+    _re.compile(r'(?:[5-9]\d|\d{3,})(?:連?[発射]|SEX)'),
     _re.compile(r'(?:[五六七八九][一二三四五六七八九十〇壱弐参拾百千万億兆]+|[一二三四五六七八九百千][一二三四五六七八九十〇壱弐参拾百千万億兆]{2,})連?[発射]'),
 
     # 「15本番」以上
@@ -843,7 +843,7 @@ p_omnivals = (
 
 
 def check_omnivals(title):
-    '''隠れ総集編チェック(関連数値編)'''
+    """隠れ総集編チェック(関連数値編)"""
     title = norm_uc(title)
     hit = tuple(_chain.from_iterable(p.findall(title) for p in p_omnivals))
     if len(hit) > 1:
@@ -855,7 +855,7 @@ p_ge200m = _re.compile(r'(?:[2-9]\d{2}|\d{4,})分')
 
 
 def is_omnirookie(cid, title):
-    '''ROOKIE隠れ総集編チェック'''
+    """ROOKIE隠れ総集編チェック"""
     if check_omitprfx(cid, ROOKIE):
         # ROOKIEチェック
         hh = p_ge4h.findall(title)
@@ -866,7 +866,7 @@ def is_omnirookie(cid, title):
 
 
 def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
-    '''除外対象かどうかチェック'''
+    """除外対象かどうかチェック"""
     # 除外作品チェック (タイトル内の文字列から)
     for key, word in filter(lambda k: k[0] not in no_omits,
                             check_omitword(title)):
@@ -895,7 +895,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
 
 
 class DMMTitleListParser:
-    '''一覧ページの解析'''
+    """一覧ページの解析"""
     _sp_tsuffix = (_re.compile(r' - \S*( - DMM.R18)?$'), '')
 
     def __init__(self, no_omits=set(OMITTYPE), patn_pid=None, show_info=True):
@@ -907,7 +907,7 @@ class DMMTitleListParser:
         self.article = []
 
     def _get_article(self, he):
-        '''アーティクル名の取得'''
+        """アーティクル名の取得"""
         try:
             article = he.find('head/title').text.strip()
         except AttributeError:
@@ -920,7 +920,7 @@ class DMMTitleListParser:
         return article
 
     def _ret_titles(self, titles):
-        '''作品タイトルとURLの取得'''
+        """作品タイトルとURLの取得"""
         def omit(key, word):
             if self._show_info or VERBOSE:
                 emsg('I', 'ページを除外しました: cid={}, {:<20}'.format(
@@ -944,7 +944,7 @@ class DMMTitleListParser:
                 yield url, Summary(url=url, title=title, pid=pid, cid=cid)
 
     def _ret_nextpage(self, he):
-        '''ページネーション処理'''
+        """ページネーション処理"""
         try:
             pagin = he.find_class(
                 'list-boxpagenation')[0].xpath('.//a[text()="次へ"]')
@@ -954,7 +954,7 @@ class DMMTitleListParser:
         return _up.urljoin(BASEURL, pagin[0].get('href')) if pagin else False
 
     def __call__(self, he):
-        '''解析実行'''
+        """解析実行"""
         self.article.append((self._get_article(he), self.priurl))
 
         self.nexturl = self._ret_nextpage(he)
@@ -963,7 +963,7 @@ class DMMTitleListParser:
 
 
 def split_pid(pid):
-    '''品番をプレフィクスと連番に分離'''
+    """品番をプレフィクスと連番に分離"""
     try:
         prefix, serial = p_splitpid1.split(pid)
     except ValueError:
@@ -973,11 +973,11 @@ def split_pid(pid):
 
 
 def sort_by_id(products, reverse=False):
-    '''
+    """
     桁数が揃ってない品番もソート
-    '''
+    """
     def _make_items(products, maxdigit):
-        '''URL(キー)と桁を揃えた品番'''
+        """URL(キー)と桁を揃えた品番"""
         for url in products:
             prefix, serial = split_pid(products[url].pid)
             yield url, '{0}{1:0>{2}}'.format(prefix, serial, maxdigit)
@@ -990,7 +990,7 @@ def sort_by_id(products, reverse=False):
 
 
 class NotKeyIdYet:
-    '''品番が key_id になるまで True を返す'''
+    """品番が key_id になるまで True を返す"""
     def _is_start_pid(self, pid):
         prefix, serial = split_pid(pid)
         return prefix == self._key_id[0] and serial < self._key_id[1]
@@ -1039,7 +1039,7 @@ sp_wikis = (_re.compile(r' "target="_blank"'), r'" target="_blank"')
 def from_dmm(listparser, priurls, pages_last=0,
              key_id=None, key_type=None, idattr='pid',
              ignore=False, show_info=True):
-    '''DMMから作品一覧を取得'''
+    """DMMから作品一覧を取得"""
     verbose('Start parsing DMM list pages')
 
     match_key_id = NotKeyIdYet(key_id, key_type, idattr, if_inactive=True)
@@ -1100,10 +1100,10 @@ p_name = _re.compile(
 
 
 def parse_names(name):
-    '''
+    """
     出演者情報の解析(rawテキスト)
     dmm2ssw.py -a オプション渡しとTSVからインポート用
-    '''
+    """
     verbose('Parsing name...')
 
     # カッコ括りの付記の分割
@@ -1154,7 +1154,7 @@ def cvt2int(item):
 
 
 def from_tsv(files):
-    '''タイトル一覧をファイルからインポートするジェネレータ(TSV)'''
+    """タイトル一覧をファイルからインポートするジェネレータ(TSV)"""
     files_exists('r', *files)
     verbose('from tsv file: {}'.format(files))
 
@@ -1171,13 +1171,9 @@ def from_tsv(files):
 
             # 処理用に女優名を要素解析
             actress = list(parse_names(a) for a in actress)
-
             numcols = len(row)
-
             number = cvt2int(row[4]) if numcols > 4 else 0
-
             director = p_delim.split(row[5]) if numcols > 5 else []
-
             note = row[6] if numcols > 6 else []
 
             yield row[0], Summary(url=row[0],
@@ -1190,12 +1186,12 @@ def from_tsv(files):
 
 
 class _FromWiki:
-    '''タイトル一覧をウィキテキスト(表形式)からインポート'''
+    """タイトル一覧をウィキテキスト(表形式)からインポート"""
     def __init__(self):
         self.article = ''
 
     def _parse_names(self, name):
-        '''出演者情報の解析(ウィキテキスト)'''
+        """出演者情報の解析(ウィキテキスト)"""
         shown = dest = parened = ''
 
         for e in filter(None, p_interlink.split(name)):
@@ -1285,11 +1281,11 @@ from_wiki = _FromWiki()
 
 
 class _FromHtml:
-    '''
+    """
     素人総合WikiページをURL(HTML)で読み込んでインポート
-    '''
+    """
     def _unquotename(self, el):
-        '''URLからページ名を取得'''
+        """URLからページ名を取得"""
         url = el.get('href')
         if not url.startswith(BASEURL_SSW):
             return url
@@ -1299,7 +1295,7 @@ class _FromHtml:
         return ph if ph.startswith('(') else '({})'.format(ph)
 
     def _parse_performers(self, td):
-        '''出演者カラムの解析(FromHtml)'''
+        """出演者カラムの解析(FromHtml)"""
 
         # 内部リンクの前にある文字列チェック
         foretxt = (td.text or '').strip()
@@ -1355,7 +1351,7 @@ class _FromHtml:
                         yield '', '', self._enclose(ph)
 
     def _parse_notes(self, note):
-        '''NOTEの解析'''
+        """NOTEの解析"""
         result = ''
 
         if note.text:
@@ -1464,7 +1460,7 @@ from_html = _FromHtml()
 
 
 def join_priurls(retrieval, *keywords, service='dvd'):
-    '''基底URLの作成'''
+    """基底URLの作成"""
     return tuple('{}/{}/-/list/=/article={}/id={}/sort=date/'.format(
         BASEURL, SERVICEDIC[service][1], retrieval, k) for k in keywords)
 
@@ -1475,7 +1471,7 @@ def build_produrl(service, cid):
 
 
 def getnext_text(elem, xpath=False):
-    '''.getnext()してtextしてstrip()'''
+    """.getnext()してtextしてstrip()"""
     if xpath:
         return [t.strip().strip('-')
                 for t in elem.getnext().xpath('{}/text()'.format(xpath))]
@@ -1485,9 +1481,9 @@ def getnext_text(elem, xpath=False):
 
 
 def _rdrparser(page, he):
-    '''
+    """
     wikiリダイレクトページかどうかの検出
-    '''
+    """
     verbose('is sswrdr/page: ', page)
     rdr_flg = False
     userarea = he.find_class('user-area')[0]
@@ -1537,7 +1533,7 @@ def _rdrparser(page, he):
 
 
 def follow_redirect(page):
-    '''
+    """
     リダイレクト先の取得と記録
     辞書REDIRECTS内の値:
     __NON__ ⇒ 実際のページ (リダイレクト不要)
@@ -1548,7 +1544,7 @@ def follow_redirect(page):
     ・実際のページならそのままページ名、
     ・リダイレクト先があればリダイレクト先ページ名、
     ・ページが存在しなければ空文字
-    '''
+    """
     global REDIRECTS
 
     verbose('check redirection: ', page)
@@ -1583,11 +1579,11 @@ def follow_redirect(page):
 
 
 def stringize_performers(pfmrs, number, follow):
-    '''
+    """
     出演者文字列の作成
-    '''
+    """
     def _build_performerslink(pfmrs, follow):
-        '''女優リンクの作成'''
+        """女優リンクの作成"""
         for shown, dest, parened in pfmrs:
             if shown in HIDE_NAMES_V:
                 shown, dest, parened = '', '', '(削除依頼対応)'
@@ -1624,7 +1620,7 @@ p_base_url = _re.compile(r'(.*/)-/')
 
 
 def resolve_service(url):
-    '''サービスの決定'''
+    """サービスの決定"""
     verbose('Resolving service...')
     base = p_base_url.findall(url)[0]
 
@@ -1639,7 +1635,7 @@ p_id = _re.compile(r'/id=([\d,]+?)/')
 
 
 def get_id(url, cid=False, ignore=False):
-    '''URLからIDを取得'''
+    """URLからIDを取得"""
     try:
         return p_cid.findall(url) if cid else p_id.findall(url)[0].split(',')
     except IndexError:
@@ -1649,7 +1645,7 @@ def get_id(url, cid=False, ignore=False):
 
 
 def gen_pid(cid, pattern=None):
-    '''URLから品番を生成'''
+    """URLから品番を生成"""
     if cid.startswith('http://'):
         cid = get_id(cid, True)[0]
 
@@ -1675,7 +1671,7 @@ class InvalidPage(Exception):
 
 
 class _GetActName:
-    '''名前の取得'''
+    """名前の取得"""
     _p_actname1 = _re.compile(r'[)）][(（]')
     _p_actname2 = _re.compile(r'[（(、]')
 
@@ -1719,7 +1715,7 @@ def fmt_name(director: str):
 
 
 def ret_apacheinfo(elems):
-    '''Apache公式から作品情報を取得'''
+    """Apache公式から作品情報を取得"""
 
     pid = actress = director = ''
 
@@ -1755,10 +1751,10 @@ def ret_apacheinfo(elems):
 
 
 def get_cookie():
-    '''
+    """
     FirefoxからSMMのCookieを取得
     取得に必要な条件が満たされなければ黙ってFalseを返す
-    '''
+    """
     if _sys.platform == 'win32':
         fx_dir = _Path(_os.environ['APPDATA']).joinpath(
             'Mozilla/Firefox/Profiles')
@@ -1805,7 +1801,7 @@ def get_cookie():
 
 
 def ssw_searchnext(el):
-    '''Wiki検索ページの次ページがあれば取得'''
+    """Wiki検索ページの次ページがあれば取得"""
     pagin = el.xpath('.//div[@class="paging-top"]/a[text()="次の20件"]')
     if pagin:
         nextp = pagin[0].get('href')
@@ -1814,7 +1810,7 @@ def ssw_searchnext(el):
 
 
 def open_ssw(*pages):
-    '''wikiページをウェブブラウザで開く'''
+    """wikiページをウェブブラウザで開く"""
     for p in filter(None, pages):
         _webbrowser.open_new_tab(
             'http://seesaawiki.jp/w/sougouwiki/e/add?pagename={}'.format(
@@ -1827,11 +1823,11 @@ sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
 
 
 def show_diff(flines, tlines, fdesc, tdesc, context=True):
-    '''
+    """
     差分をとってブラウザで開く
     open_new_tab() のパラメータは実在するuriでなければならないので
     ファイルライクオブジェクトはNG
-    '''
+    """
     diff = _HtmlDiff().make_file(flines,
                                  tlines,
                                  fdesc,
@@ -1846,7 +1842,7 @@ def show_diff(flines, tlines, fdesc, tdesc, context=True):
 
 
 def save_cache(target, stem):
-    '''キャッシュ情報の保存'''
+    """キャッシュ情報の保存"""
 
     verbose('Saving cache...')
 
@@ -1889,7 +1885,7 @@ def save_cache(target, stem):
 
 
 def load_cache(stem, default=None, expire=7200):
-    '''保存されたキャッシュ情報の読み込み'''
+    """保存されたキャッシュ情報の読み込み"""
     verbose('Loading cache...')
 
     pkfile = CACHEDIR / (stem + '.pickle')
@@ -1916,6 +1912,6 @@ REDIRECTS = load_cache(RDRDFILE, default=REDIRECTS)
 
 
 def clear_cache():
-    '''キャッシュのクリア'''
+    """キャッシュのクリア"""
     _rmtree(str(CACHEDIR), ignore_errors=True)
     verbose('cache cleared')

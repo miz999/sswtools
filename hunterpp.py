@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''
+"""
 Hunterなど、一部メーカーの無駄に長いタイトルをメーカー公式サイトから取得して
 dmmsar.pyやdmm2ssw.pyの入力となるTSVデータを作成する。
 
@@ -70,7 +70,7 @@ hunterpp.py 公式サイトの作品ページURL(開始) [公式サイトの作�
     (MacOSX/Linux)
     grep hunt982 hunter.tsv | dmm2ssw.py -a ...
 
-'''
+"""
 import argparse
 import sys
 import urllib.parse as up
@@ -167,11 +167,11 @@ def get_args():
 
 
 def gen_urls(site, args):
-    '''
+    """
     メーカー公式ページのURLの作成
-    '''
+    """
     def get_value(item):
-        '''引数がURLだったときURLの数値部を取り出す'''
+        """引数がURLだったときURLの数値部を取り出す"""
         return p_id[site].findall(item)[0] if item.startswith('http://') \
             else item
 
@@ -203,7 +203,7 @@ def cidelem(pid):
 
 
 def hunterparser(he, site):
-    '''Hunterパーサ'''
+    """Hunterパーサ"""
     title = he.xpath('.//h3')
 
     if not len(title):
@@ -225,7 +225,7 @@ def hunterparser(he, site):
 
 
 def apacheparser(he, site):
-    '''Apacheパーサ'''
+    """Apacheパーサ"""
     title = he.head.find('title')
 
     if title is None:
@@ -242,7 +242,7 @@ def apacheparser(he, site):
 
 
 def atomparser(he, site):
-    '''ATOMパーサ'''
+    """ATOMパーサ"""
     title = he.find_class('title_content_box2')
 
     if not len(title):
@@ -258,7 +258,7 @@ def atomparser(he, site):
 
 
 def switchparser(he, site):
-    '''SWITCHパーサ'''
+    """SWITCHパーサ"""
     title = he.head.find('meta[@property="og:title"]').get('content')
 
     varlist = he.find('.//table[@class="extraVarsList"]')
@@ -274,7 +274,7 @@ def switchparser(he, site):
 
 
 def gen_tsv(urls, site, parser):
-    '''TSVデータジェネレータ'''
+    """TSVデータジェネレータ"""
     total = rest = len(urls)
 
     for url in urls:

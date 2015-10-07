@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+"""
 素人系Wiki女優ページの移動(内部リンクの張り替え)
 
 書式:
 sswmv.py [移動先ページ名] [オプション ...]
 
-'''
+"""
 import sys
 import re
 import argparse

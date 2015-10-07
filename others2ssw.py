@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+"""
 その他アダルトサイトから素人系Wikiのウィキテキストを作成
 
 書式：
@@ -18,7 +18,7 @@ others2ssw.py "作品ページのURL" ["URL" ...]
 ・熟女倶楽部
 ・人妻パラダイス
 ・人妻切り
-'''
+"""
 import argparse
 import re
 from urllib.parse import urlparse
@@ -162,7 +162,7 @@ def censored(url, release, title, studio, performers, img_s, img_l, note):
 
 
 def japorn(he, url):
-    '''JAPORN.TV'''
+    """JAPORN.TV"""
     note = ''
     current_tab = he.xpath('//ol[@class="tab  current"][1]/a')[0]
     if current_tab.get('title') == 'DVD':

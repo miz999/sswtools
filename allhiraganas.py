@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+"""
 ひらがなのみの女優名の採取
 
 名前がひらがなのみで5文字未満で、DVDセルおよびレンタル最新作のリリース(わかるかぎり総集編除く)が
 1年以内の女優名をリストアップ
-'''
+"""
 import sqlite3
 import argparse
 import os
-
 from datetime import date, timedelta
 
 import libssw

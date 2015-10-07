@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+"""
 DMMのURLからページを取得し素人系総合wiki用ウィキテキストを作成する
 
 書式:
@@ -49,12 +49,12 @@ dmm2ssw.py [DMM作品ページのURL] [オプション...]
     ■ジュエル系の出演者名は無視
     ジュエル系の出演者名は本人の女優名ではないことがほとんどなので出演者情報があっても
     無視する。登録してあるジュエル系メーカーは以下の通り:
-'''
+"""
 IGNORE_PERFORMERS = {'45067': 'KIプランニング',
                      '45339': '豊彦',
                      '45352': 'リアルエレメント'}
 
-''' ■リダイレクトページの検出とリダイレクト先の自動取得
+""" ■リダイレクトページの検出とリダイレクト先の自動取得
     Wikiの出演者名や一覧ページがリダイレクトページかどうかチェックし、リダイレクト
     ページならリダイレクト先を取得してリンク先にする。
     -f オプションが与えられるとリダイレクトかどうかチェックしない。
@@ -74,7 +74,7 @@ IGNORE_PERFORMERS = {'45067': 'KIプランニング',
     ウィキテキストを作成、備考としてセル版へのリンクを追加する。
     --disable-check-rental オプションが与えられるとレンタル版をチェックしない。
     登録してあるレンタル先行レーベルは以下の通り:
-'''
+"""
 RENTAL_PRECEDES = {
     '51':    'God',
     '419':   'MANIAC（クリスタル）',
@@ -91,7 +91,7 @@ RENTAL_PRECEDES = {
     '23768': 'CINEMA（シネマ）',
 }
 
-''' ■取得した情報のキャッシュ
+""" ■取得した情報のキャッシュ
     採取したページ内容やリダイレクト情報などは、OSのテンポラリディレクトリ
     (C:\TEMPや/tmpなど)にディレクトリ 'dmm2ssw_cache' を作成し、そこに
     キャッシュする。
@@ -330,7 +330,7 @@ DMM作品ページのURL
 
     dmm2ssw.py "http://www.dmm.co.jp/mono/dvd/-/detail/=/cid=84scop225/" -ttb -a "波多野結衣" "羽川るな" "椿かなり"
 
-'''
+"""
 import sys as _sys
 import re as _re
 import argparse as _argparse
@@ -338,9 +338,10 @@ import urllib.parse as _up
 from itertools import chain as _chain
 from copy import deepcopy as _deepcopy
 from collections import namedtuple as _namedtuple
+
 import libssw as _libssw
 
-__version__ = 20150512
+__version__ = 20151007
 
 VERBOSE = 0
 
@@ -500,7 +501,7 @@ GENRE_BD = '6104'  # Blu-rayのジャンルID
 
 
 class OmitTitleException(Exception):
-    '''総集編など除外タイトル例外'''
+    """総集編など除外タイトル例外"""
     def __init__(self, key, word=''):
         self.key = key
         self.word = word
@@ -510,9 +511,9 @@ class OmitTitleException(Exception):
 
 
 def _get_args(argv, p_args):
-    '''
+    """
     コマンドライン引数の解釈
-    '''
+    """
     global VERBOSE
     global AUTOMODIFY
     global AUTOSTRIP
@@ -699,9 +700,9 @@ def _get_args(argv, p_args):
 
 
 def _build_image_url(service, cid):
-    '''
+    """
     画像URL作成
-    '''
+    """
     verbose('force building image url')
     suffix = ('js', 'jp') if service == 'ama' else ('ps', 'pl')
     return tuple(_up.urljoin(IMG_URL[service], '{0}/{0}{1}.jpg'.format(cid, s))
@@ -709,9 +710,9 @@ def _build_image_url(service, cid):
 
 
 def _normalize(string):
-    '''
+    """
     タイトルから【.+?】と非unicode単語文字を除いて正規化
-    '''
+    """
     string = _libssw.norm_uc(string).replace(' ', '').lower()
     string = _libssw.sub(sp_ltbracket_h, string)
     string = _libssw.sub(sp_ltbracket_t, string)
@@ -724,10 +725,10 @@ class LongTitleException(Exception):
 
 
 def _compare_title(cand, title):
-    '''
+    """
     同じタイトルかどうか比較
     title はあらかじめ _normalize() に通しておくこと
-    '''
+    """
     cand = _normalize(cand.strip())
     verbose('cand norm: ', cand)
     return cand.startswith(title) or title.startswith(cand)
@@ -741,7 +742,7 @@ sp_expansion = ((_re.compile('@{media}'), 'media'),
                 (_re.compile('@{cid}'), 'cid'))
 
 def expansion(phrases, summ):
-    '''予約変数の展開'''
+    """予約変数の展開"""
     for ph in phrases:
         for p, r in sp_expansion:
             ph = p.sub(getattr(summ, r), ph)
@@ -749,7 +750,7 @@ def expansion(phrases, summ):
 
 
 def _ret_apache(cid, pid):
-    '''Apacheのタイトルの長いやつ'''
+    """Apacheのタイトルの長いやつ"""
     verbose('Checking Apache title...')
 
     serial = cid.replace('h_701ap', '')
@@ -772,7 +773,7 @@ def _ret_apache(cid, pid):
 
 
 class _RetrieveTitleSCOOP:
-    '''SCOOPのタイトルの長いやつ'''
+    """SCOOPのタイトルの長いやつ"""
     def __init__(self):
         self._cookie = _libssw.load_cache('kmp_cookie', expire=86400)
 
@@ -804,7 +805,7 @@ _ret_scoop = _RetrieveTitleSCOOP()
 
 
 class _RetrieveTitlePlum:
-    '''プラムのタイトル'''
+    """プラムのタイトル"""
     def __init__(self, prefix):
         self._prefix = prefix
         self._ssid = None
@@ -823,6 +824,8 @@ class _RetrieveTitlePlum:
         if self._ssid and self._cart:
             return 'AJCSSESSID={}; cart_pDq7k={}; enter=enter'.format(
                 self._ssid, self._cart)
+        else:
+            return None
 
     def __call__(self, cid, pid):
         verbose('Checking Plum title...')
@@ -867,7 +870,7 @@ TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
                        }
 
 class __TrySMM:
-    '''
+    """
     SMMから出演者情報を得てみる
 
     SMM通販新品から「品番 + タイトルの先頭50文字」で検索、ヒットした作品のページの
@@ -875,7 +878,7 @@ class __TrySMM:
 
     返り値:
     女優情報があった場合はその人名のリスト、なければ空のタプル
-    '''
+    """
     # 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 (2015-10-05現在)
     _allhiraganas = ('ありさ', 'くるみ', 'さやか', 'しずく', 'すみれ',
                      'つばさ', 'つぼみ', 'なごみ', 'ひなぎく', 'まなか',
@@ -917,7 +920,7 @@ class __TrySMM:
             return
 
     def _is_existent(self, name):
-        '''その名前の女優が実際にいるかどうかDMM上でチェック'''
+        """その名前の女優が実際にいるかどうかDMM上でチェック"""
         verbose('is existent: ', name)
         url = '{}/-/search/=/searchstr={}/'.format(_libssw.BASEURL_ACT,
                                                    _up.quote(name))
@@ -933,11 +936,13 @@ class __TrySMM:
             else:
                 break
 
+        return None
+
     def _chk_anonym(self, pfmr):
-        '''
+        """
         SMM出演者情報でひらがなのみの名前の場合代用名かどうかチェック
         名前がひらがなのみで4文字以下で既知のひらがな女優名でなければ代用名とみなす
-        '''
+        """
         # if _libssw.p_neghirag.search(pfmr) or self._is_existent(pfmr):
         if _libssw.p_neghirag.search(pfmr) or \
            len(pfmr) > 4 or \
@@ -1008,9 +1013,9 @@ _try_smm = __TrySMM()
 
 
 class DMMParser:
-    '''
+    """
     DMM作品ページの解析
-    '''
+    """
     p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
     # p_genre = _re.compile(r'/article=keyword/id=(6003|6147|6561)/')
 
@@ -1028,7 +1033,7 @@ class DMMParser:
         self._n_i_s = n_i_s
 
     def _mark_omitted(self, key, hue):
-        '''除外タイトルの扱い'''
+        """除外タイトルの扱い"""
         if key in self._no_omits:
             # 除外対称外なら備考に記録
             if not any(key in s for s in self._sm['note']):
@@ -1039,7 +1044,7 @@ class DMMParser:
             raise OmitTitleException(key, hue)
 
     def _ret_title(self, chk_longtitle):
-        '''タイトルの採取'''
+        """タイトルの採取"""
         def _det_longtitle_maker():
             for key in filter(lambda k: self._sm['cid'].startswith(k),
                               TITLE_FROM_OFFICIAL):
@@ -1069,7 +1074,7 @@ class DMMParser:
         return title, title_dmm
 
     def _ret_props(self, prop):
-        '''各種情報'''
+        """各種情報"""
 
         tag = prop.text.strip()
 
@@ -1249,8 +1254,10 @@ class DMMParser:
             self._sm['size'] = _libssw.getnext_text(prop)
             verbose('ama size: ', self._sm['size'])
 
+        return
+
     def _ret_images(self, service):
-        '''パッケージ画像のURLの取得'''
+        """パッケージ画像のURLの取得"""
         if service == 'ama':
             img_lg = self._he.find(
                 './/div[@id="sample-video"]/img').get('src')
@@ -1269,12 +1276,12 @@ class DMMParser:
         return img_lg, img_sm
 
     def _ret_performers(self, gvnpfmrs, smm):
-        '''
+        """
         出演者の取得
         (女優名, リダイレクト先, おまけ文字列) のタプルを返すジェネレータ
-        '''
+        """
         def _trim_name(name):
-            '''女優名の調整'''
+            """女優名の調整"""
             name = name.strip()
             if AUTOSTRIP:
                 name = _libssw.p_inbracket.split(name)[0]
@@ -1344,7 +1351,7 @@ class DMMParser:
         #         yield gvn
 
     def _get_otherslink(self, service, firmly=True):
-        '''他のサービスの作品リンクの取得'''
+        """他のサービスの作品リンクの取得"""
         def _chooselink(others, service):
             for o in others:
                 link = o.get('href')
@@ -1386,7 +1393,7 @@ class DMMParser:
         return '※[[{}版>{}]]のリリースは{}。'.format(tag, url, release)
 
     def _get_otherscontent(self, *service):
-        '''他サービス版の情報取得'''
+        """他サービス版の情報取得"""
         for s in service:
             others_url = self._get_otherslink(s)
             if others_url:
@@ -1420,9 +1427,9 @@ class DMMParser:
         return _deepcopy(others_data)
 
     def _check_rltditem(self, media):
-        '''
+        """
         他メディア(「ご注文前にこちらの商品もチェック！」の欄)があればそれへのリンクを返す
-        '''
+        """
         verbose('checking {}...'.format(media))
         iterrltd = self._he.iterfind(
             './/div[@id="rltditem"]/ul/li/a/img[@alt="{}"]'.format(media))
@@ -1440,7 +1447,7 @@ class DMMParser:
 
     def __call__(self, he, service, sm=_libssw.Summary(),
                  args=_argparse.Namespace, ignore_pfmrs=False):
-        '''作品ページの解析'''
+        """作品ページの解析"""
         self._he = he
         self._sm = sm
         self._ignore_pfmrs = ignore_pfmrs
@@ -1565,7 +1572,7 @@ _othersparser = DMMParser(deeper=False)
 
 
 def search_listpage(url, listname, listtype, pid):
-    '''実際の一覧ページをWiki内で探してみる'''
+    """実際の一覧ページをWiki内で探してみる"""
     # listname = set((listname,)) | set(
     #     _libssw.p_inbracket.split(listname.rstrip(')）')))
     verbose('Searching listpage: listname=', listname, ', pid=', pid)
@@ -1613,10 +1620,10 @@ def search_listpage(url, listname, listtype, pid):
 
 
 def check_actuallpage(url, lpage, ltype, pid):
-    '''
+    """
     実際の一覧ページのチェック
     見つかったらREDIRECTSにキャッシュしておく
-    '''
+    """
     global REDIRECTS
 
     verbose('check actual list page on ssw...')
@@ -1656,7 +1663,7 @@ def check_actuallpage(url, lpage, ltype, pid):
 
 
 class ResolveListpage:
-    '''一覧ページへのリンク情報の決定'''
+    """一覧ページへのリンク情報の決定"""
     def __init__(self):
         self._unknowns = set()
 
@@ -1726,7 +1733,7 @@ def build_addcols(add_column, summ):
 
 
 def check_missings(summ):
-    '''未取得情報のチェック'''
+    """未取得情報のチェック"""
     missings = [m for m in ('release', 'title', 'maker', 'label', 'image_sm')
                 if not summ[m]]
     missings and emsg(
@@ -1734,7 +1741,7 @@ def check_missings(summ):
 
 
 def format_wikitext_a(summ, anum, astr):
-    '''ウィキテキストの作成 女優ページ用'''
+    """ウィキテキストの作成 女優ページ用"""
     wtext = ''
 
     # 発売日
@@ -1766,7 +1773,7 @@ def format_wikitext_a(summ, anum, astr):
 
 
 def format_wikitext_t(summ, astr, dstr, dir_col, diff_page, add_column):
-    '''ウィキテキストの作成 table形式'''
+    """ウィキテキストの作成 table形式"""
     wtext = ''
 
     # 品番

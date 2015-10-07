@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+"""
 素人系Wikiのレーベル/シリーズ一覧ページにあって女優ページにない作品情報の洗い出し
 
 書式:
@@ -65,7 +65,7 @@ sswchkactp.py [一覧ページのURL/HTML/ウィキテキスト ...] [オプシ�
 
 -h, --help
     ヘルプメッセージを表示して終了する。
-'''
+"""
 import argparse
 import re
 import urllib.parse as up
@@ -165,7 +165,7 @@ def get_args():
 
 
 def searchwiki_by_url(url):
-    '''検索結果から記事名を返すジェネレータ'''
+    """検索結果から記事名を返すジェネレータ"""
     resp, he = libssw.open_url(
         'http://sougouwiki.com/search?keywords={}'.format(libssw.quote(url),
                                                           cache=False))
@@ -191,9 +191,9 @@ def gen_sswurl(name):
 
 
 def check_actrpage(actr_url, listp, prod_url):
-    '''
+    """
     女優ページに作品情報があるか、一覧ページへのリンクがちゃんとあるかチェック
-    '''
+    """
     # 女優ページの取得
     resp, html = libssw.open_url(actr_url, cache=False, to_elems=False)
     if resp.status == 404:

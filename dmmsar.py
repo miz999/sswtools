@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+"""
 dmm2ssw.pyのラッパー。
 指定されたIDやキーワード等でDMMから一覧を取得し、ウィキテキストを作成する。
 
@@ -405,7 +405,7 @@ dmmsar.py (-A|-S|-L|-K|-U) [キーワード ...] [オプション...]
 
     dmmsar.py "http://www.dmm.co.jp/mono/dvd/-/list/=/article=label/id=8893/" -tmm --filter-pid "^saba" --start-pid "saba-125" --row 125
 
-'''
+"""
 import sys
 import re
 import argparse
@@ -447,7 +447,7 @@ OutFile = namedtuple('OutFile', 'actr,tbl,suffix,writemode')
 
 
 def get_args(argv):
-    '''コマンドライン引数の解釈'''
+    """コマンドライン引数の解釈"""
     global VERBOSE
     global verbose
 
@@ -833,7 +833,7 @@ def parse_outfile(args, make):
 
 
 def det_filterpatn(args):
-    '''フィルター用パターンの決定'''
+    """フィルター用パターンの決定"""
     if args.filter_pid:
         return re.compile(args.filter_pid, re.I), 'pid'
     elif args.filter_cid:
@@ -843,7 +843,7 @@ def det_filterpatn(args):
 
 
 def det_keyinfo(args):
-    '''start/last-p/cidキー情報の決定'''
+    """start/last-p/cidキー情報の決定"""
     if args.start_pid:
         return args.start_pid, 'start', 'pid'
     elif args.start_cid:
@@ -857,7 +857,7 @@ def det_keyinfo(args):
 
 
 class ExtractIDs:
-    '''位置引数からIDと検索対象の抽出'''
+    """位置引数からIDと検索対象の抽出"""
     def __call__(self, keywords: tuple, is_cid=False):
         self.retrieval = None
 
@@ -887,7 +887,7 @@ def makeproditem(cid, service, sp_pid):
 
 
 def from_sequence(keywords: tuple, service, sp_pid):
-    '''連続した品番の生成ジェネレータ'''
+    """連続した品番の生成ジェネレータ"""
     try:
         base, start, end = keywords[:3]
     except ValueError:
@@ -905,7 +905,7 @@ def from_sequence(keywords: tuple, service, sp_pid):
 
 
 def make_pgen(args, ids, listparser, sp_pid, key_id, key_type, kidattr):
-    '''作品情報作成ジェネレータの作成'''
+    """作品情報作成ジェネレータの作成"""
     if args.from_tsv:
         # TSVファイルから一覧をインポート
         verbose('Import from_tsv()')
@@ -966,19 +966,19 @@ def ret_joindata(join_d, args):
 
 
 def fmtheader(atclinfo):
-    '''ヘッダ整形'''
+    """ヘッダ整形"""
     return '\n*{}'.format(
         '／'.join('[[{}>{}]]'.format(a, u) for a, u in atclinfo))
 
 
 def build_header_actress(actids: tuple):
-    '''女優名の再構成'''
+    """女優名の再構成"""
     verbose('build_header_actress: {}'.format(actids))
 
     current = ''
 
     def _getnames(he):
-        '''女優名とよみの文字列の取得'''
+        """女優名とよみの文字列の取得"""
         nonlocal current
 
         for name, yomi in zip_longest(*libssw.get_actname(he)):
@@ -987,7 +987,7 @@ def build_header_actress(actids: tuple):
         current = libssw.get_actname.current
 
     def _build(aids):
-        '''女優名の整形とIDのペアを返す'''
+        """女優名の整形とIDのペアを返す"""
         for aid in aids:
             resp, he = libssw.open_url(ACTINFOPAGE.format(aid))
             yield '／'.join(_getnames(he)), ACTLISTPAGE.format(aid)
@@ -997,7 +997,7 @@ def build_header_actress(actids: tuple):
 
 
 def build_header(articles):
-    '''ページヘッダ文字列の作成'''
+    """ページヘッダ文字列の作成"""
     header = fmtheader(articles)
     return articles[0][0], header
 
@@ -1008,7 +1008,7 @@ def build_header_listpage(retrieval, service, name, lstid):
 
 
 def det_articlename(args, ids, wikitexts, listparser):
-    '''アーティクル名の決定およびヘッダの作成'''
+    """アーティクル名の決定およびヘッダの作成"""
     if args.retrieval == 'actress':
         # 女優ID指定:
         article_name, article_header = build_header_actress(ids)
@@ -1036,17 +1036,19 @@ def det_articlename(args, ids, wikitexts, listparser):
 
 
 def set_sortkeys(sort_key):
-    '''ソートキーの設定'''
+    """ソートキーの設定"""
     if sort_key == 'title':
         # 第1キー:タイトル、第2キー:リリース日
-        return 'release', 'title'
+        keys =  'release', 'title'
     elif sort_key == 'release':
         # 第1キー:リリース日、第2キー:品番
-        return 'pid', 'release'
+        keys = 'pid', 'release'
     elif sort_key == 'pid':
-        return 'release', 'pid'
+        keys = 'release', 'pid'
     else:
-        return ()
+        keys = ()
+
+    return keys
 
 
 def truncate_th(cols):
@@ -1058,21 +1060,21 @@ def truncate_th(cols):
 
 
 def number_header(article, n_i_s, page):
-    '''ページヘッダの出力'''
+    """ページヘッダの出力"""
     return '{}{} {}'.format(article,
                             'その他' if n_i_s else '',
                             page if page > 1 else '')
 
 
 def build_outname(of, is_table, pagen):
-    '''指定した出力ファイル名を指定のモードでオープン'''
+    """指定した出力ファイル名を指定のモードでオープン"""
     stem = of.tbl if is_table else of.actr
     fname = '.'.join('{}'.format(p) for p in (stem, pagen, of.suffix) if p)
     return fname
 
 
 class BuildPage:
-    '''ウィキテキスト生成(ページごと)'''
+    """ウィキテキスト生成(ページごと)"""
     def __init__(self, wikitexts, split, retrieval, a_name, a_hdr, t_hdr):
         self._wikitexts = wikitexts
         self._split = split
@@ -1099,7 +1101,7 @@ class BuildPage:
         verbose('wktxt attr: ', self._attr)
 
     def _header(self, n_i_s):
-        '''ページヘッダの出力'''
+        """ページヘッダの出力"""
         self.pagen = (self._row // self._split + 1) if self._row >= 0 else 0
         page_name = number_header(self._a_name, n_i_s, self.pagen)
         yield '\n' + page_name + '\n'
@@ -1133,7 +1135,7 @@ class BuildPage:
             libssw.open_ssw(*self._page_names)
 
     def __call__(self, n_i_s):
-        '''ウィキテキスト生成(ページごと)'''
+        """ウィキテキスト生成(ページごと)"""
 
         self._titles_dmm = []
 
@@ -1171,7 +1173,7 @@ class BuildPage:
 
 
 def finalize(build_page, row, make, n_i_s, nis_series, outfile):
-    '''最終的なウィキテキスト出力'''
+    """最終的なウィキテキスト出力"""
     for is_table in compress((True, False), (make.table, make.actress)):
         verbose('is_table: ', is_table)
 
