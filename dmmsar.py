@@ -20,8 +20,8 @@ dmmsar.py (-A|-S|-L|-K|-U) [キーワード ...] [オプション...]
     ・品番のプレフィクスがあらかじめ登録されている総集編のものと一致
     ・ジャンルに総集編がある
     ・タイトルに「総集編」「BEST」などの関連ワードがある
-    ・タイトルに「20人/名」以上/「15本番」以上/「50(連)発/射」以上/「4時間」以上/
-    「240分」以上/「(全)(n)タイトル」のうち2つ以上含まれている
+    ・タイトルに「20人/名」以上/「15本番」以上/「50(連)発/射|SEX」以上/
+    「4時間」以上/「240分」以上/「(全)(n)タイトル」のうち2つ以上含まれている
     ・収録時間が約4時間以上(200分超)なら総集編しかなさそうなメーカーの作品
 
 
@@ -1140,7 +1140,7 @@ class BuildPage:
         yield from self._header(n_i_s)
 
         while self._no < self._length:
-            # for j, item in enumerate(wikitexts, start=args.row - 1):
+
             verbose('Row #', self._row)
 
             item = self._wikitexts[self._no]
@@ -1166,7 +1166,6 @@ class BuildPage:
                 break
         else:
             self.done = True
-            verbose('One page done.')
 
         yield from self._tail()
 
@@ -1193,15 +1192,16 @@ def finalize(build_page, row, make, n_i_s, nis_series, outfile):
             if outfile:
                 fd.close()
 
-    if n_i_s:
-        fd = open(outf, 'a') if outfile else sys.stdout
+        if n_i_s and nis_series:
+            fd = open(outf, 'a') if outfile else sys.stdout
 
-        print('** 見つかったシリーズ一覧(順不同)', file=fd)
-        print(*('-[[{}]]'.format(s) for s in nis_series), sep='\n', file=fd)
-        print(file=fd)
+            print('** 見つかったシリーズ一覧', file=fd)
+            print(*('-[[{}]]'.format(s) for s in sorted(nis_series)),
+                  sep='\n', file=fd)
+            print(file=fd)
 
-        if outfile:
-            fd.close()
+            if outfile:
+                fd.close()
 
 
 def main(argv=None):
