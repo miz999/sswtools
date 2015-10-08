@@ -344,7 +344,7 @@ def main():
     rest = total
     omitted = 0
 
-    dmmparser = dmm2ssw.DMMParser(no_omits)
+    dmmparser = libssw.DMMParser(no_omits)
 
     for url in products:
         props = products[url]

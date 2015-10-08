@@ -332,19 +332,16 @@ import re as _re
 import argparse as _argparse
 import urllib.parse as _up
 from itertools import chain as _chain
-from copy import deepcopy as _deepcopy
 from collections import namedtuple as _namedtuple
 
 import libssw as _libssw
 
 __version__ = 20151007
 
-VERBOSE = 0
+_VERBOSE = 0
 
 _AUTOMODIFY = True
-_AUTOSTRIP = True
 
-verbose = _libssw.Verbose(_libssw.ownname(__file__), VERBOSE)
 _emsg = _libssw.Emsg(_libssw.ownname(__file__))
 
 _BASEURL = _libssw.BASEURL
@@ -359,13 +356,9 @@ _ReturnVal = _namedtuple('ReturnVal',
 _NiS = _namedtuple('n_i_s', 'sid,name')
 
 
-_p_more = _re.compile(r"url: '(.*?)'")
 _p_age = _re.compile(r'(\(\d+?\))$')
 
 _sp_heart = (_re.compile(r'（ハート）|◆'), r'♥')
-_sp_ltbracket_h = (_re.compile(r'^(?:【.+?】)+?'), '')
-_sp_ltbracket_t = (_re.compile(r'(?:【.+?】)+?$'), '')
-_sp_nowrdchr = (_re.compile(r'\W'), '')
 sp_pid = None  # dmmsar.py 側から更新
 
 
@@ -374,166 +367,18 @@ _IMG_URL = {'dvd':    'http://pics.dmm.co.jp/mono/movie/adult/',
             'video':  'http://pics.dmm.co.jp/digital/video/',
             'ama':    'http://pics.dmm.co.jp/digital/amateur/'}
 
-# 除外対象ジャンル
-_OMITGENRE = {'6014': 'イメージビデオ',
-              '6003': '総集編',       # ベスト・総集編
-              '6608': '総集編',       # 女優ベスト・総集編
-              '7407': '総集編',       # ベスト・総集編
-              '6147': 'アウトレット',
-              '6175': 'アウトレット',  # '激安アウトレット'
-              '6555': '復刻',
-              '4104': 'UMD',
-              }
-#  '6561': '限定盤'} # 特典対象
 
-# 出演者情報を無視するメーカー
-_IGNORE_PERFORMERS = {'45067': 'KIプランニング',
-                      '45339': '豊彦',
-                      '45352': 'リアルエレメント'}
-
-
-# レンタル先行レーベル
-_RENTAL_PRECEDES = {
-    '51':    'God',
-    '419':   'MANIAC（クリスタル）',
-    '664':   'LEO',
-    '3548':  'ATHENA',
-    '6172':  'アートビデオSM/妄想族',
-    '4285':  'FAプロ',
-    '21383': 'FAプロ 熟女',
-    '21405': 'FAプロ 赤羽',
-    '22815': 'Fプロジェクト',
-    '5940':  'ながえSTYLE',
-    '23360': 'ナックル（ながえスタイル）',
-    '23474': 'ナックル（サイドビー）',
-    '23768': 'CINEMA（シネマ）',
-}
-
-# 総集編・再収録専門なのに作品にそうジャンル付けされないやつ
-# メーカー
-_OMIT_MAKER = {
-    '6500': 'BACK DROP',
-    '6473': 'CHANGE',
-}
-#   '45810': 'エクストラ'}
-# 収録時間が4時間以上は総集編だけそうなメーカー
-_OMIT_SUSS_4H = {
-    '1398': 'ドグマ',
-    '3784': 'エムズビデオグループ',
-    '4809': 'ミル',
-    '4835': 'TRANS CLUB',
-    '4836': 'SHEMALE a la carte',
-    '5061': 'オーロラプロジェクト・アネックス',
-    '5534': 'ABC/妄想族',
-    '5665': 'ROOKIE',
-    '5699': 'VENUS',
-    '6413': 'フォーディメンション/エマニエル',
-    '6426': '赤い弾丸/エマニエル',
-    '6495': 'MANJIRO/エマニエル',
-    '6381': 'CREAM PIE',
-    '40006': 'ワンズファクトリー',
-    '40014': 'グローリークエスト',
-    '40018': 'ルビー',
-    '40025': 'ドリームチケット',
-    '40035': 'クリスタル映像',
-    '40070': 'マルクス兄弟',
-    '40074': 'ジャネス',
-    '40077': 'AVS collector’s',
-    '40082': 'ラハイナ東海',
-    '40160': 'アテナ映像',
-    '45016': 'センタービレッジ',
-    '45017': 'ドリームステージ',
-    '45059': 'デジタルアーク',
-    '45099': '光夜蝶',
-    '45195': '小林興業',
-    '45216': 'なでしこ',
-    '45340': 'BabyEntertainment',
-    '45371': 'ROCKET',
-    '45450': 'STAR PARADISE',
-    '45457': 'NEXT GROUP',
-    '45486': 'プリモ',
-    '45532': 'スターゲート',
-    '45700': 'バルタン',
-    '45883': 'Mellow Moon（メロウムーン）'}
-
-# 総集編・再収録専門レーベル
-_OMIT_LABEL = {
-    '2745':  'アタッカーズ アンソロジー',
-    '6010':  'ALL IN☆ ONE',
-    '7111':  'CRYSTAL EX',
-    '9164':  'オーロラプロジェクト・EX',
-    '21231': 'DRAGON（ハヤブサ）',
-    '24078': 'REBORN',
-    '24230': '美少女（プレステージ）',
-    '25025': 'コリーダ'}
-
-# 総集編・再収録専門シリーズ
-_OMIT_SERIES = {
-    '2935':   'BEST（作品集）',
-    '8750':   '微乳貧乳',
-    '9939':   'プレミアムベスト',
-    '9696':   'ism',
-    '72538':  '○○大全集（TMA）',
-    '77766':  '人妻の情事（なでしこ）',
-    '78841':  '100人斬り（TMA）',
-    '202979': '『無垢』特選 無垢ナ女子校生限定ソープランド 大好評記念感謝祭',
-    '204625': 'いいなりな人妻たち',
-    '205518': 'いやらしくてムッチリお尻で巨乳の人妻とHがしたい',
-    '205779': 'フェラチオSP',
-    '207233': '寸止め焦らしで大暴発スペシャル',
-    '208033': '湯あがりぺちゃぱいバスタイム',
-    '208077': '美熟女プレイ集',
-    '208374': '催眠研究',
-    '209310': 'ONEDAFULL1年の軌跡全60作品',
-    '209360': '○○ism',
-    '209413': 'アウトレットDVD5枚組 1980',
-    '209887': '奥さんの体がエロいから犯されるんです！！！',
-    '210101': '○時間SPECIAL',
-    '210208': 'ママ友！増刊号 ヤリ友の輪',
-    '210925': '淫乱すぎる若妻48人の連続ドスケベSEX',
-    '210926': 'どすけべ妻のいやらしいフェラチオ',
-    '211184': 'The○○ 美熟女スペシャル',
-    '211414': '母乳厳選集',
-    '213087': 'おませなJKの制服でオクチえっち！',
-    '213109': '夫の前で犯される人妻',
-    '213295': '麗しき若妻',
-    '213420': 'キレイなお姉さんのパンモロ○○コレクション',
-    '213604': 'ヌキサシバッチリ！！厳選センズリ専用ディルド＆指入れオナニー素材集',
-    '213714': '1万人のAVユーザーが選んだ○○',
-    '213840': '癒しのじゅるじゅぽフェラCOLLECTION',
-}
-
-# シリーズとして扱うとめんどくさいシリーズ
-_IGNORE_SERIES = {'8369': 'E-BODY',
-                  '205878': 'S級素人'}
-
-# レンタル版のページの出演者が欠けていることがあるメーカー
-_FORCE_CHK_SALE_MK = {'40121': 'LEO'}
-# レンタル版のページの出演者が欠けていることがあるシリーズ
-_FORCE_CHK_SALE_SR = {'79592': '熟ズボッ！',
-                      '3820':  'おはズボッ！'}
-
-_GENRE_BD = '6104'  # Blu-rayのジャンルID
-
-
-class OmitTitleException(Exception):
-    """総集編など除外タイトル例外"""
-    def __init__(self, key, word=''):
-        self.key = key
-        self.word = word
-
-    def __str__(self):
-        return repr(self.word)
+# _verbose() に置き換えられる
+_verbose = None
 
 
 def _get_args(argv, p_args):
     """
     コマンドライン引数の解釈
     """
-    global VERBOSE
+    global _VERBOSE
     global _AUTOMODIFY
-    global _AUTOSTRIP
-    global verbose
+    global _verbose
 
     argparser = _argparse.ArgumentParser(
         description='DMMのURLから素人系総合wiki用ウィキテキストを作成する')
@@ -658,6 +503,7 @@ def _get_args(argv, p_args):
     argparser.add_argument('--disable-strip-oldname',
                            help='出演者の旧芸名の自動除去を無効にする',
                            action='store_false',
+                           dest='autostrip',
                            default=True)
 
     argparser.add_argument('-c', '--copy',
@@ -675,10 +521,11 @@ def _get_args(argv, p_args):
     argparser.add_argument('--cache-info',
                            help='キャッシュのパスとファイルサイズの合計を出力して終了する',
                            action='store_true')
+
     argparser.add_argument('-v', '--verbose',
                            help='デバッグ用情報を出力する',
                            action='count',
-                           default=0)
+                           default=getattr(p_args, 'verbose', 0))
     argparser.add_argument('-V', '--version',
                            help='バージョン情報を表示して終了する',
                            action='version',
@@ -686,14 +533,12 @@ def _get_args(argv, p_args):
 
     args = argparser.parse_args(argv)
 
-    # dmmsar.py 側からVERBOSEが変更される場合があるため
-    verbose.verbose = VERBOSE = VERBOSE or args.verbose
+    if args.verbose and __name__ != '__main__':
+        args.verbose -= 1
+    _VERBOSE = args.verbose
 
-    if not VERBOSE:
-        verbose = _libssw.verbose = lambda *x: None
-    elif VERBOSE > 1:
-        _libssw.VERBOSE = _libssw.verbose.verbose = VERBOSE - 1
-        verbose('verbose mode on')
+    _verbose = _libssw.def_verbose(_VERBOSE, _libssw.ownname(__file__))
+    _verbose('verbose mode on')  # verbose モードでなければ無視される
 
     if args.cache_info:
         _libssw.cache_info()
@@ -704,39 +549,18 @@ def _get_args(argv, p_args):
             setattr(args, a, False)
 
     _AUTOMODIFY = args.disable_modify_title
-    _AUTOSTRIP = args.disable_strip_oldname
     _libssw.RECHECK = args.recheck
 
-    verbose('args: ', args)
+    _verbose('args: ', args)
     return args
 
 
 def _build_image_url(service, cid):
     """画像URL作成"""
-    verbose('force building image url')
+    _verbose('force building image url')
     suffix = ('js', 'jp') if service == 'ama' else ('ps', 'pl')
     return tuple(_up.urljoin(_IMG_URL[service], '{0}/{0}{1}.jpg'.format(cid, s))
                  for s in suffix)
-
-
-def _normalize(string):
-    """タイトルから【.+?】と非unicode単語文字を除いて正規化"""
-    string = _libssw.norm_uc(string).replace(' ', '').lower()
-    string = _libssw.sub(_sp_ltbracket_h, string)
-    string = _libssw.sub(_sp_ltbracket_t, string)
-    string = _libssw.sub(_sp_nowrdchr, string)
-    return string
-
-
-def _compare_title(cand, title):
-    """
-    同じタイトルかどうか比較
-
-    title はあらかじめ _normalize() に通しておくこと
-    """
-    cand = _normalize(cand.strip())
-    verbose('cand norm: ', cand)
-    return cand.startswith(title) or title.startswith(cand)
 
 
 _sp_expansion = ((_re.compile('@{media}'), 'media'),
@@ -753,131 +577,6 @@ def _expansion(phrases, summ):
         for p, r in _sp_expansion:
             ph = p.sub(getattr(summ, r), ph)
         yield ph
-
-
-class _LongTitleError(Exception):
-    pass
-
-
-def _ret_apache(cid, pid):
-    """Apacheのタイトルの長いやつ"""
-    verbose('Checking Apache title...')
-
-    serial = cid.replace('h_701ap', '')
-    url = 'http://www.apa-av.jp/list_detail/detail_{}.html'.format(serial)
-
-    resp, he = _libssw.open_url(url)
-
-    if resp.status != 200:
-        _emsg('W', 'ページを開けませんでした: url={}, status={}'.format(
-            url, resp.status))
-        raise _LongTitleError
-
-    opid, actress, director = _libssw.ret_apacheinfo(he)
-
-    if pid != opid:
-        verbose('check_apache: PID on Apache official is different from DMM')
-        raise _LongTitleError(pid, opid)
-
-    return he.head.find('title').text.strip().replace('\n', ' ')
-
-
-class _RetrieveTitleSCOOP:
-    """SCOOPのタイトルの長いやつ"""
-    def __init__(self):
-        self._cookie = _libssw.load_cache('kmp_cookie', expire=86400)
-
-    def __call__(self, cid, pid):
-        verbose('Checking SCOOP title...')
-
-        prefix = cid[2:6]
-        serial = cid[6:]
-        url = 'http://www.km-produce.com/works/{}-{}'.format(prefix, serial)
-
-        while True:
-            verbose('cookie: ', self._cookie)
-            resp, he = _libssw.open_url(url, set_cookie=self._cookie)
-            if 'set-cookie' in resp:
-                self._cookie = resp['set-cookie']
-                verbose('set cookie')
-                _libssw.save_cache(self._cookie, 'kmp_cookie')
-            else:
-                break
-
-        if resp.status != 200:
-            _emsg('W', 'ページを開けませんでした: url={}, status={}'.format(
-                url, resp.status))
-            raise _LongTitleError
-
-        return he.find_class('title')[0].text.strip()
-
-_ret_scoop = _RetrieveTitleSCOOP()
-
-
-class _RetrieveTitlePlum:
-    """プラムのタイトル"""
-    def __init__(self, prefix):
-        self._prefix = prefix
-        self._ssid = None
-        self._cart = None
-
-    def _parse_cookie(self, cookie):
-        verbose('parse cookie: ', cookie)
-        for c in filter(lambda c: '=' in c,
-                        (i.split(';')[0].strip() for i in cookie.split(','))):
-            lhs, rhs = c.split('=')
-            if rhs == 'deleted':
-                self._ssid = lhs
-            elif lhs == 'cart_pDq7k':
-                self._cart = rhs
-
-        if self._ssid and self._cart:
-            return 'AJCSSESSID={}; cart_pDq7k={}; enter=enter'.format(
-                self._ssid, self._cart)
-        else:
-            return None
-
-    def __call__(self, cid, pid):
-        verbose('Checking Plum title...')
-
-        serial = cid.replace(self._prefix, '')
-        if len(serial) < 3:
-            serial = '{:0>3}'.format(serial)
-        url = 'http://www.plum-web.com/?view=detail&ItemCD=SE{}&label=SE'.format(serial)
-
-        cookie = ''
-        for i in range(5):
-            cookie = self._parse_cookie(cookie)
-            verbose('plum cookie: ', cookie)
-
-            resp, he = _libssw.open_url(url, set_cookie=cookie, cache=False)
-
-            cookie = self._parse_cookie(resp.get('set-cookie', cookie))
-
-            if resp.status != 200:
-                _emsg('W', 'ページを開けませんでした: url={}, status={}'.format(
-                    url, resp.status))
-                raise _LongTitleError
-
-            if not len(he.get_element_by_id('nav', '')):
-                break
-
-        else:
-            _emsg('E', 'プラム公式サイトをうまく開けませんでした。')
-
-        title = he.find('.//h2[@id="itemtitle"]').text.strip()
-        title = _libssw.sub(_sp_ltbracket_h, title)
-
-        return title
-
-# _ret_plum_se = _RetrieveTitlePlum('h_113se')
-
-
-_TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
-                        '84scop': _ret_scoop,      # SCOOP
-                        '84scpx': _ret_scoop,      # SCOOP
-                        # 'h_113se': _ret_plum_se, # 素人援交生中出し(プラム)
-                        }
 
 
 class __TrySMM:
@@ -910,7 +609,7 @@ class __TrySMM:
                                                set_cookie=self._cookie)
 
             if resp.status != 200:
-                verbose('smm search failed: url={}, status={}'.format(
+                _verbose('smm search failed: url={}, status={}'.format(
                     search_url, resp.status))
                 return
 
@@ -924,7 +623,7 @@ class __TrySMM:
                     _emsg('W', 'SMMの年齢認証が完了していません。')
                     return
             else:
-                verbose('Age confirmed')
+                _verbose('Age confirmed')
                 return he_result
         else:
             _emsg('W', 'SMMの年齢認証が完了していません。')
@@ -932,7 +631,7 @@ class __TrySMM:
 
     def _is_existent(self, name):
         """その名前の女優が実際にいるかどうかDMM上でチェック"""
-        verbose('is existent: ', name)
+        _verbose('is existent: ', name)
         url = '{}/-/search/=/searchstr={}/'.format(_libssw.BASEURL_ACT,
                                                    _up.quote(name))
         while True:
@@ -964,10 +663,10 @@ class __TrySMM:
             return ('', '', '({})'.format(pfmr))
 
     def __call__(self, pid, title):
-        verbose('Trying SMM...')
+        _verbose('Trying SMM...')
         # SMMで検索(品番+タイトル)
         if not self._cookie:
-            verbose('could not retrieve cookie')
+            _verbose('could not retrieve cookie')
             return []
 
         for cate in 20, 6:
@@ -975,31 +674,31 @@ class __TrySMM:
             he_search = self._search(cate, pid, title)
             items = he_search.find_class('imgbox')
             if len(items):
-                verbose('Found on smm (cate: {})'.format(cate))
+                _verbose('Found on smm (cate: {})'.format(cate))
                 break
             else:
-                verbose('Not found on smm (cate: {})'.format(cate))
+                _verbose('Not found on smm (cate: {})'.format(cate))
         else:
-            verbose('smm: No search result')
+            _verbose('smm: No search result')
             return []
 
         # DMM、SMM各タイトルを正規化して比較、一致したらそのページを読み込んで
         # 出演者情報を取得
-        title = _normalize(title)
-        verbose('title norm: ', title)
+        title = _libssw.normalize(title)
+        _verbose('title norm: ', title)
 
         for item in items:
             path = item.find('a').get('href')
             self.title_smm = item.find('a/img').get('alt')
 
             # タイトルが一致しなければ次へ
-            if not _compare_title(self.title_smm, title):
-                verbose('title unmatched')
+            if not _libssw.compare_title(self.title_smm, title):
+                _verbose('title unmatched')
                 continue
 
             # 作品ページを読み込んで出演者を取得
             prod_url = _up.urljoin(_BASEURL_SMM, path)
-            verbose('smm: prod_url: ', prod_url)
+            _verbose('smm: prod_url: ', prod_url)
 
             resp, he_prod = _libssw.open_url(
                 prod_url, set_cookie=self._cookie)
@@ -1007,577 +706,21 @@ class __TrySMM:
             pid_smm = he_prod.find(
                 './/div[@class="detailline"]/dl/dd[7]').text.strip()
             if pid != pid_smm:
-                verbose('pid unmatched')
+                _verbose('pid unmatched')
                 continue
 
             smmpfmrs = he_prod.xpath('//li[@id="all_cast_li"]/a/text()')
-            verbose('smmpfmrs: ', smmpfmrs)
+            _verbose('smmpfmrs: ', smmpfmrs)
 
             return [self._chk_anonym(p) for p in smmpfmrs]
 
             break
 
         else:
-            verbose('all titles are mismatched')
+            _verbose('all titles are mismatched')
             return []
 
 _try_smm = __TrySMM()
-
-
-class DMMParser:
-    """DMM作品ページの解析"""
-    _p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
-    # p_genre = _re.compile(r'/article=keyword/id=(6003|6147|6561)/')
-
-    def __init__(self, no_omits=_libssw.gen_no_omits(),
-                 start_date=None, start_pid_s=None, filter_pid_s=None,
-                 pass_bd=False, n_i_s=False, deeper=True, quiet=False):
-        self._sm = _libssw.Summary()
-        self._deeper = deeper
-        self._quiet = quiet
-        self._no_omits = no_omits
-        self._start_date = start_date
-        self._not_sid = _libssw.NotKeyIdYet(start_pid_s, 'start', 'pid')
-        self._filter_pid_s = filter_pid_s
-        self._pass_bd = pass_bd
-        self._n_i_s = n_i_s
-
-    def _mark_omitted(self, key, hue):
-        """除外タイトルの扱い"""
-        if key in self._no_omits:
-            # 除外対称外なら備考に記録
-            if not any(key in s for s in self._sm['note']):
-                self._sm['note'].append(key)
-        else:
-            # 除外対象なら処理中止
-            verbose('Omit exception ({}, {})'.format(key, hue))
-            raise OmitTitleException(key, hue)
-
-    def _ret_title(self, chk_longtitle):
-        """タイトルの採取"""
-        def _det_longtitle_maker():
-            for key in filter(lambda k: self._sm['cid'].startswith(k),
-                              _TITLE_FROM_OFFICIAL):
-                verbose('title from maker: ', key)
-                return _TITLE_FROM_OFFICIAL[key]
-
-        tdmm = self._he.find('.//img[@class="tdmm"]').get('alt')
-        verbose('title dmm: ', tdmm)
-
-        tmkr = ''
-        if chk_longtitle:
-            titleparser = _det_longtitle_maker()
-            if titleparser:
-                # Apacheの作品タイトルはメーカー公式から
-                try:
-                    tmkr = titleparser(self._sm['cid'], self._sm['pid'])
-                except _LongTitleError as e:
-                    _emsg(
-                        'W',
-                        'メーカー公式サイトから正しい作品ページを取得できませんでした: ',
-                        e.args)
-        verbose('title maker: ', tmkr)
-
-        title = tmkr or tdmm
-        title_dmm = tdmm if not _normalize(title).startswith(_normalize(tdmm)) \
-                    else ''
-
-        return title, title_dmm
-
-    def _ret_props(self, prop):
-        """各種情報"""
-
-        tag = prop.text.strip()
-
-        if tag == '種類：':
-
-            self._sm['media'] = _libssw.rm_nlcode(_libssw.getnext_text(prop))
-            verbose('media: ', self._sm['media'])
-
-        elif tag in ('発売日：', '貸出開始日：', '配信開始日：'):
-
-            data = _libssw.getnext_text(prop)
-
-            if self._start_date and data.replace('/', '') < self._start_date:
-                raise OmitTitleException('release', 'date')
-
-            self._sm['release'] = _libssw.rm_nlcode(data)
-            verbose('release: ', self._sm['release'])
-
-        elif tag == '収録時間：':
-
-            self._sm['time'] = _libssw.rm_nlcode(_libssw.getnext_text(prop))
-            verbose('time: ', self._sm['time'])
-
-        elif tag == 'メーカー：':
-
-            mk = prop.getnext().find('a')
-
-            try:
-                self._sm['maker_id'] = mkid = _libssw.get_id(mk.get('href'))[0]
-            except AttributeError:
-                return
-
-            if not self._sm['maker']:
-                self._sm['maker'] = _libssw.getnext_text(prop, 'a')[0]
-
-            # ジュエル系なら出演者情報は無視
-            if mkid in _IGNORE_PERFORMERS:
-                self._ignore_pfmrs = True
-                verbose('Jewel family found')
-
-            # 総集編メーカーチェック
-            if mkid in _OMIT_MAKER:
-                self._mark_omitted('総集編', _OMIT_MAKER[mkid])
-
-            # 総集編容疑メーカー
-            if mkid in _OMIT_SUSS_4H:
-                self._omit_suss_4h = _OMIT_SUSS_4H[mkid]
-
-            # 他のサービスを強制チェック
-            if mkid in _FORCE_CHK_SALE_MK:
-                verbose('series forece chk other: ', _FORCE_CHK_SALE_MK[mkid])
-                self._force_chk_sale = True
-
-            verbose('maker: ', self._sm['maker'])
-
-        elif tag == 'レーベル：':
-
-            lb = prop.getnext().find('a')
-
-            try:
-                lbid = _libssw.get_id(lb.get('href'))[0]
-            except AttributeError:
-                return
-
-            self._sm['label'] = lb.text
-
-            # 隠れ総集編レーベルチェック
-            if lbid in _OMIT_LABEL:
-                self._mark_omitted('総集編', _OMIT_LABEL[lbid])
-
-            # レンタル先行レーベルチェック
-            if lbid in _RENTAL_PRECEDES:
-                self._rental_pcdr = True
-
-            self._sm['label_id'] = lbid
-            verbose('label: ', self._sm['label'])
-
-        elif tag == 'シリーズ：':
-
-            sr = prop.getnext().find('a')
-
-            if sr is None:
-                return
-
-            srid = _libssw.get_id(sr.get('href'))[0]
-
-            if self._n_i_s:
-                verbose('not in series')
-                raise OmitTitleException('series', _NiS(sid=srid, name=sr.text))
-
-            # 隠れ総集編シリーズチェック
-            if srid in _OMIT_SERIES:
-                self._mark_omitted('総集編', _OMIT_SERIES[srid])
-
-            if srid in _IGNORE_SERIES:
-                # シリーズとして扱わない処理
-                verbose('series hid: ', _IGNORE_SERIES[srid])
-                self._sm['series'] = '__HIDE__'
-            else:
-                self._sm['series'] = _libssw.getnext_text(prop, 'a')[0]
-
-            # 独自ページ個別対応
-            # ・SOD女子社員
-            if self._sm['series'] == 'SOD女子社員':
-                self._sm['series'] += 'シリーズ' + self._sm['release'].split('/', 1)[0]
-
-            self._sm['series_id'] = srid
-
-            # 他のサービスを強制チェック
-            if srid in _FORCE_CHK_SALE_SR:
-                verbose('series forece chk other: ',
-                        _FORCE_CHK_SALE_SR[srid])
-                self._force_chk_sale = True
-
-            verbose('series: ', self._sm['series'])
-
-        elif tag == '監督：':
-            data = _libssw.getnext_text(prop, 'a')
-            if data and not self._sm['director']:
-                self._sm['director'] = data
-
-            verbose('director: ', self._sm['director'])
-
-        elif tag == 'ジャンル：':
-            for g in prop.getnext():
-                verbose('genre: ', g.text)
-                try:
-                    gid = self._p_genre.findall(g.get('href'))[0]
-                except IndexError:
-                    continue
-
-                # 除外対象ジャンルであれば記録または中止
-                if _OMITGENRE.get(gid, False):
-                    self._mark_omitted(_OMITGENRE[gid], 'genre')
-
-                if gid == _GENRE_BD:
-                    self._bluray = True
-                    verbose('media: Blu-ray')
-
-                self._sm['genre'].append(g.text)
-
-        elif tag == '品番：':
-            data = _libssw.getnext_text(prop)
-
-            # URL上とページ内の品番の相違チェック
-            if not self._quiet and \
-               self._sm['cid'] and \
-               self._sm['cid'] != data.rsplit('so', 1)[0]:
-                _emsg('I', '品番がURLと異なっています: url={}, page={}'.format(
-                    self._sm['cid'], data))
-
-            self._sm['pid'], self._sm['cid'] = _libssw.gen_pid(data, sp_pid)
-            verbose('cid: ', self._sm['cid'], ', pid: ', self._sm['pid'])
-
-            # 作成開始品番チェック(厳密)
-            if self._not_sid(self._sm['pid']):
-                raise OmitTitleException('pid', self._sm['pid'])
-
-            # filter-pid-sチェック
-            if self._filter_pid_s and not self._filter_pid_s.search(
-                    self._sm['pid']):
-                raise OmitTitleException('pid filtered', self._sm['pid'])
-
-        # 動画用
-        elif tag == '名前：':
-            # 素人動画のタイトルは後でページタイトルと年齢をくっつける
-            try:
-                age = _p_age.findall(_libssw.getnext_text(prop))[0]
-            except IndexError:
-                age = ''
-            self._sm['subtitle'] = age
-            verbose('ama subtitle(age): ', self._sm['subtitle'])
-
-        elif tag == 'サイズ：':
-            self._sm['size'] = _libssw.getnext_text(prop)
-            verbose('ama size: ', self._sm['size'])
-
-        return
-
-    def _ret_images(self, service):
-        """パッケージ画像のURLの取得"""
-        if service == 'ama':
-            img_lg = self._he.find(
-                './/div[@id="sample-video"]/img').get('src')
-            img_sm = img_lg.replace('jp.jpg', 'js.jpg')
-        else:
-            img_a = self._he.find('.//a[@name="package-image"]')
-            try:
-                img_lg = img_a.get('href')
-            except AttributeError:
-                img_lg = None
-            try:
-                img_sm = img_a.find('img').get('src')
-            except AttributeError:
-                img_sm = None
-
-        return img_lg, img_sm
-
-    def _ret_performers(self, gvnpfmrs, smm):
-        """
-        出演者の取得
-        (女優名, リダイレクト先, おまけ文字列) のタプルを返すジェネレータ
-        """
-        def _trim_name(name):
-            """女優名の調整"""
-            name = name.strip()
-            if _AUTOSTRIP:
-                name = _libssw.p_inbracket.split(name)[0]
-            return name
-
-        def _list_pfmrs(plist):
-            return [(_trim_name(p.strip()), '', '') for p in plist]
-
-        verbose('Retrieving performers... (smm:{})'.format(smm))
-
-        el = self._he.get_element_by_id('performer', ())
-        len_el = len(el)
-        if len_el:
-            # if self._omit_suss and len_el > 3:
-            #     # ROOKIE出演者数チェック
-            #     self._mark_omitted('総集編', self._omit_suss)
-
-            if el[-1].get('href') == '#':
-                # 「▼すべて表示する」があったときのその先の解析
-                verbose('more performers found')
-                more_js = el.getparent().find('script')
-
-                if more_js is not None:
-                    more_path = _p_more.findall(more_js.text)[0]
-                else:
-                    # 処理スクリプトがHEAD内にある場合(動画ページ)用
-                    for scr in self._he.xpath('head/script/text()'):
-                        more_path = _p_more.findall(scr)
-                        if more_path:
-                            more_path = more_path[0]
-                            break
-                    else:
-                        _emsg('E', '出演者の「▼すべて表示する」先が取得できませんでした。')
-
-                more_url = _up.urljoin(_BASEURL, more_path)
-                resp, he_more = _libssw.open_url(more_url, 'utf-8')
-                verbose('more_url opened')
-
-                p_list = _list_pfmrs(he_more.xpath('.//a/text()'))
-
-            else:
-                p_list = _list_pfmrs(el.xpath('a/text()'))
-
-        elif smm:
-            # 出演者情報がなければSMMを見てみる(セル版のときのみ)
-            p_list = _try_smm(self._sm['pid'], self._sm['title'])
-
-            if p_list:
-                _emsg('I', '出演者情報をSMMより補完しました: ', self._sm['pid'])
-                _emsg('I', 'DMM: ', self._sm['title'])
-                _emsg('I', 'SMM: ', _try_smm.title_smm)
-                _emsg('I', '出演者: ', ','.join(p[0] or p[2] for p in p_list))
-        else:
-            p_list = []
-
-        # pfilter = ''.join(_chain.from_iterable(p_list))
-
-        # DMM/SMMから取得した出演者をyield
-        return p_list.copy()
-        # for name in p_list:
-        #     yield name
-
-        # 与えられた出演者情報でDMMに欠けているものをyield
-        # for gvn in gvnpfmrs:
-        #     verbose('gvn: ', gvn)
-        #     if all(g not in pfilter for g in gvn[:2] if g):
-        #         yield gvn
-
-    def _get_otherslink(self, service, firmly=True):
-        """他のサービスの作品リンクの取得"""
-        def _chooselink(others, service):
-            for o in others:
-                link = o.get('href')
-                if service == 'rental' and '/rental/' in link:
-                    return link.replace('/ppr', '')
-                elif service == 'videoa' and '/digital/videoa/' in link:
-                    return link
-                elif service == 'dvd' and '/mono/dvd/' in link:
-                    return link
-            return False
-
-        others = self._he.iterfind('.//ul[@class="others"]/li/a')
-        opath = _chooselink(others, service)
-
-        if not opath and firmly:
-            # 「他のサービスでこの作品を見る」欄がないときに「他の関連商品を見る」で探してみる
-            verbose('link to others not found. checking related item...')
-            searstr = self._sm['title'] + '|' + (
-                self._sm['series'] if self._sm['series'] else '')
-
-            searlurl = '{}/search/=/searchstr={}/cid={}/{}'.format(
-                _BASEURL,
-                _up.quote(searstr),
-                self._sm['cid'],
-                'related=1/sort=rankprofile/view=text/')
-
-            resp, he_rel = _libssw.open_url(searlurl)
-
-            title_nr = _normalize(self._sm['title'])
-            verbose('title norm: ', title_nr)
-
-            others = filter(lambda t: _compare_title(t.text, title_nr),
-                            he_rel.iterfind('.//p[@class="ttl"]/a'))
-            opath = _chooselink(others, service)
-
-        return _up.urljoin(_BASEURL, opath) if opath else False
-
-    def _link2other(self, url, tag, release):
-        return '※[[{}版>{}]]のリリースは{}。'.format(tag, url, release)
-
-    def _get_otherscontent(self, *service):
-        """他サービス版の情報取得"""
-        for s in service:
-            others_url = self._get_otherslink(s)
-            if others_url:
-                break
-        else:
-            verbose('missing others links')
-            return False
-
-        resp, he_others = _libssw.open_url(others_url)
-
-        others_data = _libssw.Summary(self._sm.values())
-        others_data['url'] = others_url
-        others_data['pid'], others_data['cid'] = _libssw.gen_pid(others_url,
-                                                                 sp_pid)
-
-        others_data.update(_othersparser(he_others, service, others_data))
-        verbose('others data: ', others_data.items())
-
-        if service == ('rental',):
-            # レンタル版のリリースが早ければそれを返す
-            if others_data['release'] >= self._sm['release']:
-                verbose("rental isn't released earlier")
-                return False
-            else:
-                others_data['others'].append(
-                    self._link2other(self._sm['url'],
-                                     'セル',
-                                     self._sm['release']))
-                verbose('rental precedes: ', others_data['note'])
-
-        return _deepcopy(others_data)
-
-    def _check_rltditem(self, media):
-        """
-        他メディア(「ご注文前にこちらの商品もチェック！」の欄)があればそれへのリンクを返す
-        """
-        verbose('checking {}...'.format(media))
-        iterrltd = self._he.iterfind(
-            './/div[@id="rltditem"]/ul/li/a/img[@alt="{}"]'.format(media))
-
-        for rlitem in iterrltd:
-            rlttl = rlitem.getparent().text_content().strip()
-            verbose('rltd ttl: ', rlttl)
-            # 限定品の除外チェック
-            if any(k not in self._no_omits
-                   for k, w in _libssw.check_omitword(rlttl)):
-                break
-            else:
-                verbose('rltditem: ', rlitem.getparent().get('href'))
-                return _up.urljoin(_BASEURL, rlitem.getparent().get('href'))
-
-    def __call__(self, he, service, sm=_libssw.Summary(),
-                 args=_argparse.Namespace, ignore_pfmrs=False):
-        """作品ページの解析"""
-        self._he = he
-        self._sm = sm
-        self._ignore_pfmrs = ignore_pfmrs
-        self._bluray = False
-        self._omit_suss_4h = False
-        self._rental_pcdr = False
-        self._force_chk_sale = False
-
-        self.data_replaced = False
-
-        verbose('self._sm preset: ', self._sm.items())
-
-        # 作品情報の取得
-        for prop in self._he.iterfind('.//td[@class="nw"]'):
-            self._ret_props(prop)
-
-        # タイトルの取得
-        if not self._sm['title'] or self._sm['title'].startswith('__'):
-            self._sm['title'], self._sm['title_dmm'] = self._ret_title(
-                getattr(args, 'longtitle', True))
-
-        # 除外作品チェック
-        omitinfo = _libssw.check_omit(self._sm['title'],
-                                      self._sm['cid'],
-                                      self._omit_suss_4h,
-                                      no_omits=_libssw.gen_no_omits())
-        if omitinfo:
-            self._mark_omitted(*omitinfo)
-
-        if self._omit_suss_4h and _libssw.cvt2int(self._sm['time']) > 200:
-            # 総集編容疑メーカーで4時間以上
-            self._mark_omitted('総集編', self._omit_suss_4h + '(4時間以上)')
-
-        if service == 'ama':
-            # 素人動画の時のタイトル/副題の再作成
-            self._sm['title'] = self._sm['subtitle'] = \
-                                self._sm['title'] + self._sm['subtitle']
-            # メディア情報はないのでここで
-            self._sm['media'] = '素人動画'
-        elif service == 'video':
-            self._sm['media'] = 'ビデオ動画'
-
-        sale_data = None
-        # if self.deeper and service != 'ama' and __name__ != '__main__':
-        if self._deeper and service != 'ama':
-            if self._rental_pcdr and args.check_rental:
-                # レンタル先行メーカーチェック
-                if service != 'rental':
-                    # レンタル先行メーカーなのにレンタル版のURLじゃなかったらレンタル版を
-                    # 調べてリリースの早い方を採用
-                    verbose('checking rental...')
-                    rental_data = self._get_otherscontent('rental')
-                    if rental_data:
-                        _emsg('W',
-                              'レンタル版のリリースが早いためレンタル版に'
-                              '変更します。')
-                        if __name__ != '__main__':
-                            _emsg('W', self._sm['title'])
-                        self.data_replaced = 'rental'
-                        # レンタル版データで置き換え
-                        # sale_rel = self._sm['release']
-                        self._sm.update(rental_data)
-
-                elif args.check_rltd:
-                    # レンタル版URLだったときのセル版へのリンクチェック
-                    # セル版があればそれへのリンクとリリース日を、なければレンタル版と付記
-                    verbose('checking sale...')
-                    sale_data = self._get_otherscontent('dvd')
-                    if sale_data:
-                        self._sm['others'].append(
-                            self._link2other(sale_data['url'],
-                                             'セル',
-                                             sale_data['release']))
-                    else:
-                        self._sm['others'].append('※レンタル版')
-
-            # if service == 'video':
-            #     # 動画配信のみかどうかチェック → できない
-            #     for o in ('dvd', 'rental'):
-            #         if self._get_otherslink(o, firmly=False):
-            #             break
-            #     else:
-            #         self._sm['note'].append('動画配信のみ')
-
-            # Blu-ray版のときのDVD版の、またはその逆のチェック
-            related = 'DVD' if self._bluray else 'Blu-ray'
-            rltd_url = self._check_rltditem(related)
-            if rltd_url:
-                if self._bluray and self._pass_bd:
-                    # Blu-ray版だったときDVD版があればパス
-                    verbose('raise Blu-ray exception')
-                    raise OmitTitleException('Blu-ray', 'DVD exists')
-                else:
-                    self._sm['note'].append('[[{}版あり>{}]]'.format(
-                        related, rltd_url))
-
-        # パッケージ画像の取得
-        self._sm['image_lg'], self._sm['image_sm'] = self._ret_images(service)
-
-        if not (self._ignore_pfmrs or self._sm['actress']):
-            # 出演者の取得
-            # self._sm['actress'] = list(
-            self._sm['actress'] = self._ret_performers(
-                self._sm['actress'],
-                getattr(args, 'smm', False) and service == 'dvd')
-
-            # レンタル版で出演者情報がなかったとき他のサービスで調べてみる
-            if (service == 'rental' or self.data_replaced == 'rental') \
-               and (not self._sm['actress'] or self._force_chk_sale) \
-               and getattr(args, 'check_rltd'):
-
-                verbose('possibility missing performers, checking others...')
-                other_data = self._get_otherscontent('videoa', 'dvd')
-
-                if other_data and other_data['actress']:
-                    self._sm['actress'].extend(a for a in other_data['actress']
-                                               if a not in self._sm['actress'])
-
-        return ((key, self._sm[key]) for key in self._sm if self._sm[key])
-
-_othersparser = DMMParser(deeper=False)
 
 
 class _ResolveListpage:
@@ -1586,7 +729,7 @@ class _ResolveListpage:
         self._unknowns = set()
 
     def __call__(self, summ, retrieval, args):
-        verbose('Processing list link')
+        _verbose('Processing list link')
 
         list_type = ''
 
@@ -1609,7 +752,7 @@ class _ResolveListpage:
         else:
             return '', ''
 
-        verbose('List type: {}, List page: {}'.format(list_type, list_page))
+        _verbose('List type: {}, List page: {}'.format(list_type, list_page))
 
         # SCOOP個別対応
         if list_page == 'SCOOP（スクープ）':
@@ -1620,7 +763,7 @@ class _ResolveListpage:
 
         if not args.check_listpage or \
            (list_attr == retrieval and args.table == 1):
-            verbose('pass checking listpage')
+            _verbose('pass checking listpage')
             return list_type, list_page
 
         if (list_type, list_page) not in self._unknowns:
@@ -1728,7 +871,7 @@ def _format_wikitext_t(summ, astr, dstr, dir_col, diff_page, add_column):
 
 
 def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
-         dmmparser=DMMParser()):
+         dmmparser=None):
 
     # モジュール呼び出しの場合継承したコマンドライン引数は無視
     argv = [props.url] if __name__ != '__main__' else _sys.argv[1:]
@@ -1738,10 +881,10 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     summ = _libssw.Summary()
 
     if __name__ == '__main__':
-        verbose('args: ', args)
+        _verbose('args: ', args)
         if not args.url:
             # URLが渡されなかったときは標準入力から
-            verbose('Input from stdin...')
+            _verbose('Input from stdin...')
 
             data = _sys.stdin.readline().rstrip('\n')
 
@@ -1764,7 +907,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                 else:
                     summ[key] = data
 
-            verbose('summ from stdin: ', summ.items())
+            _verbose('summ from stdin: ', summ.items())
 
         for attr in ('url', 'number', 'pid', 'subtitle'):
             if not summ[attr]:
@@ -1776,8 +919,8 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
             summ['actress'] = list(_libssw.parse_names(a) for a in actiter)
 
     else:
-        verbose('props: ', props.items())
-        verbose('p_args: ', vars(p_args))
+        _verbose('props: ', props.items())
+        _verbose('p_args: ', vars(p_args))
 
         summ.update(props)
 
@@ -1804,7 +947,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     # サービス未指定時の自動決定
     if not service:
         service = _libssw.resolve_service(summ['url'])
-    verbose('service resolved: ', service)
+    _verbose('service resolved: ', service)
 
     if service == 'ama':
         # 動画(素人)の場合監督欄は出力しない。
@@ -1814,13 +957,13 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
 
     if args.join_tsv:
         # join データ作成(tsv)
-        verbose('join tsv')
+        _verbose('join tsv')
         for k, p in _libssw.from_tsv(args.join_tsv):
             join_d[k] = p
 
     if args.join_wiki:
         # join データ作成(wiki)
-        verbose('join wiki')
+        _verbose('join wiki')
         for k, p in _libssw.from_wiki(args.join_wiki):
             if k in join_d:
                 join_d[k].merge(p)
@@ -1829,7 +972,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
 
     if args.join_html:
         # jon データ作成(url)
-        verbose('join url')
+        _verbose('join url')
         for k, p in _libssw.from_html(args.join_html):
             if k in join_d:
                 join_d[k].merge(p)
@@ -1858,7 +1001,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                      args.dir_col,
                                      False,
                                      _build_addcols(args.add_column, summ))
-        verbose('wktxt_t: ', wktxt_t)
+        _verbose('wktxt_t: ', wktxt_t)
         return False, resp.status, _ReturnVal(summ['release'],
                                               summ['pid'],
                                               summ['title'],
@@ -1877,13 +1020,16 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     # html = _libssw.sub(sp_href, html)
 
     # HTMLの解析
+    if dmmparser is None:
+        dmmparser = _libssw.DMMParser(autostrip=args.autostrip)
+
     try:
         summ.update(dmmparser(he, service, summ, args, ignore_pfmrs=rawpfmrs))
-    except OmitTitleException as e:
+    except _libssw.OmitTitleException as e:
         # 除外対象なので中止
         return False, 'Omitted', (e.key, e.word)
 
-    verbose('summ: ', summ.items())
+    _verbose('summ: ', summ.items())
 
     if dmmparser.data_replaced:
         service = dmmparser.data_replaced
@@ -1896,8 +1042,8 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     if not summ['image_lg']:
         summ['image_sm'], summ['image_lg'] = _build_image_url(service,
                                                               summ['cid'])
-        verbose('image_sm: ', summ['image_sm'])
-        verbose('image_lg: ', summ['image_lg'])
+        _verbose('image_sm: ', summ['image_sm'])
+        _verbose('image_lg: ', summ['image_lg'])
 
     #
     # タイトルの調整
@@ -1916,8 +1062,8 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     summ['title'] = modified
     if not summ['title_dmm'] and modified != on_dmm:
         summ['title_dmm'] = on_dmm
-    verbose('summ[title]: ', summ['title'])
-    verbose('summ[title_dmm]: ', summ['title_dmm'])
+    _verbose('summ[title]: ', summ['title'])
+    _verbose('summ[title_dmm]: ', summ['title_dmm'])
 
     # シリーズ/レーベル一覧へのリンク情報の設定
     # 一覧ページの直接指定があればそれを、なければ シリーズ > レーベル で決定
@@ -1927,14 +1073,14 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                                                  args)
     if args.linklabel:
         summ['list_type'] = args.linklabel
-    verbose('summ[list_page]: ', summ['list_page'])
+    _verbose('summ[list_page]: ', summ['list_page'])
 
     if args.note:
         summ['note'] = list(_expansion(args.note, summ)) + summ['note']
-    verbose('note: ', summ['note'])
+    _verbose('note: ', summ['note'])
 
     add_column = _build_addcols(args.add_column, summ)
-    verbose('add column: ', add_column)
+    _verbose('add column: ', add_column)
 
     # 出演者文字列の作成
     pfmrslk = ()
@@ -1968,10 +1114,10 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     elif not summ['subtitle']:
         # タイトルをそのまま副題に(表形式用)
         summ['subtitle'] = summ['title']
-    verbose('subtitle: ', summ['subtitle'])
+    _verbose('subtitle: ', summ['subtitle'])
 
     # 未取得情報のチェック
-    if VERBOSE:
+    if _VERBOSE:
         _check_missings(summ)
 
     # レーベル一覧での [[別ページ>]] への置き換えチェック
@@ -1981,7 +1127,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                  _libssw.le80bytes(summ['series']) and
                  summ['series'] and
                  summ['series'] != '__HIDE__')
-    verbose('diff_page: ', diff_page)
+    _verbose('diff_page: ', diff_page)
 
     # ウィキテキストの作成
     wikitext_a = _format_wikitext_a(
@@ -2020,7 +1166,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
         print(*output, sep='\n')
 
         if args.copy:
-            verbose('copy 2 clipboard')
+            _verbose('copy 2 clipboard')
             _libssw.copy2clipboard(''.join(output))
 
         if args.browser:

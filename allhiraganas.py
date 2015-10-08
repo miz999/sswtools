@@ -18,12 +18,14 @@ import dmm2ssw
 VERBOSE = 0
 
 OWNNAME = libssw.ownname(__file__)
-verbose = libssw.Verbose(OWNNAME, VERBOSE)
 emsg = libssw.Emsg(OWNNAME)
 
 
 ACTURL_BASE = libssw.ACTURL_BASE
 ACTURL = libssw.ACTURL
+
+
+verbose = None
 
 
 def get_args():
@@ -46,14 +48,9 @@ def get_args():
 
     args = argparser.parse_args()
 
-    verbose.verbose = VERBOSE = args.verbose
-
-    if not VERBOSE:
-        verbose = libssw.verbose = lambda *x: None
-    elif VERBOSE > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = \
-            dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = VERBOSE - 1
-        verbose('verbose mode on')
+    VERBOSE = args.verbose
+    verbose = libssw.def_verbose(VERBOSE, OWNNAME)
+    verbose('verbose mode on')
 
     return args
 
@@ -61,10 +58,10 @@ def get_args():
 def select_allhiragana(ids, today, path, selfcheck):
     no_omits = libssw.gen_no_omits((0, 4))
 
-    dmmparser = dmm2ssw.DMMParser(no_omits=no_omits,
-                                  deeper=False,
-                                  pass_bd=True,
-                                  quiet=True)
+    dmmparser = libssw.DMMParser(no_omits=no_omits,
+                                 deeper=False,
+                                 pass_bd=True,
+                                 quiet=True)
     conn = sqlite3.connect(path)
     cur = conn.cursor()
 
@@ -131,6 +128,7 @@ def select_allhiragana(ids, today, path, selfcheck):
                 if status in ('Omitted', 404):
                     verbose('Omitted: status=', status, ', values=', values)
                     continue
+                verbose('return from dmm2ssw: ', values)
 
                 last_web = tr[7].text.strip()
                 if last_release != last_web:

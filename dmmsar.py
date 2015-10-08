@@ -450,7 +450,6 @@ __version__ = 20151007
 OWNNAME = libssw.ownname(__file__)
 VERBOSE = 0
 
-verbose = libssw.Verbose(OWNNAME, VERBOSE)
 emsg = libssw.Emsg(OWNNAME)
 
 MSGLEVEL = {'E': 'ERROR',
@@ -472,6 +471,9 @@ p_actdelim = re.compile(r'[（、]')
 
 MakeType = namedtuple('MakeType', 'actress,table')
 OutFile = namedtuple('OutFile', 'actr,tbl,suffix,writemode')
+
+
+verbose = None
 
 
 def get_args(argv):
@@ -774,14 +776,9 @@ def get_args(argv):
 
     args = argparser.parse_args(argv)
 
-    verbose.verbose = VERBOSE = args.verbose
-
-    if not VERBOSE:
-        verbose = libssw.verbose = lambda *x: None
-    elif VERBOSE > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = \
-            dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = VERBOSE - 1
-        verbose('Verbose mode on')
+    VERBOSE = args.verbose
+    verbose = libssw.def_verbose(VERBOSE, libssw.ownname(__file__))
+    verbose('Verbose mode on')
 
     libssw.RECHECK = args.recheck
 
@@ -1330,12 +1327,12 @@ def main(argv=None):
     omitted = listparser.omitted
     before = True if key_id else False
 
-    dmmparser = dmm2ssw.DMMParser(no_omits=no_omits,
-                                  start_date=args.start_date,
-                                  start_pid_s=args.start_pid_s,
-                                  filter_pid_s=p_filter_pid_s,
-                                  pass_bd=args.pass_bd,
-                                  n_i_s=args.n_i_s)
+    dmmparser = libssw.DMMParser(no_omits=no_omits,
+                                 start_date=args.start_date,
+                                 start_pid_s=args.start_pid_s,
+                                 filter_pid_s=p_filter_pid_s,
+                                 pass_bd=args.pass_bd,
+                                 n_i_s=args.n_i_s)
     dmm2ssw.sp_pid = sp_pid
 
     if args.retrieval in ('maker', 'label', 'series'):
