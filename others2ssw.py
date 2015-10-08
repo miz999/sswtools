@@ -35,11 +35,13 @@ FOLLOW_RDR = True
 COPY = False
 BROWSER = False
 
-verbose = libssw.Verbose(OWNNAME, VERBOSE)
 emsg = libssw.Emsg(OWNNAME)
 
 p_musume_title = re.compile(r'素人アダルト動画　天然むすめ  (.*)')
 p_heyzo_title = re.compile(r'の無修正アダルト動画「(.+)」のご案内')
+
+
+verbose = None
 
 
 def get_args():
@@ -82,13 +84,9 @@ def get_args():
 
     args = argparser.parse_args()
 
-    verbose.verbose = VERBOSE = VERBOSE or args.verbose
-
-    if not VERBOSE:
-        verbose = libssw.verbose = lambda *x: None
-    elif VERBOSE > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = VERBOSE - 1
-        verbose('verbose mode on')
+    VERBOSE = args.verbose
+    verbose = libssw.def_verbose(VERBOSE, libssw.ownname(__file__))
+    verbose('verbose mode on')
 
     FOLLOW_RDR = args.follow_rdr
     COPY = args.copy

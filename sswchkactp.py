@@ -79,12 +79,15 @@ __version__ = 20150504
 VERBOSE = 0
 
 OWNNAME = libssw.ownname(__file__)
-verbose = libssw.Verbose(OWNNAME, VERBOSE)
+
 emsg = libssw.Emsg(OWNNAME)
 
 BASEURL_SSW = libssw.BASEURL_SSW
 
 p_ssw = re.compile(r'href="http://sougouwiki.com/d/([^/]+?)"')
+
+
+verbose = None
 
 
 def get_args():
@@ -148,13 +151,9 @@ def get_args():
 
     args = argparser.parse_args()
 
-    verbose.verbose = VERBOSE = VERBOSE or args.verbose
-    if not VERBOSE:
-        verbose = libssw.verbose = lambda *x: None
-    elif VERBOSE > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = \
-            dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = VERBOSE - 1
-        verbose('verbose mode on')
+    VERBOSE = args.verbose
+    verbose = libssw.def_verbose(VERBOSE, libssw.ownname(__file__))
+    verbose('verbose mode on')
 
     args.start_pid = args.start_pid.upper()
 
@@ -200,7 +199,7 @@ def check_actrpage(actr_url, listp, prod_url):
         return False, 404, False
 
     # 女優ページ内の各行をチェックしDMMの作品ページURLがあればその行を取得
-    for line in filter(lambda x: prod_url in x, html.split('\n'):
+    for line in filter(lambda x: prod_url in x, html.split('\n')):
 
         link2list = p_ssw.findall(line)
         verbose('link to listpage: ', link2list)

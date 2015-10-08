@@ -18,11 +18,14 @@ __version__ = 20151006
 VERBOSE = 0
 
 OWNNAME = libssw.ownname(__file__)
-verbose = libssw.Verbose(OWNNAME, VERBOSE)
+
 emsg = libssw.Emsg(OWNNAME)
 
 
 p_label = re.compile(r'\[\[(.+?)>')
+
+
+verbose = None
 
 
 def get_args():
@@ -59,13 +62,9 @@ def get_args():
 
     args = argparser.parse_args()
 
-    verbose.verbose = VERBOSE = VERBOSE or args.verbose
-
-    if not VERBOSE:
-        verbose = libssw.verbose = lambda *x: None
-    elif VERBOSE > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = VERBOSE - 1
-        verbose('verbose mode on')
+    VERBOSE = args.verbose
+    verbose = libssw.def_verbose(VERBOSE, libssw.ownname(__file__))
+    verbose('verbose mode on')
 
     return args
 

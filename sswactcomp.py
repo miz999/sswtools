@@ -99,7 +99,6 @@ BASEURL = libssw.BASEURL
 
 SPLIT_DEFAULT = 200
 
-verbose = libssw.Verbose(OWNNAME, VERBOSE)
 emsg = libssw.Emsg(OWNNAME)
 
 p_cstart = re.compile(r'^// *(\d+.?\d+.?\d+)')
@@ -108,6 +107,9 @@ p_actid = re.compile(r'/article=actress/id=([\d,]+?)/')
 p_linkurl = re.compile(r'>(http://.+?)\]\]')
 
 sp_datedelim = (re.compile(r'-/'), '.')
+
+
+verbose = None
 
 
 def get_args():
@@ -194,12 +196,9 @@ def get_args():
     # dmmsar.py 側からVERBOSEが変更される場合があるため
     verbose.verbose = VERBOSE = VERBOSE or args.verbose
 
-    if not VERBOSE:
-        verbose = libssw.verbose = lambda *x: None
-    elif VERBOSE > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = \
-            dmm2ssw.VERBOSE = dmm2ssw.verbose.verbose = VERBOSE - 1
-        verbose('verbose mode on')
+    VERBOSE = args.verbose
+    verbose = libssw.def_verbose(VERBOSE, libssw.ownname(__file__))
+    verbose('verbose mode on')
 
     if args.fastest:
         for a in ('follow_rdr', 'check_rental', 'pass_bd', 'check_listpage'):

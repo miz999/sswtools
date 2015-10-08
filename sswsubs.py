@@ -27,8 +27,10 @@ VERBOSE = 0
 
 p_url = re.compile(r'^\|\[\[[A-Z0-9-]+>(http:.+?)\]\]')
 
-verbose = libssw.Verbose(OWNNAME, VERBOSE)
 emsg = libssw.Emsg(OWNNAME)
+
+
+verbose = None
 
 
 def get_args():
@@ -80,13 +82,9 @@ def get_args():
 
     args = argparser.parse_args()
 
-    verbose.verbose = VERBOSE = VERBOSE or args.verbose
-
-    if not VERBOSE:
-        verbose = libssw.verbose = lambda *x: None
-    elif VERBOSE > 1:
-        libssw.VERBOSE = libssw.verbose.verbose = VERBOSE - 1
-        verbose('verbose mode on')
+    VERBOSE = args.verbose
+    verbose = libssw.def_verbose(VERBOSE, libssw.ownname(__file__))
+    verbose('verbose mode on')
 
     verbose('args: ', (args))
     return args
