@@ -3,6 +3,7 @@
 """
 DMMのURLからページを取得し素人系総合wiki用ウィキテキストを作成する
 
+
 書式:
 dmm2ssw.py [DMM作品ページのURL] [オプション...]
 
@@ -91,8 +92,8 @@ URLが与えられた場合、レンタル版をチェックし、リリース�
     [必須] python3.4以降, httplib2(python3用), lxml(python3用)
     [必須] libssw.py  このスクリプトと同じ場所、またはPYTHONPATHが
     通っているところへおいておく。
-    [任意] pyperclip (python3用) 作成したウィキテキストをクリップボードへ
-          コピーする機能を使用する場合必要。
+    [任意] pyperclip(python3用)作成したウィキテキストをクリップボードへ
+          コピーする機能(--copy)を使用する場合必要。
 
 
 注意:
@@ -142,7 +143,8 @@ DMM作品ページのURL
     指定されるとDMMページ上のものを置き換える。
 
 -l, --label [レーベル一覧ページ名]
-    -s 同様だが、シリーズ一覧ではなくレーベル一覧へのリンクとして追加する。
+    -s 同様だが、シリーズ一覧ではなくレーベル一覧へのリンクとして
+    追加する。
 
 --linklabel 一覧ページへのリンクのラベル名
     作品一覧ページへのリンクに表示するラベル(「レーベル一覧」
@@ -238,8 +240,8 @@ DMM作品ページのURL
 
 --join-wiki ウィキテキスト [ウィキテキスト ...] (一覧ページの表形式)
     DMMから得た作品と(URLが)同じ作品がウィキテキスト内にあった場合、
-    DMMからは取得できなかった情報がウィキテキスト側にあればそれで補完する
-    (NOTEも含む)。
+    DMMからは取得できなかった情報がウィキテキスト側にあればそれで
+    補完する(NOTEも含む)。
     セルが結合されている表には未対応。
 
 --join-html Wiki一覧ページのURL/HTML [Wiki一覧ページのURL/HTML ...] (一覧ページのHTML)
@@ -258,15 +260,15 @@ DMM作品ページのURL
     チェックしない。
 
 --disable-check-rental
-    レンタル先行レーベルなのにレンタル以外のサービスの作品URLだった場合に
-    レンタル版の方をチェックしない。
+    レンタル先行レーベルなのにレンタル以外のサービスの作品URLだった
+    場合にレンタル版の方をチェックしない。
 
 --disable-check-bluray
     入力されたURLがBlu-ray版だったときにDVD版の有無をチェックしない。
 
 --disable-check-listpage
-    Wiki上の実際の一覧ページをチェックせず、オプションで与えられたものか
-    DMMのものをそのまま採用する。
+    Wiki上の実際の一覧ページをチェックせず、オプションで与えられた
+    ものかDMMのものをそのまま採用する。
 
 --recheck
     「ページが見つからない」とキャッシュされているページを再チェックする。
@@ -283,9 +285,10 @@ DMM作品ページのURL
 
 -c, --copy
     作成したウィキテキストをクリップボードへコピーする。
+    Python モジュール pyperclip が必要。
 
 -b, --browser
-    ウィキテキスト作成後、Wikiの女優、シリーズ一覧、あるいはレーベル一覧の
+    ウィキテキスト作成後、Wikiの女優またはシリーズ一/レーベル一覧の
     ページをウェブブラウザで開く。
 
 -C, --clear-cache
@@ -348,8 +351,6 @@ _BASEURL = _libssw.BASEURL
 _BASEURL_SMM = _libssw.BASEURL_SMM
 _BASEURL_SSW = _libssw.BASEURL_SSW
 
-_REDIRECTS = _libssw.REDIRECTS
-
 _ReturnVal = _namedtuple('ReturnVal',
                          ('release', 'pid', 'title', 'title_dmm', 'url',
                           'time', 'maker', 'label', 'series',
@@ -382,7 +383,7 @@ _OMITGENRE = {'6014': 'イメージビデオ',
               '6175': 'アウトレット',  # '激安アウトレット'
               '6555': '復刻',
               '4104': 'UMD',
-}
+              }
 #  '6561': '限定盤'} # 特典対象
 
 # 出演者情報を無視するメーカー
@@ -504,7 +505,7 @@ _OMIT_SERIES = {
 
 # シリーズとして扱うとめんどくさいシリーズ
 _IGNORE_SERIES = {'8369': 'E-BODY',
-                 '205878': 'S級素人'}
+                  '205878': 'S級素人'}
 
 # レンタル版のページの出演者が欠けていることがあるメーカー
 _FORCE_CHK_SALE_MK = {'40121': 'LEO'}
@@ -695,11 +696,7 @@ def _get_args(argv, p_args):
         verbose('verbose mode on')
 
     if args.cache_info:
-        size = sum(
-            f.stat().st_size for f in _libssw.CACHEDIR.glob('*')) / 1048576
-        _emsg('I', 'キャッシュパス: ', _libssw.CACHEDIR)
-        _emsg('I', 'サイズ: {:.2f}MB'.format(size))
-        raise SystemExit
+        _libssw.cache_info()
 
     if args.fastest:
         for a in ('follow_rdr', 'smm', 'check_rental', 'check_listpage',
@@ -715,9 +712,7 @@ def _get_args(argv, p_args):
 
 
 def _build_image_url(service, cid):
-    """
-    画像URL作成
-    """
+    """画像URL作成"""
     verbose('force building image url')
     suffix = ('js', 'jp') if service == 'ama' else ('ps', 'pl')
     return tuple(_up.urljoin(_IMG_URL[service], '{0}/{0}{1}.jpg'.format(cid, s))
@@ -725,9 +720,7 @@ def _build_image_url(service, cid):
 
 
 def _normalize(string):
-    """
-    タイトルから【.+?】と非unicode単語文字を除いて正規化
-    """
+    """タイトルから【.+?】と非unicode単語文字を除いて正規化"""
     string = _libssw.norm_uc(string).replace(' ', '').lower()
     string = _libssw.sub(_sp_ltbracket_h, string)
     string = _libssw.sub(_sp_ltbracket_t, string)
@@ -735,13 +728,10 @@ def _normalize(string):
     return string
 
 
-class _LongTitleError(Exception):
-    pass
-
-
 def _compare_title(cand, title):
     """
     同じタイトルかどうか比較
+
     title はあらかじめ _normalize() に通しておくこと
     """
     cand = _normalize(cand.strip())
@@ -750,11 +740,12 @@ def _compare_title(cand, title):
 
 
 _sp_expansion = ((_re.compile('@{media}'), 'media'),
-                (_re.compile('@{time}'), 'time'),
-                (_re.compile('@{series}'), 'series'),
-                (_re.compile('@{maker}'), 'maker'),
-                (_re.compile('@{label}'), 'label'),
-                (_re.compile('@{cid}'), 'cid'))
+                 (_re.compile('@{time}'), 'time'),
+                 (_re.compile('@{series}'), 'series'),
+                 (_re.compile('@{maker}'), 'maker'),
+                 (_re.compile('@{label}'), 'label'),
+                 (_re.compile('@{cid}'), 'cid'))
+
 
 def _expansion(phrases, summ):
     """予約変数の展開"""
@@ -762,6 +753,10 @@ def _expansion(phrases, summ):
         for p, r in _sp_expansion:
             ph = p.sub(getattr(summ, r), ph)
         yield ph
+
+
+class _LongTitleError(Exception):
+    pass
 
 
 def _ret_apache(cid, pid):
@@ -847,7 +842,7 @@ class _RetrieveTitlePlum:
 
         serial = cid.replace(self._prefix, '')
         if len(serial) < 3:
-            serial = '{:0>3}'.format(number)
+            serial = '{:0>3}'.format(serial)
         url = 'http://www.plum-web.com/?view=detail&ItemCD=SE{}&label=SE'.format(serial)
 
         cookie = ''
@@ -882,7 +877,8 @@ _TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
                         '84scop': _ret_scoop,      # SCOOP
                         '84scpx': _ret_scoop,      # SCOOP
                         # 'h_113se': _ret_plum_se, # 素人援交生中出し(プラム)
-}
+                        }
+
 
 class __TrySMM:
     """
@@ -956,6 +952,7 @@ class __TrySMM:
     def _chk_anonym(self, pfmr):
         """
         SMM出演者情報でひらがなのみの名前の場合代用名かどうかチェック
+
         名前がひらがなのみで4文字以下で既知のひらがな女優名でなければ代用名とみなす
         """
         # if _libssw.p_neghirag.search(pfmr) or self._is_existent(pfmr):
@@ -1028,13 +1025,11 @@ _try_smm = __TrySMM()
 
 
 class DMMParser:
-    """
-    DMM作品ページの解析
-    """
+    """DMM作品ページの解析"""
     _p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
     # p_genre = _re.compile(r'/article=keyword/id=(6003|6147|6561)/')
 
-    def __init__(self, no_omits=set(_libssw.OMITTYPE),
+    def __init__(self, no_omits=_libssw.gen_no_omits(),
                  start_date=None, start_pid_s=None, filter_pid_s=None,
                  pass_bd=False, n_i_s=False, deeper=True, quiet=False):
         self._sm = _libssw.Summary()
@@ -1097,22 +1092,21 @@ class DMMParser:
         if tag == '種類：':
 
             self._sm['media'] = _libssw.rm_nlcode(_libssw.getnext_text(prop))
-
             verbose('media: ', self._sm['media'])
 
         elif tag in ('発売日：', '貸出開始日：', '配信開始日：'):
 
+            data = _libssw.getnext_text(prop)
+
             if self._start_date and data.replace('/', '') < self._start_date:
                 raise OmitTitleException('release', 'date')
 
-            self._sm['release'] = _libssw.rm_nlcode(_libssw.getnext_text(prop))
-
+            self._sm['release'] = _libssw.rm_nlcode(data)
             verbose('release: ', self._sm['release'])
 
         elif tag == '収録時間：':
 
             self._sm['time'] = _libssw.rm_nlcode(_libssw.getnext_text(prop))
-
             verbose('time: ', self._sm['time'])
 
         elif tag == 'メーカー：':
@@ -1167,7 +1161,6 @@ class DMMParser:
                 self._rental_pcdr = True
 
             self._sm['label_id'] = lbid
-
             verbose('label: ', self._sm['label'])
 
         elif tag == 'シリーズ：':
@@ -1489,7 +1482,7 @@ class DMMParser:
         omitinfo = _libssw.check_omit(self._sm['title'],
                                       self._sm['cid'],
                                       self._omit_suss_4h,
-                                      no_omits=set(_libssw.OMITTYPE))
+                                      no_omits=_libssw.gen_no_omits())
         if omitinfo:
             self._mark_omitted(*omitinfo)
 
@@ -1587,97 +1580,6 @@ class DMMParser:
 _othersparser = DMMParser(deeper=False)
 
 
-def _search_listpage(url, listname, listtype, pid):
-    """実際の一覧ページをWiki内で探してみる"""
-    # listname = set((listname,)) | set(
-    #     _libssw.p_inbracket.split(listname.rstrip(')）')))
-    verbose('Searching listpage: listname=', listname, ', pid=', pid)
-
-    # DMM作品ページのURLで検索
-    resp, he = _libssw.open_url(
-        'http://sougouwiki.com/search?keywords={}'.format(
-            _libssw.quote(url, safe='')),
-        cache=False)
-
-    searesult = he.find_class('result-box')[0].find('p[1]/strong').tail
-
-    if searesult.strip() == 'に該当するページは見つかりませんでした。':
-        verbose('url not found on ssw')
-        return ()
-
-    found = False
-    while not found:
-        keywords = he.xpath('//h3[@class="keyword"]/a/text()')
-        verbose('list page keywords: ', keywords)
-
-        for word in keywords:
-            cand = word.strip().rstrip(' 0123456789')
-            verbose('list cand key: ', cand)
-
-            if cand.startswith(listname) or listname.startswith(cand):
-                # Wikiページ名にレーベル/シリーズ名が含まれるか、その逆のとき採用
-                yield word
-                found = True
-
-            if not found and listtype == 'レーベル':
-                # レーベル一覧であれば、品番のプレフィクスが含まれるとき採用
-                prefix = _libssw.split_pid(pid)[0]
-                verbose('prefix: ', prefix)
-                if prefix in word and not word.startswith('作品一覧'):
-                    verbose('prefix in pid: ', prefix)
-                    yield word
-                    found = True
-
-        if not found:
-            # 次のページがあったらそちらで再度探す
-            he = _libssw.ssw_searchnext(he)
-            if he is None:
-                break
-
-
-def _check_actuallpage(url, lpage, ltype, pid):
-    """
-    実際の一覧ページのチェック
-    見つかったら_REDIRECTSにキャッシュしておく
-    """
-    global _REDIRECTS
-
-    verbose('check actual list page on ssw...')
-
-    if not _libssw.RECHECK \
-       and url in _REDIRECTS \
-       and _REDIRECTS[url] != '__NOT_FOUND__':
-        # キャッシュされてたらそれを返す
-        verbose('list page found on REDIRECTS: ', _REDIRECTS[url])
-        return lpage if _REDIRECTS[url] == '__NON__' else _REDIRECTS[url]
-
-    pages = tuple(_search_listpage(url, lpage, ltype, pid))
-    verbose('list page found: ', pages)
-
-    result = None
-    numcand = len(pages)
-    if not numcand:
-        verbose('list page search result is zero')
-        # 見つからなかったらシリーズ/レーベル名で開いてあればそれを返す
-        dest = _libssw.follow_redirect(lpage)
-        verbose('dest: ', dest)
-        if dest:
-            result = dest
-    elif numcand == 1:
-        # 候補が1個ならそれを返す
-        result = pages[0]
-    else:
-        _emsg('I', '一覧ベージ候補が複数見つかりました:')
-        for cand in pages:
-            _emsg('I', '⇒ ', cand)
-
-    if result:
-        _REDIRECTS[url] = result
-        _libssw.save_cache(_REDIRECTS, _libssw.RDRDFILE)
-
-    return result
-
-
 class _ResolveListpage:
     """一覧ページへのリンク情報の決定"""
     def __init__(self):
@@ -1701,7 +1603,7 @@ class _ResolveListpage:
                     break
                 else:
                     _emsg('W',
-                          typ,
+                          _libssw.RETLABEL[attr],
                           '名が80バイトを超えているのでそのページは無いものとします: ',
                           list_page)
         else:
@@ -1724,10 +1626,10 @@ class _ResolveListpage:
         if (list_type, list_page) not in self._unknowns:
 
             # Wiki上の実際の一覧ページを探し、見つかったらそれにする。
-            actuall = _check_actuallpage(summ['url'],
-                                         list_page,
-                                         list_type,
-                                         summ['pid'])
+            actuall = _libssw.check_actuallpage(summ['url'],
+                                                list_page,
+                                                list_type,
+                                                summ['pid'])
             if actuall:
                 list_page = actuall
             else:
@@ -1958,16 +1860,16 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                      _build_addcols(args.add_column, summ))
         verbose('wktxt_t: ', wktxt_t)
         return False, resp.status, _ReturnVal(summ['release'],
-                                             summ['pid'],
-                                             summ['title'],
-                                             summ['title_dmm'],
-                                             summ['url'],
-                                             summ['time'],
-                                             summ.values('maker', 'maker_id'),
-                                             summ.values('label', 'label_id'),
-                                             summ.values('series', 'series_id'),
-                                             wktxt_a=(),
-                                             wktxt_t=wktxt_t)
+                                              summ['pid'],
+                                              summ['title'],
+                                              summ['title_dmm'],
+                                              summ['url'],
+                                              summ['time'],
+                                              summ.values('maker', 'maker_id'),
+                                              summ.values('label', 'label_id'),
+                                              summ.values('series', 'series_id'),
+                                              wktxt_a=(),
+                                              wktxt_t=wktxt_t)
     elif resp.status != 200:
         return False, resp.status, ('HTTP status', resp.status)
 
@@ -2094,16 +1996,16 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     if __name__ != '__main__':
         # モジュール呼び出しならタプルで返す。
         return True, summ['url'], _ReturnVal(summ['release'],
-                                            summ['pid'],
-                                            summ['title'],
-                                            summ['title_dmm'],
-                                            summ['url'],
-                                            summ['time'],
-                                            summ.values('maker', 'maker_id'),
-                                            summ.values('label', 'label_id'),
-                                            summ.values('series', 'series_id'),
-                                            wikitext_a,
-                                            wikitext_t)
+                                             summ['pid'],
+                                             summ['title'],
+                                             summ['title_dmm'],
+                                             summ['url'],
+                                             summ['time'],
+                                             summ.values('maker', 'maker_id'),
+                                             summ.values('label', 'label_id'),
+                                             summ.values('series', 'series_id'),
+                                             wikitext_a,
+                                             wikitext_t)
     else:
         # 書き出す
         output = ['']

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-素人Wiki用スクリプト用ライブラリ
-"""
+"""素人Wiki用スクリプト用ライブラリ"""
 import os as _os
 import sys as _sys
 import re as _re
@@ -13,7 +11,6 @@ import fileinput as _fileinput
 import pickle as _pickle
 import webbrowser as _webbrowser
 import unicodedata as _unicodedata
-# import tkinter
 from operator import itemgetter as _itemgetter
 from multiprocessing import Process as _Process
 from collections import namedtuple as _namedtuple
@@ -44,9 +41,6 @@ __version__ = 20150512
 
 VERBOSE = 0
 
-CACHEDIR = _Path(_gettempdir()) / 'dmm2ssw_cache'
-RDRDFILE = 'redirects'
-
 RECHECK = False
 
 BASEURL = 'http://www.dmm.co.jp'
@@ -62,7 +56,16 @@ SVC_URL = {'http://www.dmm.co.jp/mono/dvd/':       'dvd',
            'http://www.dmm.co.jp/digital/videoa/': 'video',
            'http://www.dmm.co.jp/digital/videoc/': 'ama'}
 
-SERVICEDIC = {
+RETLABEL = {'series': 'シリーズ',
+            'label':  'レーベル',
+            'maker':  'メーカー'}
+
+# 送信防止措置依頼されている女優
+HIDE_NAMES = {'1023995': '立花恭子',
+              '1024279': '藤崎かすみ',
+              '1026305': '北野ひな'}
+
+_SERVICEDIC = {
     'all':    ('', ''),
     'dvd':    ('n1=FgRCTw9VBA4GCF5WXA__/n2=Aw1fVhQKX19XC15nV0AC/',
                'mono/dvd'),
@@ -74,30 +77,26 @@ SERVICEDIC = {
                'digital/videoc')
 }
 
-RETLABEL = {'series': 'シリーズ',
-           'label':  'レーベル',
-           'maker':  'メーカー'}
-
 # 除外キーワード
-OMITWORDS = {'総集編':      '総集編',
-             'BEST':       '総集編',
-             'Best':       '総集編',
-             'ベスト':      '総集編',
-             'COMPLETE':   '総集編',
-             'コンプリート': '総集編',
-             '総編版':      '総集編',
+_OMITWORDS = {'総集編':      '総集編',
+              'BEST':       '総集編',
+              'Best':       '総集編',
+              'ベスト':      '総集編',
+              'COMPLETE':   '総集編',
+              'コンプリート': '総集編',
+              '総編版':      '総集編',
 
-             'アウトレット': 'アウトレット',
-             '廉価版':      'アウトレット',
+              'アウトレット': 'アウトレット',
+              '廉価版':      'アウトレット',
 
-             '復刻版':       '復刻盤',
-             '復刻盤':       '復刻盤',
+              '復刻版':       '復刻盤',
+              '復刻盤':       '復刻盤',
 
-             'DMM初回限定':  '限定盤',
-             'DMM限定':     '限定盤',
-             '数量限定':     '限定盤',
-             '枚限定':       '限定盤',
-             '初回限定版':    '限定盤',
+              'DMM初回限定':  '限定盤',
+              'DMM限定':     '限定盤',
+              '数量限定':     '限定盤',
+              '枚限定':       '限定盤',
+              '初回限定版':    '限定盤',
 }
 # 【混ぜるな危険】
 #  'コレクション'
@@ -105,11 +104,11 @@ OMITWORDS = {'総集編':      '総集編',
 #  '大全集'
 #  '全集'
 
-OMITTYPE = ('イメージビデオ', '総集編', 'アウトレット', '復刻盤', '限定盤', 'UMD')
+_OMITTYPE = ('イメージビデオ', '総集編', 'アウトレット', '復刻盤', '限定盤', 'UMD')
 
 # 総集編・再収録専門そうなやつ
 # 品番プレフィクス(URL上のもの)
-OMNI_PREFIX = (
+_OMNI_PREFIX = (
     '118bst',         # プレステージの総集編
     '118dcm',         # プレステージの総集編
     '118dcx',         # プレステージの総集編
@@ -360,34 +359,32 @@ OMNI_PREFIX = (
     'h_970kagh015r',  # かぐや姫（メロウムーン）の総集編作品 (レンタル)
 )
 # 品番正規表現
-OMNI_PATTERN = (
+_OMNI_PATTERN = (
     _re.compile(r'^(?:[hn]_)?\d*aaj'),  # AV30
     _re.compile(r'^(?:837?)?sbb'),      # コレクターズエディション (マルクス兄弟)
 )
 
 # イメージビデオ専門レーベル
-IV_PREFIX = (
+_IV_PREFIX = (
     'h_803pnch',    # Panchu
     )
 
-ROOKIE = ('rki', '9rki')
+_ROOKIE = ('rki', '9rki')
 
 # 既定のリンク先は同名別女優がいるためリダイレクトにできない女優をあらかじめ登録
-REDIRECTS = {'黒木麻衣':  '花野真衣',
-             '若菜あゆみ': '若菜あゆみ(人妻)',
-             '藤原ひとみ': '藤原ひとみ(kawaii*)',
-             '佐々木玲奈': '佐々木玲奈(2013)',
-             'すみれ':    '東尾真子',
-             'EMIRI':    '丘咲エミリ',
-             '松嶋葵':    '松嶋葵（2014）',
-             '和久井ナナ': 'ふわりゆうき'}
-
-# 事務所から送信防止措置依頼されている女優
-HIDE_NAMES = {'1023995': '立花恭子',
-              '1024279': '藤崎かすみ',
-              '1026305': '北野ひな'}
+_REDIRECTS = {'黒木麻衣':  '花野真衣',
+              '若菜あゆみ': '若菜あゆみ(人妻)',
+              '藤原ひとみ': '藤原ひとみ(kawaii*)',
+              '佐々木玲奈': '佐々木玲奈(2013)',
+              'すみれ':    '東尾真子',
+              'EMIRI':    '丘咲エミリ',
+              '松嶋葵':    '松嶋葵（2014）',
+              '和久井ナナ': 'ふわりゆうき'}
 
 HIDE_NAMES_V = HIDE_NAMES.values()
+
+_CACHEDIR = _Path(_gettempdir()) / 'dmm2ssw_cache'
+_RDRDFILE = 'redirects'
 
 
 p_number = _re.compile(r'\d+')
@@ -405,7 +402,7 @@ t_wikisyntax = str.maketrans('[]~', '［］～')
 t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
 
 
-DummyResp = _namedtuple('DummyResp', 'status,fromcache')
+_DummyResp = _namedtuple('DummyResp', 'status,fromcache')
 
 
 def ownname(path):
@@ -596,15 +593,18 @@ def copy2clipboard(string):
 
 
 def quote(string, safe='/', encoding='euc_jisx0213', errors=None):
+    """URL埋め込みように文字列をクオート"""
     return _up.quote(string, safe=safe, encoding=encoding,
                      errors=errors).replace('-', '%2d')
 
 
 def unquote(string, encoding='euc_jisx0213', errors='replace'):
+    """文字列をアンクオート"""
     return _up.unquote(string, encoding=encoding, errors=errors)
 
 
 def _clip_pname(url):
+    """WikiページのURLからページ名を取得"""
     return unquote(url.rsplit('/', 1)[-1])
 
 
@@ -612,6 +612,7 @@ _t_nl = str.maketrans('', '', '\r\n')
 
 
 def rm_nlcode(string):
+    """改行文字を除去"""
     return string.translate(_t_nl)
 
 
@@ -619,10 +620,12 @@ _t_pidsep = str.maketrans('', '', '+-')
 
 
 def rm_hyphen(string):
+    """ハイフンを除去"""
     return string.translate(_t_pidsep)
 
 
 def extr_num(string):
+    """文字列から数値だけ抽出"""
     return p_number.findall(string)
 
 
@@ -630,6 +633,7 @@ p_list_article = _re.compile(r'/article=(.+?)/')
 
 
 def get_article(url):
+    """DMM URLからarticle=部を抽出"""
     return p_list_article.findall(url)[0]
 
 
@@ -652,11 +656,14 @@ def inprogress(msg):
         print('{}  '.format(msg), end='\r', file=_sys.stderr, flush=True)
 
 
-def gen_no_omits(no_omit: 'int or tuple[int]'):
+def gen_no_omits(no_omit=None):
+    """除外しない対象セットの作成"""
     if isinstance(no_omit, int):
-        return set(OMITTYPE[:no_omit])
+        return set(_OMITTYPE[:no_omit])
+    elif no_omit is None:
+        return set(_OMITTYPE)
     else:
-        return set(OMITTYPE[i] for i in no_omit)
+        return set(_OMITTYPE[i] for i in no_omit)
 
 
 def le80bytes(string, encoding='euc_jisx0213'):
@@ -679,7 +686,7 @@ class __OpenUrl:
     def __init__(self):
         if VERBOSE > 1:
             _httplib2.debuglevel = 1
-        self.__http = _httplib2.Http(str(CACHEDIR))
+        self.__http = _httplib2.Http(str(_CACHEDIR))
         self.__wait = dict()
 
     def __sleep(self):
@@ -749,7 +756,7 @@ class __OpenUrl:
                         _emsg('E', '(おそらくサーバー側に問題のある)HTTP例外です。')
                     else:
                         url = url.replace('/limit=120/', '/limit=60/')
-                resp = DummyResp(status=0, fromcache=False)
+                resp = _DummyResp(status=0, fromcache=False)
             verbose('http resp: ', resp)
             verbose('fromcache: ', resp.fromcache)
 
@@ -789,12 +796,12 @@ def norm_uc(string):
 
 def check_omitword(title):
     """タイトル内の除外キーワードチェック"""
-    for key in filter(lambda k: k in title, OMITWORDS):
-        verbose('omit key, word: {}, {}'.format(key, OMITWORDS[key]))
-        yield OMITWORDS[key], key
+    for key in filter(lambda k: k in title, _OMITWORDS):
+        verbose('omit key, word: {}, {}'.format(key, _OMITWORDS[key]))
+        yield _OMITWORDS[key], key
 
 
-def check_omitprfx(cid, prefix=OMNI_PREFIX, patn=OMNI_PATTERN):
+def check_omitprfx(cid, prefix=_OMNI_PREFIX, patn=_OMNI_PATTERN):
     """隠れ総集編チェック(プレフィクス版)"""
     return any(cid.startswith(p) for p in prefix) or \
         any(p.search(cid) for p in patn)
@@ -840,7 +847,7 @@ _p_ge200m = _re.compile(r'(?:[2-9]\d{2}|\d{4,})分')
 
 def is_omnirookie(cid, title):
     """ROOKIE隠れ総集編チェック"""
-    if check_omitprfx(cid, ROOKIE):
+    if check_omitprfx(cid, _ROOKIE):
         # ROOKIEチェック
         hh = _p_ge4h.findall(title)
         mmm = _p_ge200m.findall(title)
@@ -850,7 +857,11 @@ def is_omnirookie(cid, title):
 
 
 def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
-    """除外対象かどうかチェック"""
+    """
+    除外対象かどうかチェック
+
+    除外対象なら対象の情報を返す。
+    """
     # 除外作品チェック (タイトル内の文字列から)
     for key, word in filter(lambda k: k[0] not in no_omits,
                             check_omitword(title)):
@@ -874,7 +885,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
 
     if 'イメージビデオ' not in no_omits:
         # 隠れIVチェック
-        if check_omitprfx(cid, IV_PREFIX):
+        if check_omitprfx(cid, _IV_PREFIX):
             return 'イメージビデオ', cid
 
 
@@ -882,7 +893,7 @@ class DMMTitleListParser:
     """一覧ページの解析"""
     _sp_tsuffix = (_re.compile(r' - \S*( - DMM.R18)?$'), '')
 
-    def __init__(self, no_omits=set(OMITTYPE), patn_pid=None, show_info=True):
+    def __init__(self, no_omits=set(_OMITTYPE), patn_pid=None, show_info=True):
         self._no_omits = no_omits
         self._patn_pid = patn_pid
         self._show_info = show_info
@@ -962,6 +973,8 @@ def split_pid(pid):
 
 def sort_by_id(products, reverse=False):
     """
+    品番をソート
+
     桁数が揃ってない品番もソート
     """
     def _make_items(products, maxdigit):
@@ -1084,6 +1097,7 @@ _p_name = _re.compile(
 def parse_names(name):
     """
     出演者情報の解析(rawテキスト)
+
     dmm2ssw.py -a オプション渡しとTSVからインポート用
     """
     verbose('Parsing name...')
@@ -1117,6 +1131,7 @@ _p_etc = _re.compile(r'ほか\w*?計(\d+)名')
 
 
 def ret_numofpfmrs(etc):
+    """ほか計n名を取得"""
     number = None
 
     m = _p_etc.findall(etc)
@@ -1132,6 +1147,7 @@ def ret_numofpfmrs(etc):
 
 
 def cvt2int(item):
+    """数値だけ取り出してintに変換"""
     return int(extr_num(item)[0]) if item else 0
 
 
@@ -1263,9 +1279,7 @@ from_wiki = _FromWiki()
 
 
 class _FromHtml:
-    """
-    素人総合WikiページをURL(HTML)で読み込んでインポート
-    """
+    """素人総合WikiページをURLから(HTMLで)読み込んでインポート"""
     def _unquotename(self, el):
         """URLからページ名を取得"""
         url = el.get('href')
@@ -1274,6 +1288,7 @@ class _FromHtml:
         return _clip_pname(el.get('href'))
 
     def _enclose(self, ph):
+        """括弧でくくってなかったらくくる"""
         return ph if ph.startswith('(') else '({})'.format(ph)
 
     def _parse_performers(self, td):
@@ -1364,6 +1379,7 @@ class _FromHtml:
     def __call__(self, wikiurls, service='dvd', cache=True):
 
         def _makeheader(iterth):
+            """ヘッダの TITLE → SUBTITLE の置き換え"""
             for th in iterth:
                 yield 'TITLE' if th.text == 'SUBTITLE' else th.text
 
@@ -1442,14 +1458,15 @@ from_html = _FromHtml()
 
 
 def join_priurls(retrieval, *keywords, service='dvd'):
-    """基底URLの作成"""
+    """DMM基底URLの作成"""
     return tuple('{}/{}/-/list/=/article={}/id={}/sort=date/'.format(
-        BASEURL, SERVICEDIC[service][1], retrieval, k) for k in keywords)
+        BASEURL, _SERVICEDIC[service][1], retrieval, k) for k in keywords)
 
 
 def build_produrl(service, cid):
+    """DMM作品ページのURL作成"""
     return '{}/{}/-/detail/=/cid={}/'.format(
-        BASEURL, SERVICEDIC[service][1], cid)
+        BASEURL, _SERVICEDIC[service][1], cid)
 
 
 def getnext_text(elem, xpath=False):
@@ -1463,9 +1480,7 @@ def getnext_text(elem, xpath=False):
 
 
 def _rdrparser(page, he):
-    """
-    wikiリダイレクトページかどうかの検出
-    """
+    """wikiリダイレクトページかどうかの検出"""
     verbose('is sswrdr/page: ', page)
     rdr_flg = False
     userarea = he.find_class('user-area')[0]
@@ -1517,6 +1532,7 @@ def _rdrparser(page, he):
 def follow_redirect(page):
     """
     リダイレクト先の取得と記録
+
     辞書REDIRECTS内の値:
     __NON__ ⇒ 実際のページ (リダイレクト不要)
     __NOT_FOUND__ ⇒ page が存在しない
@@ -1527,11 +1543,11 @@ def follow_redirect(page):
     ・リダイレクト先があればリダイレクト先ページ名、
     ・ページが存在しなければ空文字
     """
-    global REDIRECTS
+    global _REDIRECTS
 
     verbose('check redirection: ', page)
 
-    dest = REDIRECTS.get(page, '')
+    dest = _REDIRECTS.get(page, '')
 
     if dest:
         verbose('"{}" found on REDIRECTS: {}'.format(page, dest))
@@ -1552,18 +1568,108 @@ def follow_redirect(page):
 
     if resp.status == 200:
         dest = _rdrparser(page, he)
-        REDIRECTS[page] = dest or '__NON__'
+        _REDIRECTS[page] = dest or '__NON__'
     elif resp.status == 404:
-        REDIRECTS[page] = '__NOT_FOUND__'
+        _REDIRECTS[page] = '__NOT_FOUND__'
 
     verbose('rdr dest: ', dest)
     return dest
 
 
+def _search_listpage(url, listname, listtype, pid):
+    """実際の一覧ページをWiki内で探してみる"""
+    # listname = set((listname,)) | set(
+    #     _libssw.p_inbracket.split(listname.rstrip(')）')))
+    verbose('Searching listpage: listname=', listname, ', pid=', pid)
+
+    # DMM作品ページのURLで検索
+    resp, he = open_url(
+        'http://sougouwiki.com/search?keywords={}'.format(
+            quote(url, safe='')),
+        cache=False)
+
+    searesult = he.find_class('result-box')[0].find('p[1]/strong').tail
+
+    if searesult.strip() == 'に該当するページは見つかりませんでした。':
+        verbose('url not found on ssw')
+        return ()
+
+    found = False
+    while not found:
+        keywords = he.xpath('//h3[@class="keyword"]/a/text()')
+        verbose('list page keywords: ', keywords)
+
+        for word in keywords:
+            cand = word.strip().rstrip(' 0123456789')
+            verbose('list cand key: ', cand)
+
+            if cand.startswith(listname) or listname.startswith(cand):
+                # Wikiページ名にレーベル/シリーズ名が含まれるか、その逆のとき採用
+                yield word
+                found = True
+
+            if not found and listtype == 'レーベル':
+                # レーベル一覧であれば、品番のプレフィクスが含まれるとき採用
+                prefix = _libssw.split_pid(pid)[0]
+                verbose('prefix: ', prefix)
+                if prefix in word and not word.startswith('作品一覧'):
+                    verbose('prefix in pid: ', prefix)
+                    yield word
+                    found = True
+
+        if not found:
+            # 次のページがあったらそちらで再度探す
+            he = ssw_searchnext(he)
+            if he is None:
+                break
+
+
+def check_actuallpage(url, lpage, ltype, pid):
+    """
+    実際の一覧ページのチェック
+
+    見つかったら_REDIRECTSにキャッシュしておく
+    """
+    global _REDIRECTS
+
+    verbose('check actual list page on ssw...')
+
+    if not RECHECK \
+       and url in _REDIRECTS \
+       and _REDIRECTS[url] != '__NOT_FOUND__':
+        # キャッシュされてたらそれを返す
+        verbose('list page found on REDIRECTS: ', _REDIRECTS[url])
+        return lpage if _REDIRECTS[url] == '__NON__' else _REDIRECTS[url]
+
+    pages = tuple(_search_listpage(url, lpage, ltype, pid))
+    verbose('list page found: ', pages)
+
+    result = None
+    numcand = len(pages)
+    if not numcand:
+        verbose('list page search result is zero')
+        # 見つからなかったらシリーズ/レーベル名で開いてあればそれを返す
+        dest = follow_redirect(lpage)
+        verbose('dest: ', dest)
+        if dest:
+            result = dest
+    elif numcand == 1:
+        # 候補が1個ならそれを返す
+        result = pages[0]
+    else:
+        _emsg('I', '一覧ベージ候補が複数見つかりました:')
+        for cand in pages:
+            _emsg('I', '⇒ ', cand)
+
+    if result:
+        _REDIRECTS[url] = result
+        save_cache(_REDIRECTS, _RDRDFILE)
+
+    return result
+
+
 def stringize_performers(pfmrs, number, follow):
-    """
-    出演者文字列の作成
-    """
+    """出演者文字列の作成"""
     def _build_performerslink(pfmrs, follow):
         """女優リンクの作成"""
         for shown, dest, parened in pfmrs:
@@ -1580,7 +1686,7 @@ def stringize_performers(pfmrs, number, follow):
     pfmrsstr = '／'.join(_build_performerslink(pfmrs, follow))
 
     if follow:
-        save_cache(REDIRECTS, RDRDFILE)
+        save_cache(_REDIRECTS, _RDRDFILE)
 
     # 「～ほかn名」
     if number == -1:
@@ -1645,7 +1751,7 @@ _sp_pid_indv = (
 
 
 def gen_pid(cid, pattern=None):
-    """URLから品番を生成"""
+    """DMMの品番(cid)から正規の品番を生成"""
     if cid.startswith('http://'):
         cid = get_id(cid, True)[0]
 
@@ -1666,7 +1772,7 @@ def gen_pid(cid, pattern=None):
     return pid, cid
 
 
-class InvalidPage(Exception):
+class _InvalidPage(Exception):
     pass
 
 
@@ -1679,7 +1785,7 @@ class _GetActName:
         try:
             data = elems.find('.//h1').text.strip()
         except AttributeError:
-            raise InvalidPage
+            raise _InvalidPage
 
         # 複数の女優名チェク ('）（' で分割を試みる)
         named = self._p_actname1.split(data)
@@ -1753,6 +1859,7 @@ def ret_apacheinfo(elems):
 def get_cookie():
     """
     FirefoxからSMMのCookieを取得
+
     取得に必要な条件が満たされなければ黙ってFalseを返す
     """
     if _sys.platform == 'win32':
@@ -1825,6 +1932,7 @@ _sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
 def show_diff(flines, tlines, fdesc, tdesc, context=True):
     """
     差分をとってブラウザで開く
+
     open_new_tab() のパラメータは実在するuriでなければならないので
     ファイルライクオブジェクトはNG
     """
@@ -1835,7 +1943,7 @@ def show_diff(flines, tlines, fdesc, tdesc, context=True):
                                  context=context)
     for p in _sp_diff:
         diff = sub(p, diff)
-    dummy, tmpf = _mkstemp(suffix='.html', dir=str(CACHEDIR))
+    dummy, tmpf = _mkstemp(suffix='.html', dir=str(_CACHEDIR))
     with open(tmpf, 'w') as f:
         f.writelines(diff)
     _webbrowser.open_new_tab(tmpf)
@@ -1843,11 +1951,10 @@ def show_diff(flines, tlines, fdesc, tdesc, context=True):
 
 def save_cache(target, stem):
     """キャッシュ情報の保存"""
-
     verbose('Saving cache...')
 
-    lockfile = CACHEDIR / (stem + '.lock')
-    pkfile = CACHEDIR / (stem + '.pickle')
+    lockfile = _CACHEDIR / (stem + '.lock')
+    pkfile = _CACHEDIR / (stem + '.pickle')
     verbose('cache file: ', pkfile)
 
     if lockfile.exists():
@@ -1888,7 +1995,7 @@ def load_cache(stem, default=None, expire=7200):
     """保存されたキャッシュ情報の読み込み"""
     verbose('Loading cache...')
 
-    pkfile = CACHEDIR / (stem + '.pickle')
+    pkfile = _CACHEDIR / (stem + '.pickle')
     verbose('cache file path: ', pkfile)
 
     now = _time.time()
@@ -1908,10 +2015,18 @@ def load_cache(stem, default=None, expire=7200):
             cache = _pickle.load(f)
         return cache
 
-REDIRECTS = load_cache(RDRDFILE, default=REDIRECTS)
+_REDIRECTS = load_cache(_RDRDFILE, default=_REDIRECTS)
 
 
 def clear_cache():
     """キャッシュのクリア"""
-    _rmtree(str(CACHEDIR), ignore_errors=True)
+    _rmtree(str(_CACHEDIR), ignore_errors=True)
     verbose('cache cleared')
+
+
+def cache_info():
+    """キャッシュ情報の出力"""
+    size = sum(f.stat().st_size for f in _CACHEDIR.glob('*')) / 1048576
+    _emsg('I', 'キャッシュパス: ', _CACHEDIR)
+    _emsg('I', 'サイズ: {:.2f}MB'.format(size))
+    raise SystemExit
