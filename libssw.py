@@ -40,8 +40,7 @@ except ImportError:
     pass
 
 
-__version__ = 20150512
-
+__version__ = 20151009
 
 _VERBOSE = 0
 

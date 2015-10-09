@@ -78,7 +78,7 @@ import re
 
 import libssw
 
-__version__ = 20150526
+__version__ = 20151009
 
 OWNNAME = libssw.ownname(__file__)
 VERBOSE = 0

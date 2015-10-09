@@ -109,7 +109,7 @@ import libssw
 
 # import pdb
 
-__version__ = 20150424
+__version__ = 20151009
 
 VERBOSE = 0
 

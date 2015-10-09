@@ -25,7 +25,7 @@ from urllib.parse import urlparse
 
 import libssw
 
-__version__ = 20150808
+__version__ = 20151009
 
 VERBOSE = 0
 

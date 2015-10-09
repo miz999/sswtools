@@ -14,6 +14,7 @@ from datetime import date, timedelta
 import libssw
 import dmm2ssw
 
+__version__ = 20151009
 
 VERBOSE = 0
 

@@ -19,7 +19,7 @@ import fileinput
 
 import libssw
 
-__version__ = 20140813
+__version__ = 20151009
 
 OWNNAME = libssw.ownname(__file__)
 

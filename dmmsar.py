@@ -445,7 +445,7 @@ from collections import OrderedDict, namedtuple
 import libssw
 import dmm2ssw
 
-__version__ = 20151007
+__version__ = 20151009
 
 OWNNAME = libssw.ownname(__file__)
 VERBOSE = 0

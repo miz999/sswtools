@@ -74,7 +74,7 @@ from collections import OrderedDict
 import libssw
 import dmm2ssw
 
-__version__ = 20150504
+__version__ = 20151009
 
 VERBOSE = 0
 

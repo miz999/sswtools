@@ -13,7 +13,7 @@ import argparse
 from itertools import chain
 import libssw
 
-__version__ = 20151006
+__version__ = 20151009
 
 VERBOSE = 0
 

@@ -336,7 +336,7 @@ from collections import namedtuple as _namedtuple
 
 import libssw as _libssw
 
-__version__ = 20151007
+__version__ = 20151009
 
 _VERBOSE = 0
 

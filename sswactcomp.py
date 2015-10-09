@@ -90,7 +90,7 @@ from itertools import chain
 import libssw
 import dmm2ssw
 
-__version__ = 20140805
+__version__ = 20151009
 
 VERBOSE = 0
 
