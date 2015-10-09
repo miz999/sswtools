@@ -495,7 +495,7 @@ def main():
 
     # メーカー名がわかったところで出力ファイルのチェック
     outstem = '{}.{}'.format(flprefix,
-                             article_name.translate(libssw.t_filename))
+                             libssw.trans_filename(article_name))
 
     outfile = args.outfile or '{}.wiki'.format(outstem)
     if args.replace:

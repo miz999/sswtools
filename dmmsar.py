@@ -621,7 +621,7 @@ def get_args(argv):
     argparser.add_argument('--row',
                            help='先頭行のみなし行開始位置 (-t/-tt 指定時のみ)',
                            type=int,
-                           default=0)
+                           default=0)  # --row のデフォルトは後で決定
 
     argparser.add_argument('--pages-last',
                            help='データ収集ページ数(最新からPAGEページ分を収集)',
@@ -753,7 +753,7 @@ def get_args(argv):
                            action='store_true')
 
     argparser.add_argument('-c', '--copy',
-                           help='作成したウィキテキストをクリップボードへコピーする',
+                           help='作成したウィキテキストをクリップボードへコピーする(pyperclipが必要)',
                            action='store_true')
 
     # ブラウザ制御
@@ -831,7 +831,7 @@ def get_args(argv):
 
 def parse_outfile(args, make):
     if not args.out:
-        return
+        return None
 
     # ファイル名に拡張子があったら分割
     split, suffix = (args.out.rsplit('.', 1) + [''])[:2]
@@ -965,31 +965,6 @@ def make_pgen(args, ids, listparser, sp_pid, key_id, key_type, kidattr):
     return p_gen
 
 
-def ret_joindata(join_d, args):
-    if args.join_tsv:
-        # join データ作成(tsv)
-        verbose('join tsv')
-        join_d.update((k, p) for k, p in libssw.from_tsv(args.join_tsv))
-
-    if args.join_wiki:
-        # join データ作成(wiki)
-        verbose('join wiki')
-        for k, p in libssw.from_wiki(args.join_wiki):
-            if k in join_d:
-                join_d[k].merge(p)
-            else:
-                join_d[k] = p
-
-    if args.join_html:
-        # jon データ作成(url)
-        verbose('join html')
-        for k, p in libssw.from_html(args.join_html, service=args.service):
-            if k in join_d:
-                join_d[k].merge(p)
-            else:
-                join_d[k] = p
-
-
 def fmtheader(atclinfo):
     """ヘッダ整形"""
     return '\n*{}'.format(
@@ -1094,7 +1069,7 @@ def number_header(article, n_i_s, page):
 def build_outname(of, is_table, pagen):
     """指定した出力ファイル名を指定のモードでオープン"""
     stem = of.tbl if is_table else of.actr
-    fname = '.'.join('{}'.format(p) for p in (stem, pagen, of.suffix) if p)
+    fname = '.'.join(str(p) for p in (stem, pagen, of.suffix) if p)
     return fname
 
 
@@ -1160,7 +1135,6 @@ class BuildPage:
             libssw.open_ssw(*self._page_names)
 
     def __call__(self, n_i_s):
-        """ウィキテキスト生成(ページごと)"""
 
         self._titles_dmm = []
 
@@ -1299,7 +1273,7 @@ def main(argv=None):
         args.service = libssw.resolve_service(next(iter(products)))
 
     join_d = dict()
-    ret_joindata(join_d, args)
+    libssw.ret_joindata(join_d, args)
 
     if (args.join_tsv or args.join_wiki or args.join_html) and not len(join_d):
         emsg('E', '--join-* オプションで読み込んだデータが0件でした。')
@@ -1328,12 +1302,12 @@ def main(argv=None):
     before = True if key_id else False
 
     dmmparser = libssw.DMMParser(no_omits=no_omits,
+                                 patn_pid=sp_pid,
                                  start_date=args.start_date,
                                  start_pid_s=args.start_pid_s,
                                  filter_pid_s=p_filter_pid_s,
                                  pass_bd=args.pass_bd,
                                  n_i_s=args.n_i_s)
-    dmm2ssw.sp_pid = sp_pid
 
     if args.retrieval in ('maker', 'label', 'series'):
         keyiter = libssw.sort_by_id(products)

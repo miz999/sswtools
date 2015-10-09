@@ -21,7 +21,7 @@ OWNNAME = libssw.ownname(__file__)
 emsg = libssw.Emsg(OWNNAME)
 
 
-ACTURL_BASE = libssw.ACTURL_BASE
+BASEURL_ACT = libssw.BASEURL_ACT
 ACTURL = libssw.ACTURL
 
 
@@ -151,7 +151,7 @@ def select_allhiragana(ids, today, path, selfcheck):
             else:
                 mu = he.get_element_by_id("mu").xpath('table[last()]//a')
                 if len(mu) and mu[-1].text == '次へ':
-                    resp, he = libssw.open_url(ACTURL_BASE + mu[-1].get('href'))
+                    resp, he = libssw.open_url(BASEURL_ACT + mu[-1].get('href'))
                 else:
                     print('negative')
                     break

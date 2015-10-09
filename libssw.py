@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """素人Wiki用スクリプト用ライブラリ"""
+
 import os as _os
 import sys as _sys
 import re as _re
@@ -17,9 +18,10 @@ from collections import namedtuple as _namedtuple
 from tempfile import gettempdir as _gettempdir, mkstemp as _mkstemp
 from shutil import rmtree as _rmtree
 from difflib import HtmlDiff as _HtmlDiff
-from http.client import HTTPException as _HTTPException
 from pathlib import Path as _Path
 from itertools import chain as _chain
+from copy import deepcopy as _deepcopy
+from http.client import HTTPException as _HTTPException
 from argparse import Namespace as _apNamespace
 
 try:
@@ -40,6 +42,7 @@ except ImportError:
 
 __version__ = 20150512
 
+
 _VERBOSE = 0
 
 RECHECK = False
@@ -49,17 +52,16 @@ BASEURL_SMM = 'http://supermm.jp'
 BASEURL_SSW = 'http://sougouwiki.com'
 BASEURL_ACT = 'http://actress.dmm.co.jp'
 
-ACTURL_BASE = 'http://actress.dmm.co.jp'
-ACTURL = ACTURL_BASE + '/-/detail/=/actress_id={}/'
-
-SVC_URL = {'http://www.dmm.co.jp/mono/dvd/':       'dvd',
-           'http://www.dmm.co.jp/rental/':         'rental',
-           'http://www.dmm.co.jp/digital/videoa/': 'video',
-           'http://www.dmm.co.jp/digital/videoc/': 'ama'}
+ACTURL = BASEURL_ACT + '/-/detail/=/actress_id={}/'
 
 RETLABEL = {'series': 'シリーズ',
             'label':  'レーベル',
             'maker':  'メーカー'}
+
+_SVC_URL = {'http://www.dmm.co.jp/mono/dvd/':       'dvd',
+            'http://www.dmm.co.jp/rental/':         'rental',
+            'http://www.dmm.co.jp/digital/videoa/': 'video',
+            'http://www.dmm.co.jp/digital/videoc/': 'ama'}
 
 _SERVICEDIC = {
     'all':    ('', ''),
@@ -109,6 +111,7 @@ _RENTAL_PRECEDES = {
 HIDE_NAMES = {'1023995': '立花恭子',
               '1024279': '藤崎かすみ',
               '1026305': '北野ひな'}
+HIDE_NAMES_V = HIDE_NAMES.values()
 
 _GENRE_BD = '6104'  # Blu-rayのジャンルID
 
@@ -522,28 +525,22 @@ _REDIRECTS = {'黒木麻衣':  '花野真衣',
               '松嶋葵':    '松嶋葵（2014）',
               '和久井ナナ': 'ふわりゆうき'}
 
-HIDE_NAMES_V = HIDE_NAMES.values()
-
 _CACHEDIR = _Path(_gettempdir()) / 'dmm2ssw_cache'
 _RDRDFILE = 'redirects'
 
 
-p_number = _re.compile(r'\d+')
 p_delim = _re.compile(r'[/／,、]')
 p_inbracket = _re.compile(r'[(（]')
-p_interlink = _re.compile(r'(\[\[.+?\]\])')
 p_linkpare = _re.compile(r'\[\[(.+?)(?:>(.+?))?\]\]')
 p_hiragana = _re.compile(r'[ぁ-ゞー]')
 p_neghirag = _re.compile(r'[^ぁ-ゞー]')
 
-sp_pid = (_re.compile(r'^(?:[hn]_)?\d*([a-z]+)(\d+).*', _re.I), r'\1-\2')
+_p_number = _re.compile(r'\d+')
+_p_interlink = _re.compile(r'(\[\[.+?\]\])')
+
 _sp_ltbracket_h = (_re.compile(r'^(?:【.+?】)+?'), '')
 _sp_ltbracket_t = (_re.compile(r'(?:【.+?】)+?$'), '')
 _sp_nowrdchr = (_re.compile(r'\W'), '')
-
-
-t_wikisyntax = str.maketrans('[]~', '［］～')
-t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
 
 
 _DummyResp = _namedtuple('DummyResp', 'status,fromcache')
@@ -595,7 +592,7 @@ class Emsg:
         self._ownname = ownname
 
     def __call__(self, level, *msg):
-        msg = ''.join('{}'.format(m) for m in msg)
+        msg = ''.join(str(m) for m in msg)
         m = '({}:{}) {}'.format(self._ownname, self._msglevel[level], msg)
         if level == 'W':
             m = '\033[1;33m{}\033[0m'.format(m)
@@ -739,8 +736,8 @@ class Summary:
 
 def sub(p_list, string, n=False):
     """re.sub()、re.subn()ラッパー"""
-    return p_list[0].subn(p_list[1], string) if n \
-        else p_list[0].sub(p_list[1], string)
+    m = p_list[0].subn if n else p_list[0].sub
+    return m(p_list[1], string)
 
 
 def copy2clipboard(string):
@@ -785,7 +782,7 @@ def rm_hyphen(string):
 
 def extr_num(string):
     """文字列から数値だけ抽出"""
-    return p_number.findall(string)
+    return _p_number.findall(string)
 
 
 p_list_article = _re.compile(r'/article=(.+?)/')
@@ -865,6 +862,14 @@ def load_cache(stem, default=None, expire=7200):
 _REDIRECTS = load_cache(_RDRDFILE, default=_REDIRECTS)
 
 
+_t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
+
+
+def trans_filename(filename):
+    """ファイル名に使用できない文字列の置き換え"""
+    return filename.translate(_t_filename)
+
+
 def files_exists(mode, *files):
     """同名のファイルが存在するかどうかチェック"""
     for f in files:
@@ -897,6 +902,14 @@ def gen_no_omits(no_omit=None):
 def le80bytes(string, encoding='euc_jisx0213'):
     """Wikiページ名最大長(80バイト)チェック"""
     return len(bytes(string, encoding)) <= 80
+
+
+_t_wikisyntax = str.maketrans('[]~', '［］～')
+
+
+def trans_wikisyntax(wikitext):
+    """Wiki構文と衝突する記号の変換"""
+    return wikitext.translate(_t_wikisyntax)
 
 
 def gen_ntfcols(tname, fsource: 'sequence'):
@@ -985,7 +998,7 @@ class __OpenUrl:
                     else:
                         url = url.replace('/limit=120/', '/limit=60/')
                 resp = _DummyResp(status=0, fromcache=False)
-            _verbose('http resp: ', resp)
+            _verbose('http status: ', resp.status)
             _verbose('fromcache: ', resp.fromcache)
 
             if not resp.fromcache:
@@ -1022,17 +1035,11 @@ def norm_uc(string):
     return _unicodedata.normalize('NFKC', string)
 
 
-def check_omitword(title):
+def _check_omitword(title):
     """タイトル内の除外キーワードチェック"""
     for key in filter(lambda k: k in title, _OMITWORDS):
         _verbose('omit key, word: {}, {}'.format(key, _OMITWORDS[key]))
         yield _OMITWORDS[key], key
-
-
-def check_omitprfx(cid, prefix=_OMNI_PREFIX, patn=_OMNI_PATTERN):
-    """隠れ総集編チェック(プレフィクス版)"""
-    return any(cid.startswith(p) for p in prefix) or \
-        any(p.search(cid) for p in patn)
 
 
 _p_omnivals = (
@@ -1061,27 +1068,8 @@ _p_omnivals = (
 )
 
 
-def check_omnivals(title):
-    """隠れ総集編チェック(関連数値編)"""
-    title = norm_uc(title)
-    hit = tuple(_chain.from_iterable(p.findall(title) for p in _p_omnivals))
-    if len(hit) > 1:
-        return hit
-
-
 _p_ge4h = _re.compile(r'(?:[4-9]|\d{2,})時間')
 _p_ge200m = _re.compile(r'(?:[2-9]\d{2}|\d{4,})分')
-
-
-def is_omnirookie(cid, title):
-    """ROOKIE隠れ総集編チェック"""
-    if check_omitprfx(cid, _ROOKIE):
-        # ROOKIEチェック
-        hh = _p_ge4h.findall(title)
-        mmm = _p_ge200m.findall(title)
-        return hh, mmm
-    else:
-        return None, None
 
 
 def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
@@ -1090,30 +1078,53 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
 
     除外対象なら対象の情報を返す。
     """
+    def _check_omitprfx(cid, prefix=_OMNI_PREFIX, patn=_OMNI_PATTERN):
+        """隠れ総集編チェック(プレフィクス版)"""
+        return any(cid.startswith(p) for p in prefix) or \
+            any(p.search(cid) for p in patn)
+
+    def _check_omnivals(title):
+        """隠れ総集編チェック(関連数値編)"""
+        title = norm_uc(title)
+        hit = tuple(_chain.from_iterable(
+            p.findall(title) for p in _p_omnivals))
+        if len(hit) > 1:
+            return hit
+
+    def _is_omnirookie(cid, title):
+        """ROOKIE隠れ総集編チェック"""
+        if _check_omitprfx(cid, _ROOKIE):
+            # ROOKIEチェック
+            hh = _p_ge4h.findall(title)
+            mmm = _p_ge200m.findall(title)
+            return hh, mmm
+        else:
+            return None, None
+
     # 除外作品チェック (タイトル内の文字列から)
     for key, word in filter(lambda k: k[0] not in no_omits,
-                            check_omitword(title)):
+                            _check_omitword(title)):
         return key, word
 
     if '総集編' not in no_omits:
         # 隠れ総集編チェック(タイトル内の数値から)
-        omnivals = check_omnivals(title)
+        omnivals = _check_omnivals(title)
         if omnivals:
             return '総集編', omnivals
 
         # 隠れ総集編チェック(cidから)
-        if check_omitprfx(cid):
+        if _check_omitprfx(cid):
             return '総集編', cid
 
         # 総集編容疑メーカー
         if omit_suss_4h:
-            hh, mmm = is_omnirookie(cid, title)
+            hh, mmm = _is_omnirookie(cid, title)
             if hh or mmm:
                 return '総集編', omit_suss_4h + '(4時間以上)'
 
     if 'イメージビデオ' not in no_omits:
         # 隠れIVチェック
-        if check_omitprfx(cid, _IV_PREFIX):
+        if _check_omitprfx(cid, _IV_PREFIX):
             return 'イメージビデオ', cid
 
 
@@ -1168,17 +1179,6 @@ def normalize(string):
     string = sub(_sp_ltbracket_t, string)
     string = sub(_sp_nowrdchr, string)
     return string
-
-
-def _compare_title(cand, title):
-    """
-    同じタイトルかどうか比較
-
-    title はあらかじめ normalize() に通しておくこと
-    """
-    cand = normalize(cand.strip())
-    verbose('cand norm: ', cand)
-    return cand.startswith(title) or title.startswith(cand)
 
 
 class _LongTitleError(Exception):
@@ -1321,12 +1321,14 @@ class DMMParser:
     _p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
     # p_genre = _re.compile(r'/article=keyword/id=(6003|6147|6561)/')
     _p_more = _re.compile(r"url: '(.*?)'")
+    _p_serial = _re.compile(r'(\d+)$')
 
-    def __init__(self, no_omits=gen_no_omits(),
+    def __init__(self, no_omits=gen_no_omits(), patn_pid=None,
                  start_date=None, start_pid_s=None, filter_pid_s=None,
                  autostrip=True, pass_bd=False, n_i_s=False,
                  deeper=True, quiet=False):
         self._no_omits = no_omits
+        self._patn_pid = patn_pid
         self._start_date = start_date
         self._not_sid = NotKeyIdYet(start_pid_s, 'start', 'pid')
         self._filter_pid_s = filter_pid_s
@@ -1357,7 +1359,11 @@ class DMMParser:
                 _verbose('title from maker: ', key)
                 return _TITLE_FROM_OFFICIAL[key]
 
-        tdmm = self._he.find('.//img[@class="tdmm"]').get('alt')
+        try:
+            tdmm = self._he.find('.//img[@class="tdmm"]').get('alt')
+        except AttributeError:
+            _emsg('E', 'DMM作品ページではないようです。')
+
         _verbose('title dmm: ', tdmm)
 
         tmkr = ''
@@ -1533,7 +1539,7 @@ class DMMParser:
                 _emsg('I', '品番がURLと異なっています: url={}, page={}'.format(
                     self._sm['cid'], data))
 
-            self._sm['pid'], self._sm['cid'] = gen_pid(data, sp_pid)
+            self._sm['pid'], self._sm['cid'] = gen_pid(data, self._patn_pid)
             _verbose('cid: ', self._sm['cid'], ', pid: ', self._sm['pid'])
 
             # 作成開始品番チェック(厳密)
@@ -1657,9 +1663,24 @@ class DMMParser:
 
     def _get_otherslink(self, service, firmly=True):
         """他のサービスの作品リンクの取得"""
+
+        def _compare_title(text, title, ttl_s):
+            """
+            同じタイトルかどうか比較
+
+            title はあらかじめ normalize() に通しておくこと
+            """
+            text = text.strip()
+            cand = normalize(text.strip())
+            cand_s = self._p_serial.findall(cand)
+            _verbose('cand norm: ', cand)
+            return (cand.startswith(title) or title.startswith(cand)) and \
+                ttl_s == cand_s
+
         def _chooselink(others, service):
             for o in others:
                 link = o.get('href')
+                _verbose('other link: ', link)
                 if service == 'rental' and '/rental/' in link:
                     return link.replace('/ppr', '')
                 elif service == 'videoa' and '/digital/videoa/' in link:
@@ -1678,21 +1699,22 @@ class DMMParser:
                 self._sm['series'] if self._sm['series'] else '')
 
             searlurl = '{}/search/=/searchstr={}/cid={}/{}'.format(
-                _BASEURL,
+                BASEURL,
                 _up.quote(searstr),
                 self._sm['cid'],
-                'related=1/sort=rankprofile/view=text/')
+                'limit=120/related=1/sort=rankprofile/view=text/')
 
             resp, he_rel = open_url(searlurl)
 
-            title_nr = normalize(self._sm['title'])
-            _verbose('title norm: ', title_nr)
+            ttl_nr = normalize(self._sm['title'])
+            _verbose('title norm: ', ttl_nr)
+            ttl_s = self._p_serial.findall(self._sm['title'])
 
-            others = filter(lambda t: _compare_title(t.text, title_nr),
+            others = filter(lambda t: _compare_title(t.text, ttl_nr, ttl_s),
                             he_rel.iterfind('.//p[@class="ttl"]/a'))
             opath = _chooselink(others, service)
 
-        return _up.urljoin(_BASEURL, opath) if opath else False
+        return opath.split('?')[0] if opath else False
 
     def _link2other(self, url, tag, release):
         return '※[[{}版>{}]]のリリースは{}。'.format(tag, url, release)
@@ -1702,6 +1724,7 @@ class DMMParser:
         for s in service:
             others_url = self._get_otherslink(s)
             if others_url:
+                _verbose('others link gotten')
                 break
         else:
             _verbose('missing others links')
@@ -1711,9 +1734,10 @@ class DMMParser:
 
         others_data = Summary(self._sm.values())
         others_data['url'] = others_url
-        others_data['pid'], others_data['cid'] = gen_pid(others_url, sp_pid)
+        others_data['pid'], others_data['cid'] = gen_pid(others_url,
+                                                         self._patn_pid)
 
-        others_data.update(_othersparser(he_others, service, others_data))
+        others_data.update(_othersparser(he_others, service, sm=others_data))
         _verbose('others data: ', others_data.items())
 
         if service == ('rental',):
@@ -1743,11 +1767,14 @@ class DMMParser:
             _verbose('rltd ttl: ', rlttl)
             # 限定品の除外チェック
             if any(k not in self._no_omits
-                   for k, w in check_omitword(rlttl)):
+                   for k, w in _check_omitword(rlttl)):
                 break
             else:
                 _verbose('rltditem: ', rlitem.getparent().get('href'))
-                return _up.urljoin(_BASEURL, rlitem.getparent().get('href'))
+                return _up.urljoin(BASEURL, rlitem.getparent().get('href'))
+
+        _verbose('rltditem not found.')
+        return False
 
     def __call__(self, he, service, sm=Summary(),
                  args=_apNamespace, ignore_pfmrs=False):
@@ -1762,6 +1789,7 @@ class DMMParser:
 
         self.data_replaced = False
 
+        _verbose('Parsing DMM product page: deper=', self._deeper)
         _verbose('self._sm preset: ', self._sm.items())
 
         # 作品情報の取得
@@ -1859,9 +1887,10 @@ class DMMParser:
                 getattr(args, 'smm', False) and service == 'dvd')
 
             # レンタル版で出演者情報がなかったとき他のサービスで調べてみる
-            if (service == 'rental' or self.data_replaced == 'rental') \
-               and (not self._sm['actress'] or self._force_chk_sale) \
-               and getattr(args, 'check_rltd'):
+            if self._deeper and \
+               (service == 'rental' or self.data_replaced == 'rental') and \
+               (not self._sm['actress'] or self._force_chk_sale) and \
+               getattr(args, 'check_rltd'):
 
                 _verbose('possibility missing performers, checking others...')
                 other_data = self._get_otherscontent('videoa', 'dvd')
@@ -1895,7 +1924,7 @@ class DMMTitleListParser:
             article = ''
 
         # wiki構文と衝突する文字列の置き換え
-        article = article.translate(t_wikisyntax)
+        article = trans_wikisyntax(article)
         article = sub(self._sp_tsuffix, article)
 
         return article
@@ -1913,9 +1942,8 @@ class DMMTitleListParser:
             title = t_el.text
             path = t_el.get('href')
             url = _up.urljoin(BASEURL, path)
-
             pid, cid = gen_pid(url, self._patn_pid)
-            cid = cid.lstrip('79')
+            # cid = cid.lstrip('79')
 
             # 除外作品チェック
             omitinfo = check_omit(title, cid, no_omits=self._no_omits)
@@ -2134,7 +2162,7 @@ class _FromWiki:
         """出演者情報の解析(ウィキテキスト)"""
         shown = dest = parened = ''
 
-        for e in filter(None, p_interlink.split(name)):
+        for e in filter(None, _p_interlink.split(name)):
 
             # いったん丸カッコ括りを解く
             elem = e.strip().strip('()')
@@ -2399,6 +2427,32 @@ class _FromHtml:
 from_html = _FromHtml()
 
 
+def ret_joindata(join_d, args):
+    """--join-*データ回収"""
+    if args.join_tsv:
+        # join データ作成(tsv)
+        _verbose('join tsv')
+        join_d.update((k, p) for k, p in from_tsv(args.join_tsv))
+
+    if args.join_wiki:
+        # join データ作成(wiki)
+        _verbose('join wiki')
+        for k, p in from_wiki(args.join_wiki):
+            if k in join_d:
+                join_d[k].merge(p)
+            else:
+                join_d[k] = p
+
+    if args.join_html:
+        # jon データ作成(url)
+        _verbose('join html')
+        for k, p in from_html(args.join_html, service=args.service):
+            if k in join_d:
+                join_d[k].merge(p)
+            else:
+                join_d[k] = p
+
+
 def join_priurls(retrieval, *keywords, service='dvd'):
     """DMM基底URLの作成"""
     return tuple('{}/{}/-/list/=/article={}/id={}/sort=date/'.format(
@@ -2654,10 +2708,10 @@ def resolve_service(url):
     _verbose('Resolving service...')
     base = _p_base_url.findall(url)[0]
 
-    if not base or base not in SVC_URL:
+    if not base or base not in _SVC_URL:
         _emsg('E', '未サポートのURLです。')
     else:
-        return SVC_URL[base]
+        return _SVC_URL[base]
 
 
 _p_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
@@ -2673,6 +2727,8 @@ def get_id(url, cid=False, ignore=False):
             return ()
         _emsg('E', 'IDを取得できません: ', url)
 
+
+_sp_pid = (_re.compile(r'^(?:[hn]_)?\d*([a-z]+)(\d+).*', _re.I), r'\1-\2')
 
 # 品番変換個別対応
 _sp_pid_indv = (
@@ -2706,7 +2762,7 @@ def gen_pid(cid, pattern=None):
             if m:
                 break
         else:
-            pid, m = sub(sp_pid, cid, True)
+            pid, m = sub(_sp_pid, cid, True)
 
     if m:
         pid = pid.upper()

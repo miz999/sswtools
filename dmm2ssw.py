@@ -359,7 +359,6 @@ _NiS = _namedtuple('n_i_s', 'sid,name')
 _p_age = _re.compile(r'(\(\d+?\))$')
 
 _sp_heart = (_re.compile(r'（ハート）|◆'), r'♥')
-sp_pid = None  # dmmsar.py 側から更新
 
 
 _IMG_URL = {'dvd':    'http://pics.dmm.co.jp/mono/movie/adult/',
@@ -507,7 +506,7 @@ def _get_args(argv, p_args):
                            default=True)
 
     argparser.add_argument('-c', '--copy',
-                           help='作成したウィキテキストをクリップボードへコピーする',
+                           help='作成したウィキテキストをクリップボードへコピーする(pyperclipが必要)',
                            action='store_true')
 
     argparser.add_argument('-b', '--browser',
@@ -759,7 +758,7 @@ class _ResolveListpage:
             list_page = 'スクープ'
 
         # wiki構文と衝突する文字列の置き換え
-        list_page = list_page.translate(_libssw.t_wikisyntax)
+        list_page = _libssw.trans_wikisyntax(list_page)
 
         if not args.check_listpage or \
            (list_attr == retrieval and args.table == 1):
@@ -929,10 +928,6 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
             summ['list_type'] = typ
             summ['list_page'] = getattr(args, attr)
 
-    # 品番
-    if not summ['pid']:
-        summ['pid'], summ['cid'] = _libssw.gen_pid(summ['url'], sp_pid)
-
     retrieval = getattr(p_args, 'retrieval',
                         'series' if args.as_series else 'find')
     service = getattr(p_args, 'service', None)
@@ -954,30 +949,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
         args.dir_col = False
 
     join_d = dict()
-
-    if args.join_tsv:
-        # join データ作成(tsv)
-        _verbose('join tsv')
-        for k, p in _libssw.from_tsv(args.join_tsv):
-            join_d[k] = p
-
-    if args.join_wiki:
-        # join データ作成(wiki)
-        _verbose('join wiki')
-        for k, p in _libssw.from_wiki(args.join_wiki):
-            if k in join_d:
-                join_d[k].merge(p)
-            else:
-                join_d[k] = p
-
-    if args.join_html:
-        # jon データ作成(url)
-        _verbose('join url')
-        for k, p in _libssw.from_html(args.join_html):
-            if k in join_d:
-                join_d[k].merge(p)
-            else:
-                join_d[k] = p
+    _libssw.ret_joindata(join_d, args)
 
     if (args.join_tsv or args.join_wiki or args.join_html) and not len(join_d):
         _emsg('E', '--join-* オプションで読み込んだデータが0件でした。')
@@ -988,6 +960,8 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     if resp.status == 404:
         # 404の時、空のエントリを作成(表形式のみ)して返す
         _emsg('I', 'ページが見つかりませんでした: ', summ['url'])
+        if not summ['pid']:
+            summ['pid'], summ['cid'] = _libssw.gen_pid(summ['url'])
         if p_args.cid_l:
             summ['url'] = ''
         else:
@@ -1038,6 +1012,9 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     if summ['url'] in join_d:
         summ.merge(join_d[summ['url']])
 
+    if args.pid:
+        summ['pid'] = args.pid
+
     # 画像がまだないときのリンク自動生成
     if not summ['image_lg']:
         summ['image_sm'], summ['image_lg'] = _build_image_url(service,
@@ -1054,7 +1031,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
 
     on_dmm = summ['title']
     # wiki構文と衝突する文字列の置き換え
-    modified = on_dmm.translate(_libssw.t_wikisyntax)
+    modified = _libssw.trans_wikisyntax(on_dmm)
     if _AUTOMODIFY:
         # ♥の代替文字列の置き換え
         modified = _libssw.sub(_sp_heart, modified)
