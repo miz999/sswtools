@@ -163,9 +163,7 @@ DMM作品ページのURL
 
     ※指定しない場合
     DMM上の品番情報(cid=)から自動生成を試みる。
-    正規表現にマッチした場合置き換えられ、すべて大文字化される。
     正しい品番にならない場合があるので注意。
-    マッチしなかったら変更せずそのまま出力する。
 
     自動生成パターン(python正規表現)と置換文字列:
 
@@ -336,17 +334,12 @@ from collections import namedtuple as _namedtuple
 
 import libssw as _libssw
 
-__version__ = 20151009
+__version__ = 20151010
 
 _VERBOSE = 0
-
 _AUTOMODIFY = True
 
 _emsg = _libssw.Emsg(_libssw.ownname(__file__))
-
-_BASEURL = _libssw.BASEURL
-_BASEURL_SMM = _libssw.BASEURL_SMM
-_BASEURL_SSW = _libssw.BASEURL_SSW
 
 _ReturnVal = _namedtuple('ReturnVal',
                          ('release', 'pid', 'title', 'title_dmm', 'url',
@@ -354,7 +347,6 @@ _ReturnVal = _namedtuple('ReturnVal',
                           'wktxt_a', 'wktxt_t'))
 
 _NiS = _namedtuple('n_i_s', 'sid,name')
-
 
 _p_age = _re.compile(r'(\(\d+?\))$')
 
@@ -576,150 +568,6 @@ def _expansion(phrases, summ):
         for p, r in _sp_expansion:
             ph = p.sub(getattr(summ, r), ph)
         yield ph
-
-
-class __TrySMM:
-    """
-    SMMから出演者情報を得てみる
-
-    SMM通販新品から「品番 + タイトルの先頭50文字」で検索、ヒットした作品のページの
-    「この作品に出演している女優」を見る
-
-    返り値:
-    女優情報があった場合はその人名のリスト、なければ空のタプル
-    """
-    # 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 (2015-10-05現在)
-    _allhiraganas = ('ありさ', 'くるみ', 'さやか', 'しずく', 'すみれ',
-                     'つばさ', 'つぼみ', 'なごみ', 'ひなぎく', 'まなか',
-                     'まりか', 'めぐり', 'ももか', 'ゆいの', 'ゆうみ', 'りんか')
-
-    def __init__(self):
-        self.title_smm = ''
-        # self._cookie = _libssw.get_cookie()
-        self._cookie = 'afsmm=10163915; TONOSAMA_BATTA=0bf596e86b6853db3b7cc52cdd4ff239; ses_age=18'
-
-    def _search(self, cate, pid, title):
-        search_url = '{}/search/image/-_-/cate/{}/word/{}'.format(
-            _BASEURL_SMM, cate, pid)
-            # _BASEURL_SMM, _up.quote('{} {}'.format(pid, title[:50])))
-
-        for i in range(2):
-            resp, he_result = _libssw.open_url(search_url,
-                                               set_cookie=self._cookie)
-
-            if resp.status != 200:
-                _verbose('smm search failed: url={}, status={}'.format(
-                    search_url, resp.status))
-                return
-
-            # SMM上で年齢認証済みかどうかの確認
-            confirm = he_result.get_element_by_id('confirm', None)
-            if confirm is not None:
-                # id='confirm' があるので未認証
-                # Firefox の cookie 情報を得てみる
-                self._cookie = _libssw.get_cookie()
-                if not self._cookie:
-                    _emsg('W', 'SMMの年齢認証が完了していません。')
-                    return
-            else:
-                _verbose('Age confirmed')
-                return he_result
-        else:
-            _emsg('W', 'SMMの年齢認証が完了していません。')
-            return
-
-    def _is_existent(self, name):
-        """その名前の女優が実際にいるかどうかDMM上でチェック"""
-        _verbose('is existent: ', name)
-        url = '{}/-/search/=/searchstr={}/'.format(_libssw.BASEURL_ACT,
-                                                   _up.quote(name))
-        while True:
-            resp, he = _libssw.open_url(url)
-            if any(name == a.find('td[2]/a').text.strip()
-                   for a in he.iterfind('.//tr[@class="list"]')):
-                return True
-
-            pagin = he.find('.//td[@class="line"]/a[last()]')
-            if pagin is not None and pagin.text == '次へ':
-                url = _libssw.BASEURL_ACT + pagin.get('href')
-            else:
-                break
-
-        return None
-
-    def _chk_anonym(self, pfmr):
-        """
-        SMM出演者情報でひらがなのみの名前の場合代用名かどうかチェック
-
-        名前がひらがなのみで4文字以下で既知のひらがな女優名でなければ代用名とみなす
-        """
-        # if _libssw.p_neghirag.search(pfmr) or self._is_existent(pfmr):
-        if _libssw.p_neghirag.search(pfmr) or \
-           len(pfmr) > 4 or \
-           pfmr in self._allhiraganas:
-            return (pfmr, '', '')
-        else:
-            return ('', '', '({})'.format(pfmr))
-
-    def __call__(self, pid, title):
-        _verbose('Trying SMM...')
-        # SMMで検索(品番+タイトル)
-        if not self._cookie:
-            _verbose('could not retrieve cookie')
-            return []
-
-        for cate in 20, 6:
-            # 通販新品(動画よりリリースが早い) → 単品動画 (売り切れがない) で検索
-            he_search = self._search(cate, pid, title)
-            items = he_search.find_class('imgbox')
-            if len(items):
-                _verbose('Found on smm (cate: {})'.format(cate))
-                break
-            else:
-                _verbose('Not found on smm (cate: {})'.format(cate))
-        else:
-            _verbose('smm: No search result')
-            return []
-
-        # DMM、SMM各タイトルを正規化して比較、一致したらそのページを読み込んで
-        # 出演者情報を取得
-        title = _libssw.normalize(title)
-        _verbose('title norm: ', title)
-
-        for item in items:
-            path = item.find('a').get('href')
-            self.title_smm = item.find('a/img').get('alt')
-
-            # タイトルが一致しなければ次へ
-            if not _libssw.compare_title(self.title_smm, title):
-                _verbose('title unmatched')
-                continue
-
-            # 作品ページを読み込んで出演者を取得
-            prod_url = _up.urljoin(_BASEURL_SMM, path)
-            _verbose('smm: prod_url: ', prod_url)
-
-            resp, he_prod = _libssw.open_url(
-                prod_url, set_cookie=self._cookie)
-
-            pid_smm = he_prod.find(
-                './/div[@class="detailline"]/dl/dd[7]').text.strip()
-            if pid != pid_smm:
-                _verbose('pid unmatched')
-                continue
-
-            smmpfmrs = he_prod.xpath('//li[@id="all_cast_li"]/a/text()')
-            _verbose('smmpfmrs: ', smmpfmrs)
-
-            return [self._chk_anonym(p) for p in smmpfmrs]
-
-            break
-
-        else:
-            _verbose('all titles are mismatched')
-            return []
-
-_try_smm = __TrySMM()
 
 
 class _ResolveListpage:
@@ -1137,8 +985,6 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
 
         if wikitext_t:
             output.append(wikitext_t)
-
-        output += '\n'
 
         print(*output, sep='\n')
 

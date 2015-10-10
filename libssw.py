@@ -40,14 +40,12 @@ except ImportError:
     pass
 
 
-__version__ = 20151009
+__version__ = 20151010
 
 _VERBOSE = 0
 
 RECHECK = False
 
-BASEURL = 'http://www.dmm.co.jp'
-BASEURL_SMM = 'http://supermm.jp'
 BASEURL_SSW = 'http://sougouwiki.com'
 BASEURL_ACT = 'http://actress.dmm.co.jp'
 
@@ -56,6 +54,9 @@ ACTURL = BASEURL_ACT + '/-/detail/=/actress_id={}/'
 RETLABEL = {'series': 'シリーズ',
             'label':  'レーベル',
             'maker':  'メーカー'}
+
+_BASEURL_DMM = 'http://www.dmm.co.jp'
+_BASEURL_SMM = 'http://supermm.jp'
 
 _SVC_URL = {'http://www.dmm.co.jp/mono/dvd/':       'dvd',
             'http://www.dmm.co.jp/rental/':         'rental',
@@ -536,6 +537,7 @@ p_neghirag = _re.compile(r'[^ぁ-ゞー]')
 
 _p_number = _re.compile(r'\d+')
 _p_interlink = _re.compile(r'(\[\[.+?\]\])')
+_p_serial = _re.compile(r'(\d+)$')
 
 _sp_ltbracket_h = (_re.compile(r'^(?:【.+?】)+?'), '')
 _sp_ltbracket_t = (_re.compile(r'(?:【.+?】)+?$'), '')
@@ -1171,13 +1173,26 @@ class NotKeyIdYet:
         return self._match(cand)
 
 
-def normalize(string):
+def _normalize(string):
     """タイトルから【.+?】と非unicode単語文字を除いて正規化"""
-    string = norm_uc(string).replace(' ', '').lower()
     string = sub(_sp_ltbracket_h, string)
     string = sub(_sp_ltbracket_t, string)
     string = sub(_sp_nowrdchr, string)
+    string = norm_uc(string).replace(' ', '').lower()
     return string
+
+
+def _compare_title(cand, title, ttl_s):
+    """
+    同じタイトルかどうか比較
+
+    title はあらかじめ _normalize() に通しておくこと
+    """
+    cand = _normalize(cand.strip())
+    cand_s = _p_serial.findall(cand)
+    _verbose('cand norm: ', cand)
+    return (cand.startswith(title) or title.startswith(cand)) and \
+        ttl_s == cand_s
 
 
 class _LongTitleError(Exception):
@@ -1305,6 +1320,150 @@ _TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
                         }
 
 
+class __TrySMM:
+    """
+    SMMから出演者情報を得てみる
+
+    SMM通販新品から「品番 + タイトルの先頭50文字」で検索、ヒットした作品のページの
+    「この作品に出演している女優」を見る
+
+    返り値:
+    女優情報があった場合はその人名のリスト、なければ空のタプル
+    """
+    # 1年以内にリリース実績のある実在するひらがなのみで4文字以下の名前 (2015-10-05現在)
+    _allhiraganas = ('ありさ', 'くるみ', 'さやか', 'しずく', 'すみれ',
+                     'つばさ', 'つぼみ', 'なごみ', 'ひなぎく', 'まなか',
+                     'まりか', 'めぐり', 'ももか', 'ゆいの', 'ゆうみ', 'りんか')
+
+    def __init__(self):
+        self.title_smm = ''
+        # self._cookie = get_cookie()
+        self._cookie = 'afsmm=10163915; TONOSAMA_BATTA=0bf596e86b6853db3b7cc52cdd4ff239; ses_age=18'
+
+    def _search(self, cate, pid, title):
+        search_url = '{}/search/image/-_-/cate/{}/word/{}'.format(
+            _BASEURL_SMM, cate, pid)
+            # _BASEURL_SMM, _up.quote('{} {}'.format(pid, title[:50])))
+
+        for i in range(2):
+            resp, he_result = open_url(search_url, set_cookie=self._cookie)
+
+            if resp.status != 200:
+                _verbose('smm search failed: url={}, status={}'.format(
+                    search_url, resp.status))
+                return
+
+            # SMM上で年齢認証済みかどうかの確認
+            confirm = he_result.get_element_by_id('confirm', None)
+            if confirm is not None:
+                # id='confirm' があるので未認証
+                # Firefox の cookie 情報を得てみる
+                self._cookie = get_cookie()
+                if not self._cookie:
+                    _emsg('W', 'SMMの年齢認証が完了していません。')
+                    return
+            else:
+                _verbose('Age confirmed')
+                return he_result
+        else:
+            _emsg('W', 'SMMの年齢認証が完了していません。')
+            return
+
+    def _is_existent(self, name):
+        """その名前の女優が実際にいるかどうかDMM上でチェック"""
+        _verbose('is existent: ', name)
+        url = '{}/-/search/=/searchstr={}/'.format(BASEURL_ACT,
+                                                   _up.quote(name))
+        while True:
+            resp, he = open_url(url)
+            if any(name == a.find('td[2]/a').text.strip()
+                   for a in he.iterfind('.//tr[@class="list"]')):
+                return True
+
+            pagin = he.find('.//td[@class="line"]/a[last()]')
+            if pagin is not None and pagin.text == '次へ':
+                url = BASEURL_ACT + pagin.get('href')
+            else:
+                break
+
+        return None
+
+    def _chk_anonym(self, pfmr):
+        """
+        SMM出演者情報でひらがなのみの名前の場合代用名かどうかチェック
+
+        名前がひらがなのみで4文字以下で既知のひらがな女優名でなければ代用名とみなす
+        """
+        # if p_neghirag.search(pfmr) or self._is_existent(pfmr):
+        if p_neghirag.search(pfmr) or \
+           len(pfmr) > 4 or \
+           pfmr in self._allhiraganas:
+            return (pfmr, '', '')
+        else:
+            return ('', '', '({})'.format(pfmr))
+
+    def __call__(self, pid, title):
+        _verbose('Trying SMM...')
+        # SMMで検索(品番+タイトル)
+        if not self._cookie:
+            _verbose('could not retrieve cookie')
+            return []
+
+        for cate in 20, 6:
+            # 通販新品(動画よりリリースが早い) → 単品動画 (売り切れがない) で検索
+            he_search = self._search(cate, pid, title)
+            items = he_search.find_class('imgbox')
+            if len(items):
+                _verbose('Found on smm (cate: {})'.format(cate))
+                break
+            else:
+                _verbose('Not found on smm (cate: {})'.format(cate))
+        else:
+            _verbose('smm: No search result')
+            return []
+
+        # DMM、SMM各タイトルを正規化して比較、一致したらそのページを読み込んで
+        # 出演者情報を取得
+        title = _normalize(title)
+        title_s = _p_serial.findall(title)
+        _verbose('title norm: ', title)
+
+        for item in items:
+            path = item.find('a').get('href')
+            self.title_smm = item.find('a/img').get('alt')
+
+            # タイトルが一致しなければ次へ
+            if not _compare_title(self.title_smm, title, title_s):
+                _verbose('title unmatched')
+                continue
+
+            # 作品ページを読み込んで出演者を取得
+            prod_url = _up.urljoin(_BASEURL_SMM, path)
+            _verbose('smm: prod_url: ', prod_url)
+
+            resp, he_prod = open_url(
+                prod_url, set_cookie=self._cookie)
+
+            pid_smm = he_prod.find(
+                './/div[@class="detailline"]/dl/dd[7]').text.strip()
+            if pid != pid_smm:
+                _verbose('pid unmatched')
+                continue
+
+            smmpfmrs = he_prod.xpath('//li[@id="all_cast_li"]/a/text()')
+            _verbose('smmpfmrs: ', smmpfmrs)
+
+            return [self._chk_anonym(p) for p in smmpfmrs]
+
+            break
+
+        else:
+            _verbose('all titles are mismatched')
+            return []
+
+_try_smm = __TrySMM()
+
+
 class OmitTitleException(Exception):
     """総集編など除外タイトル例外"""
     def __init__(self, key, word=''):
@@ -1320,7 +1479,6 @@ class DMMParser:
     _p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
     # p_genre = _re.compile(r'/article=keyword/id=(6003|6147|6561)/')
     _p_more = _re.compile(r"url: '(.*?)'")
-    _p_serial = _re.compile(r'(\d+)$')
 
     def __init__(self, no_omits=gen_no_omits(), patn_pid=None,
                  start_date=None, start_pid_s=None, filter_pid_s=None,
@@ -1380,8 +1538,7 @@ class DMMParser:
         _verbose('title maker: ', tmkr)
 
         title = tmkr or tdmm
-        title_dmm = tdmm if not normalize(title).startswith(normalize(tdmm)) \
-                    else ''
+        title_dmm = tdmm if not _normalize(title).startswith(_normalize(tdmm)) else ''
 
         return title, title_dmm
 
@@ -1475,7 +1632,8 @@ class DMMParser:
 
             if self._n_i_s:
                 _verbose('not in series')
-                raise OmitTitleException('series', _NiS(sid=srid, name=sr.text))
+                raise OmitTitleException('series',
+                                         _NiS(sid=srid, name=sr.text))
 
             # 隠れ総集編シリーズチェック
             if srid in _OMIT_SERIES:
@@ -1491,7 +1649,8 @@ class DMMParser:
             # 独自ページ個別対応
             # ・SOD女子社員
             if self._sm['series'] == 'SOD女子社員':
-                self._sm['series'] += 'シリーズ' + self._sm['release'].split('/', 1)[0]
+                self._sm['series'] += ('シリーズ' +
+                                       self._sm['release'].split('/', 1)[0])
 
             self._sm['series_id'] = srid
 
@@ -1626,7 +1785,7 @@ class DMMParser:
                     else:
                         _emsg('E', '出演者の「▼すべて表示する」先が取得できませんでした。')
 
-                more_url = _up.urljoin(BASEURL, more_path)
+                more_url = _up.urljoin(_BASEURL_DMM, more_path)
                 resp, he_more = open_url(more_url, 'utf-8')
                 _verbose('more_url opened')
 
@@ -1663,19 +1822,6 @@ class DMMParser:
     def _get_otherslink(self, service, firmly=True):
         """他のサービスの作品リンクの取得"""
 
-        def _compare_title(text, title, ttl_s):
-            """
-            同じタイトルかどうか比較
-
-            title はあらかじめ normalize() に通しておくこと
-            """
-            text = text.strip()
-            cand = normalize(text.strip())
-            cand_s = self._p_serial.findall(cand)
-            _verbose('cand norm: ', cand)
-            return (cand.startswith(title) or title.startswith(cand)) and \
-                ttl_s == cand_s
-
         def _chooselink(others, service):
             for o in others:
                 link = o.get('href')
@@ -1698,16 +1844,16 @@ class DMMParser:
                 self._sm['series'] if self._sm['series'] else '')
 
             searlurl = '{}/search/=/searchstr={}/cid={}/{}'.format(
-                BASEURL,
+                _BASEURL_DMM,
                 _up.quote(searstr),
                 self._sm['cid'],
                 'limit=120/related=1/sort=rankprofile/view=text/')
 
             resp, he_rel = open_url(searlurl)
 
-            ttl_nr = normalize(self._sm['title'])
+            ttl_nr = _normalize(self._sm['title'])
             _verbose('title norm: ', ttl_nr)
-            ttl_s = self._p_serial.findall(self._sm['title'])
+            ttl_s = _p_serial.findall(self._sm['title'])
 
             others = filter(lambda t: _compare_title(t.text, ttl_nr, ttl_s),
                             he_rel.iterfind('.//p[@class="ttl"]/a'))
@@ -1770,7 +1916,8 @@ class DMMParser:
                 break
             else:
                 _verbose('rltditem: ', rlitem.getparent().get('href'))
-                return _up.urljoin(BASEURL, rlitem.getparent().get('href'))
+                return _up.urljoin(_BASEURL_DMM,
+                                   rlitem.getparent().get('href'))
 
         _verbose('rltditem not found.')
         return False
@@ -1940,7 +2087,7 @@ class DMMTitleListParser:
             t_el = ttl.find('a')
             title = t_el.text
             path = t_el.get('href')
-            url = _up.urljoin(BASEURL, path)
+            url = _up.urljoin(_BASEURL_DMM, path)
             pid, cid = gen_pid(url, self._patn_pid)
             # cid = cid.lstrip('79')
 
@@ -1959,7 +2106,8 @@ class DMMTitleListParser:
         except IndexError:
             return False
 
-        return _up.urljoin(BASEURL, pagin[0].get('href')) if pagin else False
+        return _up.urljoin(_BASEURL_DMM,
+                           pagin[0].get('href')) if pagin else False
 
     def __call__(self, he):
         """解析実行"""
@@ -2455,13 +2603,13 @@ def ret_joindata(join_d, args):
 def join_priurls(retrieval, *keywords, service='dvd'):
     """DMM基底URLの作成"""
     return tuple('{}/{}/-/list/=/article={}/id={}/sort=date/'.format(
-        BASEURL, _SERVICEDIC[service][1], retrieval, k) for k in keywords)
+        _BASEURL_DMM, _SERVICEDIC[service][1], retrieval, k) for k in keywords)
 
 
 def build_produrl(service, cid):
     """DMM作品ページのURL作成"""
     return '{}/{}/-/detail/=/cid={}/'.format(
-        BASEURL, _SERVICEDIC[service][1], cid)
+        _BASEURL_DMM, _SERVICEDIC[service][1], cid)
 
 
 def getnext_text(elem, xpath=False):
@@ -2480,7 +2628,7 @@ def _rdrparser(page, he):
     rdr_flg = False
     userarea = he.find_class('user-area')[0]
 
-    if any(a.get('href').startswith(BASEURL)
+    if any(a.get('href').startswith(_BASEURL_DMM)
            for a in userarea.iterfind('.//a[@class="outlink"]')):
         # DMMへのリンクが見つかったらリダイレクトページではないとみなし終了
         _verbose('Not redirect page (dmm link found)')
