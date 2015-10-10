@@ -1182,17 +1182,21 @@ def _normalize(string):
     return string
 
 
-def _compare_title(cand, title, ttl_s):
+def _compare_title(cand, title, ttl_s=None):
     """
     同じタイトルかどうか比較
 
     title はあらかじめ _normalize() に通しておくこと
     """
     cand = _normalize(cand.strip())
-    cand_s = _p_serial.findall(cand)
     _verbose('cand norm: ', cand)
-    return (cand.startswith(title) or title.startswith(cand)) and \
-        ttl_s == cand_s
+
+    if ttl_s is None:
+        return cand == title
+    else:
+        cand_s = _p_serial.findall(cand)
+        return (cand.startswith(title) or title.startswith(cand)) and \
+            ttl_s == cand_s
 
 
 class _LongTitleError(Exception):
@@ -1209,9 +1213,7 @@ def _ret_apache(cid, pid):
     resp, he = open_url(url)
 
     if resp.status != 200:
-        _emsg('W', 'ページを開けませんでした: url={}, status={}'.format(
-            url, resp.status))
-        raise _LongTitleError
+        raise _LongTitleError(url, resp.status)
 
     opid, actress, director = ret_apacheinfo(he)
 
@@ -1245,9 +1247,7 @@ class _RetrieveTitleSCOOP:
                 break
 
         if resp.status != 200:
-            _emsg('W', 'ページを開けませんでした: url={}, status={}'.format(
-                url, resp.status))
-            raise _LongTitleError
+            raise _LongTitleError(url, resp.status)
 
         return he.find_class('title')[0].text.strip()
 
@@ -1295,9 +1295,7 @@ class _RetrieveTitlePlum:
             cookie = self._parse_cookie(resp.get('set-cookie', cookie))
 
             if resp.status != 200:
-                _emsg('W', 'ページを開けませんでした: url={}, status={}'.format(
-                    url, resp.status))
-                raise _LongTitleError
+                raise _LongTitleError(url, resp.status)
 
             if not len(he.get_element_by_id('nav', '')):
                 break
@@ -1311,13 +1309,6 @@ class _RetrieveTitlePlum:
         return title
 
 # _ret_plum_se = _RetrieveTitlePlum('h_113se')
-
-
-_TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
-                        '84scop': _ret_scoop,      # SCOOP
-                        '84scpx': _ret_scoop,      # SCOOP
-                        # 'h_113se': _ret_plum_se, # 素人援交生中出し(プラム)
-                        }
 
 
 class __TrySMM:
@@ -1466,12 +1457,14 @@ _try_smm = __TrySMM()
 
 class OmitTitleException(Exception):
     """総集編など除外タイトル例外"""
-    def __init__(self, key, word=''):
-        self.key = key
-        self.word = word
+    pass
 
-    def __str__(self):
-        return repr(self.word)
+
+_TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
+                        '84scop': _ret_scoop,      # SCOOP
+                        '84scpx': _ret_scoop,      # SCOOP
+                        # 'h_113se': _ret_plum_se, # 素人援交生中出し(プラム)
+                        }
 
 
 class DMMParser:
@@ -1538,7 +1531,7 @@ class DMMParser:
         _verbose('title maker: ', tmkr)
 
         title = tmkr or tdmm
-        title_dmm = tdmm if not _normalize(title).startswith(_normalize(tdmm)) else ''
+        title_dmm = tdmm if not _compare_title(title, _normalize(tdmm)) else ''
 
         return title, title_dmm
 
@@ -2032,7 +2025,7 @@ class DMMParser:
                 self._sm['actress'],
                 getattr(args, 'smm', False) and service == 'dvd')
 
-            # レンタル版で出演者情報がなかったとき他のサービスで調べてみる
+            # レンタル版で出演者情報がなかった/不足しているかもなとき他のサービスで調べてみる
             if self._deeper and \
                (service == 'rental' or self.data_replaced == 'rental') and \
                (not self._sm['actress'] or self._force_chk_sale) and \
