@@ -445,7 +445,7 @@ from collections import OrderedDict, namedtuple
 import libssw
 import dmm2ssw
 
-__version__ = 20151009
+__version__ = 20151010
 
 OWNNAME = libssw.ownname(__file__)
 VERBOSE = 0
@@ -455,9 +455,6 @@ emsg = libssw.Emsg(OWNNAME)
 MSGLEVEL = {'E': 'ERROR',
             'W': 'WARN',
             'I': 'INFO'}
-
-BASEURL = libssw.BASEURL
-BASEURL_SSW = libssw.BASEURL_SSW
 
 ACTINFOPAGE = 'http://actress.dmm.co.jp/-/detail/=/actress_id={}/'
 ACTLISTPAGE = 'http://www.dmm.co.jp/mono/dvd/-/list/=/article=actress/id={}/sort=date/'

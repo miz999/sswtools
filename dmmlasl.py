@@ -109,12 +109,11 @@ import libssw
 
 # import pdb
 
-__version__ = 20151009
+__version__ = 20151010
 
 VERBOSE = 0
 
 OWNNAME = libssw.ownname(__file__)
-BASEURL = libssw.BASEURL
 
 emsg = libssw.Emsg(OWNNAME)
 
