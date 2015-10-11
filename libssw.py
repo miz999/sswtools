@@ -80,10 +80,10 @@ _IGNORE_SERIES = {'8369': 'E-BODY',
                   '205878': 'S級素人'}
 
 # レンタル版のページの出演者が欠けていることがあるメーカー
-_FORCE_CHK_SALE_MK = {'40121': 'LEO'}
+_FORCE_CHK_SALE_MK = {'40121': ('LEO', 'dvd')}
 # レンタル版のページの出演者が欠けていることがあるシリーズ
-_FORCE_CHK_SALE_SR = {'79592': '熟ズボッ！',
-                      '3820':  'おはズボッ！'}
+_FORCE_CHK_SALE_SR = {'79592': ('熟ズボッ！', 'videoa'),
+                      '3820':  ('おはズボッ！', 'videoa')}
 
 # 出演者情報を無視するメーカー
 _IGNORE_PERFORMERS = {'45067': 'KIプランニング',
@@ -1031,7 +1031,7 @@ class __OpenUrl:
 open_url = __OpenUrl()
 
 
-def norm_uc(string):
+def _ucnormalize(string):
     """unicode正規化"""
     return _unicodedata.normalize('NFKC', string)
 
@@ -1086,7 +1086,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
 
     def _check_omnivals(title):
         """隠れ総集編チェック(関連数値編)"""
-        title = norm_uc(title)
+        title = _ucnormalize(title)
         hit = tuple(_chain.from_iterable(
             p.findall(title) for p in _p_omnivals))
         if len(hit) > 1:
@@ -1173,30 +1173,33 @@ class NotKeyIdYet:
         return self._match(cand)
 
 
-def _normalize(string):
+def _uniformize(string):
     """タイトルから【.+?】と非unicode単語文字を除いて正規化"""
     string = sub(_sp_ltbracket_h, string)
     string = sub(_sp_ltbracket_t, string)
+
+    serial = _p_serial.findall(string)
+    serial = serial and serial[0]
+
     string = sub(_sp_nowrdchr, string)
-    string = norm_uc(string).replace(' ', '').lower()
-    return string
+    string = _ucnormalize(string).replace(' ', '').lower()
+
+    return string, serial
 
 
 def _compare_title(cand, title, ttl_s=None):
     """
     同じタイトルかどうか比較
 
-    title はあらかじめ _normalize() に通しておくこと
+    title はあらかじめ _uniformize() に通しておくこと
     """
-    cand = _normalize(cand.strip())
-    _verbose('cand norm: ', cand)
+    cand, cand_s = _uniformize(cand.strip())
+    _verbose('cand norm: ', cand, cand_s)
 
-    if ttl_s is None:
+    if not ttl_s:
         return cand == title
     else:
-        cand_s = _p_serial.findall(cand)
-        return (cand.startswith(title) or title.startswith(cand)) and \
-            ttl_s == cand_s
+        return title.startswith(cand) and ttl_s == cand_s
 
 
 class _LongTitleError(Exception):
@@ -1415,9 +1418,8 @@ class __TrySMM:
 
         # DMM、SMM各タイトルを正規化して比較、一致したらそのページを読み込んで
         # 出演者情報を取得
-        title = _normalize(title)
-        title_s = _p_serial.findall(title)
-        _verbose('title norm: ', title)
+        title, title_s = _uniformize(title)
+        _verbose('title norm: ', title, title_s)
 
         for item in items:
             path = item.find('a').get('href')
@@ -1445,8 +1447,6 @@ class __TrySMM:
 
             return [self._chk_anonym(p) for p in smmpfmrs]
 
-            break
-
         else:
             _verbose('all titles are mismatched')
             return []
@@ -1469,7 +1469,6 @@ _TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
 class DMMParser:
     """DMM作品ページの解析"""
     _p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
-    # p_genre = _re.compile(r'/article=keyword/id=(6003|6147|6561)/')
     _p_more = _re.compile(r"url: '(.*?)'")
 
     def __init__(self, no_omits=gen_no_omits(), patn_pid=None,
@@ -1531,7 +1530,8 @@ class DMMParser:
         _verbose('title maker: ', tmkr)
 
         title = tmkr or tdmm
-        title_dmm = tdmm if not _compare_title(title, _normalize(tdmm)) else ''
+        title_dmm = tdmm if not _compare_title(title,
+                                               *_uniformize(tdmm)) else ''
 
         return title, title_dmm
 
@@ -1586,9 +1586,8 @@ class DMMParser:
                 self._omit_suss_4h = _OMIT_SUSS_4H[mkid]
 
             # 他のサービスを強制チェック
-            if mkid in _FORCE_CHK_SALE_MK:
-                _verbose('series forece chk other: ', _FORCE_CHK_SALE_MK[mkid])
-                self._force_chk_sale = True
+            self._force_chk_sale = _FORCE_CHK_SALE_MK.get(mkid, False)
+            _verbose('series forece chk other: ', self._force_chk_sale)
 
             _verbose('maker: ', self._sm['maker'])
 
@@ -1648,10 +1647,8 @@ class DMMParser:
             self._sm['series_id'] = srid
 
             # 他のサービスを強制チェック
-            if srid in _FORCE_CHK_SALE_SR:
-                _verbose('series forece chk other: ',
-                         _FORCE_CHK_SALE_SR[srid])
-                self._force_chk_sale = True
+            self._force_chk_sale = _FORCE_CHK_SALE_SR.get(srid, False)
+            _verbose('series forece chk other: ', self._force_chk_sale)
 
             _verbose('series: ', self._sm['series'])
 
@@ -1812,23 +1809,24 @@ class DMMParser:
         #     if all(g not in pfilter for g in gvn[:2] if g):
         #         yield gvn
 
+    _choosepare = {'rental': ('/rental/', lambda x: x.replace('/ppr', '')),
+                   'videoa': ('/digital/videoa/', lambda x: x),
+                   'dvd':    ('/mono/dvd/', lambda x: x)}
+
     def _get_otherslink(self, service, firmly=True):
         """他のサービスの作品リンクの取得"""
 
         def _chooselink(others, service):
+            part, how = self._choosepare[service]
             for o in others:
                 link = o.get('href')
-                _verbose('other link: ', link)
-                if service == 'rental' and '/rental/' in link:
-                    return link.replace('/ppr', '')
-                elif service == 'videoa' and '/digital/videoa/' in link:
-                    return link
-                elif service == 'dvd' and '/mono/dvd/' in link:
-                    return link
-            return False
+                if part in link:
+                    return how(link)
+            return ''
 
-        others = self._he.iterfind('.//ul[@class="others"]/li/a')
-        opath = _chooselink(others, service)
+        _verbose('Getting otherslink...')
+        opath = _chooselink(self._he.iterfind('.//ul[@class="others"]/li/a'),
+                            service)
 
         if not opath and firmly:
             # 「他のサービスでこの作品を見る」欄がないときに「他の関連商品を見る」で探してみる
@@ -1844,28 +1842,23 @@ class DMMParser:
 
             resp, he_rel = open_url(searlurl)
 
-            ttl_nr = _normalize(self._sm['title'])
-            _verbose('title norm: ', ttl_nr)
-            ttl_s = _p_serial.findall(self._sm['title'])
+            ttl_nr, ttl_s = _uniformize(self._sm['title'])
+            _verbose('title norm: ', ttl_nr, ttl_s)
 
             others = filter(lambda t: _compare_title(t.text, ttl_nr, ttl_s),
                             he_rel.iterfind('.//p[@class="ttl"]/a'))
-            opath = _chooselink(others, service)
+            opath = _chooselink(others, service).split('?')[0]
 
-        return opath.split('?')[0] if opath else False
+        return _up.urljoin(_BASEURL_DMM, opath) if opath else False
 
     def _link2other(self, url, tag, release):
         return '※[[{}版>{}]]のリリースは{}。'.format(tag, url, release)
 
-    def _get_otherscontent(self, *service):
+    def _get_otherscontent(self, service):
         """他サービス版の情報取得"""
-        for s in service:
-            others_url = self._get_otherslink(s)
-            if others_url:
-                _verbose('others link gotten')
-                break
-        else:
-            _verbose('missing others links')
+        others_url = self._get_otherslink(service)
+        if not others_url:
+            _verbose('Others link not found')
             return False
 
         resp, he_others = open_url(others_url)
@@ -2025,18 +2018,15 @@ class DMMParser:
                 self._sm['actress'],
                 getattr(args, 'smm', False) and service == 'dvd')
 
-            # レンタル版で出演者情報がなかった/不足しているかもなとき他のサービスで調べてみる
-            if self._deeper and \
-               (service == 'rental' or self.data_replaced == 'rental') and \
-               (not self._sm['actress'] or self._force_chk_sale) and \
-               getattr(args, 'check_rltd'):
-
+            # レンタル版で出演者情報がない/不足しているかもなとき他のサービスで調べてみる
+            if self._deeper and args.check_rltd and self._force_chk_sale:
                 _verbose('possibility missing performers, checking others...')
-                other_data = self._get_otherscontent('videoa', 'dvd')
+                other_data = self._get_otherscontent(self._force_chk_sale[1])
 
                 if other_data and other_data['actress']:
-                    self._sm['actress'].extend(a for a in other_data['actress']
-                                               if a not in self._sm['actress'])
+                    self._sm['actress'].extend(
+                        filter(lambda a: a not in self._sm['actress'],
+                               other_data['actress']))
 
         return ((key, self._sm[key]) for key in self._sm if self._sm[key])
 
