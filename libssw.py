@@ -1196,10 +1196,10 @@ def _compare_title(cand, title, ttl_s=None):
     cand, cand_s = _uniformize(cand.strip())
     _verbose('cand norm: ', cand, cand_s)
 
-    if not ttl_s:
-        return cand == title
-    else:
+    if ttl_s or cand_s:
         return title.startswith(cand) and ttl_s == cand_s
+    else:
+        return cand == title
 
 
 class _LongTitleError(Exception):
