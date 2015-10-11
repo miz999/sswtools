@@ -345,7 +345,6 @@ _ReturnVal = _namedtuple('ReturnVal',
                          ('release', 'pid', 'title', 'title_dmm', 'url',
                           'time', 'maker', 'label', 'series',
                           'wktxt_a', 'wktxt_t'))
-
 _NiS = _namedtuple('n_i_s', 'sid,name')
 
 _p_age = _re.compile(r'(\(\d+?\))$')
@@ -550,8 +549,8 @@ def _build_image_url(service, cid):
     """画像URL作成"""
     _verbose('force building image url')
     suffix = ('js', 'jp') if service == 'ama' else ('ps', 'pl')
-    return tuple(_up.urljoin(_IMG_URL[service], '{0}/{0}{1}.jpg'.format(cid, s))
-                 for s in suffix)
+    return tuple(_up.urljoin(_IMG_URL[service],
+                             '{0}/{0}{1}.jpg'.format(cid, s)) for s in suffix)
 
 
 _sp_expansion = ((_re.compile('@{media}'), 'media'),
@@ -830,9 +829,9 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                               summ['title_dmm'],
                                               summ['url'],
                                               summ['time'],
-                                              summ.values('maker', 'maker_id'),
-                                              summ.values('label', 'label_id'),
-                                              summ.values('series', 'series_id'),
+                                              summ('maker', 'maker_id'),
+                                              summ('label', 'label_id'),
+                                              summ('series', 'series_id'),
                                               wktxt_a=(),
                                               wktxt_t=wktxt_t)
     elif resp.status != 200:
@@ -874,7 +873,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     # タイトルの調整
     #
     # 削除依頼対応
-    for dl in _libssw.HIDE_NAMES.values():
+    for dl in _libssw.HIDE_NAMES_V:
         summ['title'] = summ['title'].replace(dl, '').strip()
 
     on_dmm = summ['title']
@@ -972,9 +971,9 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                                              summ['title_dmm'],
                                              summ['url'],
                                              summ['time'],
-                                             summ.values('maker', 'maker_id'),
-                                             summ.values('label', 'label_id'),
-                                             summ.values('series', 'series_id'),
+                                             summ('maker', 'maker_id'),
+                                             summ('label', 'label_id'),
+                                             summ('series', 'series_id'),
                                              wikitext_a,
                                              wikitext_t)
     else:

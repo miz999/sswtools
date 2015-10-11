@@ -863,14 +863,6 @@ def load_cache(stem, default=None, expire=7200):
 _REDIRECTS = load_cache(_RDRDFILE, default=_REDIRECTS)
 
 
-_t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
-
-
-def trans_filename(filename):
-    """ファイル名に使用できない文字列の置き換え"""
-    return filename.translate(_t_filename)
-
-
 def files_exists(mode, *files):
     """同名のファイルが存在するかどうかチェック"""
     for f in files:
@@ -903,6 +895,14 @@ def gen_no_omits(no_omit=None):
 def le80bytes(string, encoding='euc_jisx0213'):
     """Wikiページ名最大長(80バイト)チェック"""
     return len(bytes(string, encoding)) <= 80
+
+
+_t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
+
+
+def trans_filename(filename):
+    """ファイル名に使用できない文字列の置き換え"""
+    return filename.translate(_t_filename)
 
 
 _t_wikisyntax = str.maketrans('[]~', '［］～')
@@ -1342,7 +1342,7 @@ class __TrySMM:
             if resp.status != 200:
                 _verbose('smm search failed: url={}, status={}'.format(
                     search_url, resp.status))
-                return
+                return None
 
             # SMM上で年齢認証済みかどうかの確認
             confirm = he_result.get_element_by_id('confirm', None)
@@ -1352,13 +1352,13 @@ class __TrySMM:
                 self._cookie = get_cookie()
                 if not self._cookie:
                     _emsg('W', 'SMMの年齢認証が完了していません。')
-                    return
+                    return None
             else:
                 _verbose('Age confirmed')
                 return he_result
         else:
             _emsg('W', 'SMMの年齢認証が完了していません。')
-            return
+            return None
 
     def _is_existent(self, name):
         """その名前の女優が実際にいるかどうかDMM上でチェック"""
@@ -1432,8 +1432,7 @@ class __TrySMM:
             prod_url = _up.urljoin(_BASEURL_SMM, path)
             _verbose('smm: prod_url: ', prod_url)
 
-            resp, he_prod = open_url(
-                prod_url, set_cookie=self._cookie)
+            resp, he_prod = open_url(prod_url, set_cookie=self._cookie)
 
             pid_smm = he_prod.find(
                 './/div[@class="detailline"]/dl/dd[7]').text.strip()
@@ -1508,6 +1507,7 @@ class DMMParser:
                               _TITLE_FROM_OFFICIAL):
                 _verbose('title from maker: ', key)
                 return _TITLE_FROM_OFFICIAL[key]
+            return False
 
         try:
             tdmm = self._he.find('.//img[@class="tdmm"]').get('alt')
@@ -1650,7 +1650,7 @@ class DMMParser:
             # 他のサービスを強制チェック
             if srid in _FORCE_CHK_SALE_SR:
                 _verbose('series forece chk other: ',
-                        _FORCE_CHK_SALE_SR[srid])
+                         _FORCE_CHK_SALE_SR[srid])
                 self._force_chk_sale = True
 
             _verbose('series: ', self._sm['series'])

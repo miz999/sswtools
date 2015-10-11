@@ -851,7 +851,8 @@ def parse_outfile(args, make):
         libssw.files_exists('w', *chk)
         writemode = 'x'
 
-    return OutFile(actr=outf_actr, tbl=outf_tbl, suffix=suffix, writemode=writemode)
+    return OutFile(actr=outf_actr, tbl=outf_tbl, suffix=suffix,
+                   writemode=writemode)
 
 
 def det_filterpatn(args):
@@ -1117,8 +1118,7 @@ class BuildPage:
 
     def _tail(self):
         # DMM上のタイトルを変更している作品のDMMタイトルをコメントで残す
-        yield '\n■関連ページ'
-        yield '-[[]]\n'
+        yield '\n■関連ページ\n-[[]]\n'
 
         # DMM上のタイトルを変更している作品のDMMタイトルをコメントで残す
         if self._titles_dmm:
@@ -1453,7 +1453,8 @@ def main(argv=None):
             wikitexts.sort(key=attrgetter(k))
 
         if args.add_column:
-            add_header = '|'.join(c.split(':')[0] for c in args.add_column) + '|'
+            add_header = '|'.join(
+                c.split(':')[0] for c in args.add_column) + '|'
             args.add_column = tuple(truncate_th(args.add_column))
         else:
             add_header = ''
