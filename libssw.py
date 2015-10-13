@@ -737,8 +737,8 @@ class Summary:
 
 def sub(p_list, string, n=False):
     """re.sub()、re.subn()ラッパー"""
-    m = p_list[0].subn if n else p_list[0].sub
-    return m(p_list[1], string)
+    return p_list[0].subn(p_list[1], string) if n else \
+        p_list[0].sub(p_list[1], string)
 
 
 def copy2clipboard(string):
@@ -786,12 +786,62 @@ def extr_num(string):
     return _p_number.findall(string)
 
 
+def cvt2int(item):
+    """数値だけ取り出してintに変換"""
+    return int(extr_num(item)[0]) if item else 0
+
+
+def _ucnormalize(string):
+    """unicode正規化"""
+    return _unicodedata.normalize('NFKC', string)
+
+
+def inprogress(msg):
+    """「{}中...」メッセージ"""
+    if not _VERBOSE:
+        print('{}  '.format(msg), end='\r', file=_sys.stderr, flush=True)
+
+
 p_list_article = _re.compile(r'/article=(.+?)/')
 
 
 def get_article(url):
     """DMM URLからarticle=部を抽出"""
     return p_list_article.findall(url)[0]
+
+
+def le80bytes(string, encoding='euc_jisx0213'):
+    """Wikiページ名最大長(80バイト)チェック"""
+    return len(bytes(string, encoding)) <= 80
+
+
+_t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
+
+
+def trans_filename(filename):
+    """ファイル名に使用できない文字列の置き換え"""
+    return filename.translate(_t_filename)
+
+
+_t_wikisyntax = str.maketrans('[]~', '［］～')
+
+
+def trans_wikisyntax(wikitext):
+    """Wiki構文と衝突する記号の変換"""
+    return wikitext.translate(_t_wikisyntax)
+
+
+def files_exists(mode, *files):
+    """同名のファイルが存在するかどうかチェック"""
+    for f in files:
+        if f in {_sys.stdin, _sys.stdout}:
+            continue
+        _verbose('file: ', f)
+        isexist = _os.path.exists(f)
+        if mode == 'r' and not isexist:
+            _emsg('E', 'ファイルが見つかりません: ', f)
+        elif mode == 'w' and isexist:
+            _emsg('E', '同名のファイルが存在します (-r で上書きします): ', f)
 
 
 def save_cache(target, stem):
@@ -863,25 +913,6 @@ def load_cache(stem, default=None, expire=7200):
 _REDIRECTS = load_cache(_RDRDFILE, default=_REDIRECTS)
 
 
-def files_exists(mode, *files):
-    """同名のファイルが存在するかどうかチェック"""
-    for f in files:
-        if f in {_sys.stdin, _sys.stdout}:
-            continue
-        _verbose('file: ', f)
-        isexist = _os.path.exists(f)
-        if mode == 'r' and not isexist:
-            _emsg('E', 'ファイルが見つかりません: ', f)
-        elif mode == 'w' and isexist:
-            _emsg('E', '同名のファイルが存在します (-r で上書きします): ', f)
-
-
-def inprogress(msg):
-    """「{}中...」メッセージ"""
-    if not _VERBOSE:
-        print('{}  '.format(msg), end='\r', file=_sys.stderr, flush=True)
-
-
 def gen_no_omits(no_omit=None):
     """除外しない対象セットの作成"""
     if isinstance(no_omit, int):
@@ -890,27 +921,6 @@ def gen_no_omits(no_omit=None):
         return set(_OMITTYPE)
     else:
         return set(_OMITTYPE[i] for i in no_omit)
-
-
-def le80bytes(string, encoding='euc_jisx0213'):
-    """Wikiページ名最大長(80バイト)チェック"""
-    return len(bytes(string, encoding)) <= 80
-
-
-_t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
-
-
-def trans_filename(filename):
-    """ファイル名に使用できない文字列の置き換え"""
-    return filename.translate(_t_filename)
-
-
-_t_wikisyntax = str.maketrans('[]~', '［］～')
-
-
-def trans_wikisyntax(wikitext):
-    """Wiki構文と衝突する記号の変換"""
-    return wikitext.translate(_t_wikisyntax)
 
 
 def gen_ntfcols(tname, fsource: 'sequence'):
@@ -1029,11 +1039,6 @@ class __OpenUrl:
         return resp, _fromstring(html) if to_elems else html
 
 open_url = __OpenUrl()
-
-
-def _ucnormalize(string):
-    """unicode正規化"""
-    return _unicodedata.normalize('NFKC', string)
 
 
 def _check_omitword(title):
@@ -1366,8 +1371,7 @@ class __TrySMM:
     def _is_existent(self, name):
         """その名前の女優が実際にいるかどうかDMM上でチェック"""
         _verbose('is existent: ', name)
-        url = '{}/-/search/=/searchstr={}/'.format(BASEURL_ACT,
-                                                   _up.quote(name))
+        url = '{}/-/search/=/searchstr={}/'.format(BASEURL_ACT, quote(name))
         while True:
             resp, he = open_url(url)
             if any(name == a.find('td[2]/a').text.strip()
@@ -1836,7 +1840,7 @@ class DMMParser:
 
             searlurl = '{}/search/=/searchstr={}/cid={}/{}'.format(
                 _BASEURL_DMM,
-                _up.quote(searstr),
+                quote(searstr),
                 self._sm['cid'],
                 'limit=120/related=1/sort=rankprofile/view=text/')
 
@@ -2127,7 +2131,7 @@ def sort_by_id(products, reverse=False):
             prefix, serial = split_pid(products[url].pid)
             yield url, '{0}{1:0>{2}}'.format(prefix, serial, maxdigit)
 
-    maxdigit = max(extr_num(products[p].pid)[0] for p in products)
+    maxdigit = max(cvt2int(products[p].pid) for p in products)
 
     return (url for url, pid in sorted(_make_items(products, maxdigit),
                                        key=_itemgetter(1),
@@ -2244,11 +2248,6 @@ def ret_numofpfmrs(etc):
         number = -2
 
     return number
-
-
-def cvt2int(item):
-    """数値だけ取り出してintに変換"""
-    return int(extr_num(item)[0]) if item else 0
 
 
 def from_tsv(files):
