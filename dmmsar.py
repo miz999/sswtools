@@ -354,6 +354,9 @@ DMMから女優、シリーズ、メーカー、あるいはレーベルのID(DM
     そちらに置き換える。
     デフォルトの挙動はdmm2ssw.pyと逆。
 
+--disable-check-related'
+    他メディアやサービスの情報収集を行わない。
+
 --disable-check-listpage
     Wiki上の実際の一覧ページを探さない。
 
@@ -734,6 +737,11 @@ def get_args(argv):
     argparser.add_argument('--disable-check-listpage',
                            help='Wiki上の実際の一覧ページを探さない',
                            dest='check_listpage',
+                           action='store_false',
+                           default=True)
+    argparser.add_argument('--disable-check-related',
+                           help='他メディアやサービスの情報収集を行わない',
+                           dest='check_rltd',
                            action='store_false',
                            default=True)
     argparser.add_argument('--disable-longtitle',
@@ -1304,7 +1312,11 @@ def main(argv=None):
                                  start_pid_s=args.start_pid_s,
                                  filter_pid_s=p_filter_pid_s,
                                  pass_bd=args.pass_bd,
-                                 n_i_s=args.n_i_s)
+                                 n_i_s=args.n_i_s,
+                                 longtitle=args.longtitle,
+                                 check_rental=args.check_rental,
+                                 check_rltd=args.check_rltd,
+                                 check_smm=args.smm)
 
     if args.retrieval in ('maker', 'label', 'series'):
         keyiter = libssw.sort_by_id(products)

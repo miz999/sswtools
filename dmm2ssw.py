@@ -261,6 +261,9 @@ DMM作品ページのURL
     レンタル先行レーベルなのにレンタル以外のサービスの作品URLだった
     場合にレンタル版の方をチェックしない。
 
+--disable-check-related'
+    他メディアやサービスの情報収集を行わない
+
 --disable-check-bluray
     入力されたURLがBlu-ray版だったときにDVD版の有無をチェックしない。
 
@@ -462,7 +465,7 @@ def _get_args(argv, p_args):
                            action='store_false',
                            default=getattr(p_args, 'check_rental', True))
     argparser.add_argument('--disable-check-related',
-                           help='レンタル版のときの他メディアの情報収集を行わない',
+                           help='他メディアやサービスの情報収集を行わない',
                            dest='check_rltd',
                            action='store_false',
                            default=getattr(p_args, 'check_rltd', True))
@@ -841,11 +844,15 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
     # html = _libssw.sub(sp_href, html)
 
     # HTMLの解析
-    if dmmparser is None:
-        dmmparser = _libssw.DMMParser(autostrip=args.autostrip)
+    if not dmmparser:
+        dmmparser = _libssw.DMMParser(autostrip=args.autostrip,
+                                      longtitle=args.longtitle,
+                                      check_rental=args.check_rental,
+                                      check_rltd=args.check_rltd,
+                                      check_smm=args.smm)
 
     try:
-        summ.update(dmmparser(he, service, summ, args, ignore_pfmrs=rawpfmrs))
+        summ.update(dmmparser(he, service, summ, ignore_pfmrs=rawpfmrs))
     except _libssw.OmitTitleException as e:
         # 除外対象なので中止
         return False, 'Omitted', (e.key, e.word)

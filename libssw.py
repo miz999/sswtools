@@ -22,7 +22,6 @@ from pathlib import Path as _Path
 from itertools import chain as _chain
 from copy import deepcopy as _deepcopy
 from http.client import HTTPException as _HTTPException
-from argparse import Namespace as _apNamespace
 
 try:
     import httplib2 as _httplib2
@@ -1460,7 +1459,9 @@ _try_smm = __TrySMM()
 
 class OmitTitleException(Exception):
     """総集編など除外タイトル例外"""
-    pass
+    def __init__(self, key, word):
+        self.key = key
+        self.word = word
 
 
 _TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
@@ -1478,6 +1479,8 @@ class DMMParser:
     def __init__(self, no_omits=gen_no_omits(), patn_pid=None,
                  start_date=None, start_pid_s=None, filter_pid_s=None,
                  autostrip=True, pass_bd=False, n_i_s=False,
+                 longtitle=False, check_rental=False, check_rltd=False,
+                 check_smm=False,
                  deeper=True, quiet=False):
         self._no_omits = no_omits
         self._patn_pid = patn_pid
@@ -1487,6 +1490,10 @@ class DMMParser:
         self._autostrip = autostrip
         self._pass_bd = pass_bd
         self._n_i_s = n_i_s
+        self._longtitle = longtitle
+        self._check_rental = check_rental
+        self._check_rltd = check_rltd
+        self._check_smm = check_smm
         self._deeper = deeper
         self._quiet = quiet
 
@@ -1503,8 +1510,8 @@ class DMMParser:
             _verbose('Omit exception ({}, {})'.format(key, hue))
             raise OmitTitleException(key, hue)
 
-    def _ret_title(self, chk_longtitle):
-        """タイトルの採取"""
+    def _ret_title(self):
+        """タイトルの採取 (DMMParser)"""
         def _det_longtitle_maker():
             for key in filter(lambda k: self._sm['cid'].startswith(k),
                               _TITLE_FROM_OFFICIAL):
@@ -1520,7 +1527,7 @@ class DMMParser:
         _verbose('title dmm: ', tdmm)
 
         tmkr = ''
-        if chk_longtitle:
+        if self._longtitle:
             titleparser = _det_longtitle_maker()
             if titleparser:
                 # Apacheの作品タイトルはメーカー公式から
@@ -1891,7 +1898,7 @@ class DMMParser:
 
     def _check_rltditem(self, media):
         """
-        他メディア(「ご注文前にこちらの商品もチェック！」の欄)があればそれへのリンクを返す
+        DVD⇔Blu-ray (「ご注文前にこちらの商品もチェック！」の欄)関連商品リンクを返す
         """
         _verbose('checking {}...'.format(media))
         iterrltd = self._he.iterfind(
@@ -1912,8 +1919,7 @@ class DMMParser:
         _verbose('rltditem not found.')
         return False
 
-    def __call__(self, he, service, sm=Summary(),
-                 args=_apNamespace, ignore_pfmrs=False):
+    def __call__(self, he, service, sm=Summary(), ignore_pfmrs=False):
         """作品ページの解析"""
         self._he = he
         self._sm = sm
@@ -1934,8 +1940,7 @@ class DMMParser:
 
         # タイトルの取得
         if not self._sm['title'] or self._sm['title'].startswith('__'):
-            self._sm['title'], self._sm['title_dmm'] = self._ret_title(
-                getattr(args, 'longtitle', True))
+            self._sm['title'], self._sm['title_dmm'] = self._ret_title()
 
         # 除外作品チェック
         omitinfo = check_omit(self._sm['title'],
@@ -1961,7 +1966,7 @@ class DMMParser:
         sale_data = None
         # if self.deeper and service != 'ama' and __name__ != '__main__':
         if self._deeper and service != 'ama':
-            if self._rental_pcdr and args.check_rental:
+            if self._rental_pcdr and self._check_rental:
                 # レンタル先行メーカーチェック
                 if service != 'rental':
                     # レンタル先行メーカーなのにレンタル版のURLじゃなかったらレンタル版を
@@ -1979,7 +1984,7 @@ class DMMParser:
                         # sale_rel = self._sm['release']
                         self._sm.update(rental_data)
 
-                elif args.check_rltd:
+                elif self._check_rltd:
                     # レンタル版URLだったときのセル版へのリンクチェック
                     # セル版があればそれへのリンクとリリース日を、なければレンタル版と付記
                     _verbose('checking sale...')
@@ -2020,10 +2025,10 @@ class DMMParser:
             # self._sm['actress'] = list(
             self._sm['actress'] = self._ret_performers(
                 self._sm['actress'],
-                getattr(args, 'smm', False) and service == 'dvd')
+                self._check_smm and service == 'dvd')
 
             # レンタル版で出演者情報がない/不足しているかもなとき他のサービスで調べてみる
-            if self._deeper and args.check_rltd and self._force_chk_sale:
+            if self._deeper and self._check_rltd and self._force_chk_sale:
                 _verbose('possibility missing performers, checking others...')
                 other_data = self._get_otherscontent(self._force_chk_sale[1])
 
@@ -2063,7 +2068,7 @@ class DMMTitleListParser:
         return article
 
     def _ret_titles(self, titles):
-        """作品タイトルとURLの取得"""
+        """作品タイトルとURLの取得 (DMMTitleListParser)"""
         def omit(key, word):
             if self._show_info or _VERBOSE:
                 _emsg('I', 'ページを除外しました: cid={}, {:<20}'.format(
