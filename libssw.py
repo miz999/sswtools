@@ -1177,7 +1177,8 @@ def _uniformize(string):
     string = sub(_sp_ltbracket_h, string)
     string = sub(_sp_ltbracket_t, string)
 
-    serial = _p_serial.findall(string) or ''
+    serial = _p_serial.findall(string)
+    serial = serial[0] if serial else ''
 
     string = sub(_sp_nowrdchr, string)
     string = _ucnormalize(string).replace(' ', '').lower()
