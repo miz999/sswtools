@@ -63,15 +63,10 @@ _SVC_URL = {'http://www.dmm.co.jp/mono/dvd/':       'dvd',
             'http://www.dmm.co.jp/digital/videoc/': 'ama'}
 
 _SERVICEDIC = {
-    'all':    ('', ''),
-    'dvd':    ('n1=FgRCTw9VBA4GCF5WXA__/n2=Aw1fVhQKX19XC15nV0AC/',
-               'mono/dvd'),
-    'rental': ('n1=FgRCTw9VBA4GF1RWR1cK/n2=Aw1fVhQKX0JIF25cRVI_/',
-               'rental'),
-    'video':  ('n1=FgRCTw9VBA4GAVhfWkIHWw__/n2=Aw1fVhQKX1ZRAlhMUlo5QQgBU1lR/',
-               'digital/videoa'),
-    'ama':    ('n1=FgRCTw9VBA4GAVhfWkIHWw__/n2=Aw1fVhQKX1ZRAlhMUlo5QQgBU1lT/',
-               'digital/videoc')
+    'dvd':    'mono/dvd',
+    'rental': 'rental',
+    'video':  'digital/videoa',
+    'ama':    'digital/videoc'
 }
 
 # シリーズとして扱うとめんどくさいシリーズ
@@ -702,10 +697,10 @@ class Summary:
             v = getattr(self, a)
             if a == 'note' and not v:
                 break
-            if isinstance(v, int):
-                v = str(v) if v else ''
-            elif isinstance(v, list):
+            elif isinstance(v, (list, tuple)):
                 v = ','.join(v)
+            else:
+                v = str(v) if v else ''
             yield v
 
     def tsv(self, *args):
@@ -1182,8 +1177,7 @@ def _uniformize(string):
     string = sub(_sp_ltbracket_h, string)
     string = sub(_sp_ltbracket_t, string)
 
-    serial = _p_serial.findall(string)
-    serial = serial and serial[0]
+    serial = _p_serial.findall(string) or ''
 
     string = sub(_sp_nowrdchr, string)
     string = _ucnormalize(string).replace(' ', '').lower()
@@ -1198,7 +1192,7 @@ def _compare_title(cand, title, ttl_s=None):
     title はあらかじめ _uniformize() に通しておくこと
     """
     cand, cand_s = _uniformize(cand.strip())
-    _verbose('cand norm: ', cand, cand_s)
+    _verbose('cand norm: {}, {}'.format(cand, cand_s))
 
     if ttl_s or cand_s:
         return title.startswith(cand) and ttl_s == cand_s
@@ -1290,7 +1284,8 @@ class _RetrieveTitlePlum:
         serial = cid.replace(self._prefix, '')
         if len(serial) < 3:
             serial = '{:0>3}'.format(serial)
-        url = 'http://www.plum-web.com/?view=detail&ItemCD=SE{}&label=SE'.format(serial)
+        url = 'http://www.plum-web.com/?view=detail&ItemCD=SE{}&label=SE'.format(
+            serial)
 
         cookie = ''
         for i in range(5):
@@ -1339,9 +1334,10 @@ class __TrySMM:
         self._cookie = 'afsmm=10163915; TONOSAMA_BATTA=0bf596e86b6853db3b7cc52cdd4ff239; ses_age=18'
 
     def _search(self, cate, pid, title):
+
         search_url = '{}/search/image/-_-/cate/{}/word/{}'.format(
-            _BASEURL_SMM, cate, pid)
-            # _BASEURL_SMM, _up.quote('{} {}'.format(pid, title[:50])))
+            # _BASEURL_SMM, cate, pid)
+            _BASEURL_SMM, cate, _up.quote('{} {}'.format(pid, title[:50])))
 
         for i in range(2):
             resp, he_result = open_url(search_url, set_cookie=self._cookie)
@@ -1464,15 +1460,14 @@ class OmitTitleException(Exception):
         self.word = word
 
 
-_TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
-                        '84scop': _ret_scoop,      # SCOOP
-                        '84scpx': _ret_scoop,      # SCOOP
-                        # 'h_113se': _ret_plum_se, # 素人援交生中出し(プラム)
-                        }
-
-
 class DMMParser:
     """DMM作品ページの解析"""
+    _TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
+                            '84scop': _ret_scoop,      # SCOOP
+                            '84scpx': _ret_scoop,      # SCOOP
+                            # 'h_113se': _ret_plum_se, # 素人援交生中出し(プラム)
+    }
+
     _p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
     _p_more = _re.compile(r"url: '(.*?)'")
 
@@ -1514,9 +1509,9 @@ class DMMParser:
         """タイトルの採取 (DMMParser)"""
         def _det_longtitle_maker():
             for key in filter(lambda k: self._sm['cid'].startswith(k),
-                              _TITLE_FROM_OFFICIAL):
+                              self._TITLE_FROM_OFFICIAL):
                 _verbose('title from maker: ', key)
-                return _TITLE_FROM_OFFICIAL[key]
+                return self._TITLE_FROM_OFFICIAL[key]
             return False
 
         try:
@@ -2590,13 +2585,13 @@ def ret_joindata(join_d, args):
 def join_priurls(retrieval, *keywords, service='dvd'):
     """DMM基底URLの作成"""
     return tuple('{}/{}/-/list/=/article={}/id={}/sort=date/'.format(
-        _BASEURL_DMM, _SERVICEDIC[service][1], retrieval, k) for k in keywords)
+        _BASEURL_DMM, _SERVICEDIC[service], retrieval, k) for k in keywords)
 
 
 def build_produrl(service, cid):
     """DMM作品ページのURL作成"""
     return '{}/{}/-/detail/=/cid={}/'.format(
-        _BASEURL_DMM, _SERVICEDIC[service][1], cid)
+        _BASEURL_DMM, _SERVICEDIC[service], cid)
 
 
 def getnext_text(elem, xpath=False):
