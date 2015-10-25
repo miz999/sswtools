@@ -531,7 +531,6 @@ p_neghirag = _re.compile(r'[^ぁ-ゞー]')
 
 _p_number = _re.compile(r'\d+')
 _p_interlink = _re.compile(r'(\[\[.+?\]\])')
-_p_serial = _re.compile(r'(\d+)$')
 
 _sp_ltbracket_h = (_re.compile(r'^(?:【.+?】)+?'), '')
 _sp_ltbracket_t = (_re.compile(r'(?:【.+?】)+?$'), '')
@@ -1177,8 +1176,8 @@ def _uniformize(string):
     string = sub(_sp_ltbracket_h, string)
     string = sub(_sp_ltbracket_t, string)
 
-    serial = _p_serial.findall(string)
-    serial = serial[0] if serial else ''
+    serial = extr_num(string)
+    serial = serial[-1] if serial else ''
 
     string = sub(_sp_nowrdchr, string)
     string = _ucnormalize(string).replace(' ', '').lower()
