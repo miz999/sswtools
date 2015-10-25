@@ -3079,6 +3079,7 @@ def clear_cache():
     """キャッシュのクリア"""
     _rmtree(str(_CACHEDIR), ignore_errors=True)
     _emsg('I', 'キャッシュをクリアしました。')
+    open_url.__init__()
 
 
 def cache_info():
