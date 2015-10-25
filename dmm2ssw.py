@@ -536,6 +536,10 @@ def _get_args(argv, p_args):
     if args.cache_info:
         _libssw.cache_info()
 
+    # キャッシュディレクトリの削除
+    if args.clear_cache:
+        _libssw.clear_cache()
+
     if args.fastest:
         for a in ('follow_rdr', 'smm', 'check_rental', 'check_listpage',
                   'check_rltd', 'longtitle'):
@@ -1006,10 +1010,6 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
                     _libssw.open_ssw(a[1] or a[0])
             if args.table:
                 _libssw.open_ssw(summ['list_page'])
-
-    # キャッシュディレクトリの削除
-    if args.clear_cache:
-        _libssw.clear_cache()
 
 
 if __name__ == '__main__':

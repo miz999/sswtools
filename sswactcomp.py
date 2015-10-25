@@ -199,6 +199,10 @@ def get_args():
     verbose = libssw.def_verbose(VERBOSE, libssw.ownname(__file__))
     verbose('verbose mode on')
 
+    # キャッシュディレクトリの削除
+    if args.clear_cache:
+        libssw.clear_cache()
+
     if args.fastest:
         for a in ('follow_rdr', 'check_rental', 'pass_bd', 'check_listpage'):
             setattr(args, a, False)
@@ -436,10 +440,6 @@ def main():
     print()
     if args.out:
         fd.close()
-
-    # キャッシュディレクトリの削除
-    if args.clear_cache:
-        libssw.clear_cache()
 
 
 if __name__ == '__main__':

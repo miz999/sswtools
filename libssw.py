@@ -1418,7 +1418,7 @@ class __TrySMM:
         # DMM、SMM各タイトルを正規化して比較、一致したらそのページを読み込んで
         # 出演者情報を取得
         title, title_s = _uniformize(title)
-        _verbose('title norm: ', title, title_s)
+        _verbose('title norm: {}, {}'.format(title, title_s))
 
         for item in items:
             path = item.find('a').get('href')
@@ -3079,7 +3079,7 @@ def show_diff(flines, tlines, fdesc, tdesc, context=True):
 def clear_cache():
     """キャッシュのクリア"""
     _rmtree(str(_CACHEDIR), ignore_errors=True)
-    _verbose('cache cleared')
+    _emsg('I', 'キャッシュをクリアしました。')
 
 
 def cache_info():

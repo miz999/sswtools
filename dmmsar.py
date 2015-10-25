@@ -830,6 +830,10 @@ def get_args(argv):
                   'check_listpage', 'longtitle'):
             setattr(args, a, False)
 
+    # キャッシュディレクトリの削除
+    if args.clear_cache:
+        libssw.clear_cache()
+
     verbose('args: ', args)
     return args
 
@@ -1503,10 +1507,6 @@ def main(argv=None):
 
         if args.out:
             fd.close()
-
-    # キャッシュディレクトリの削除
-    if args.clear_cache:
-        libssw.clear_cache()
 
 
 if __name__ == '__main__':
