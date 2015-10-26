@@ -1175,8 +1175,7 @@ def _uniformize(string):
     """タイトルから【.+?】と非unicode単語文字を除いて正規化"""
     string = sub(_sp_ltbracket_h, string)
     string = sub(_sp_ltbracket_t, string)
-    string = sub(_sp_nowrdchr, string)
-    string = _ucnormalize(string).replace(' ', '').lower()
+    string = sub(_sp_nowrdchr, string).lower()
 
     serial = extr_num(string)
     serial = serial[-1] if serial else ''
@@ -1193,10 +1192,9 @@ def _compare_title(cand, title, ttl_s=None):
     cand, cand_s = _uniformize(cand.strip())
     _verbose('cand norm:  {}, {}'.format(cand, cand_s))
 
-    if ttl_s or cand_s:
-        return title.startswith(cand) and ttl_s == cand_s
-    else:
-        return cand == title
+    is_startsw = title.startswith(cand) or cand.startswith(title)
+
+    return (is_startsw and ttl_s == cand_s) if ttl_s or cand_s else is_startsw
 
 
 class _LongTitleError(Exception):

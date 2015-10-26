@@ -723,8 +723,7 @@ def _format_wikitext_t(summ, astr, dstr, dir_col, diff_page, add_column):
     return wtext
 
 
-def main(props=_libssw.Summary(), p_args=_argparse.Namespace,
-         dmmparser=None):
+def main(props=_libssw.Summary(), p_args=_argparse.Namespace, dmmparser=None):
 
     # モジュール呼び出しの場合継承したコマンドライン引数は無視
     argv = [props.url] if __name__ != '__main__' else _sys.argv[1:]
