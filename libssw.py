@@ -532,8 +532,7 @@ p_neghirag = _re.compile(r'[^ぁ-ゞー]')
 _p_number = _re.compile(r'\d+')
 _p_interlink = _re.compile(r'(\[\[.+?\]\])')
 
-_sp_ltbracket_h = (_re.compile(r'^(?:【.+?】)+?'), '')
-_sp_ltbracket_t = (_re.compile(r'(?:【.+?】)+?$'), '')
+_sp_ltbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
 _sp_nowrdchr = (_re.compile(r'\W'), '')
 
 
@@ -784,11 +783,6 @@ def cvt2int(item):
     return int(extr_num(item)[0]) if item else 0
 
 
-def _ucnormalize(string):
-    """unicode正規化"""
-    return _unicodedata.normalize('NFKC', string)
-
-
 def inprogress(msg):
     """「{}中...」メッセージ"""
     if not _VERBOSE:
@@ -1034,6 +1028,60 @@ class __OpenUrl:
 open_url = __OpenUrl()
 
 
+_t_knum = str.maketrans('一二三四五六七八九〇壱弐参', '1234567890123')
+_p_kunit = _re.compile(r'[十拾百千]+|\d+')
+_TRANSUNIT = {'十': 10,
+              '拾': 10,
+              '百': 100,
+              '千': 1000}
+
+
+def _kansuji2arabic(kansuji):
+    """漢数字をアラビア数字に変換簡易版(1万未満まで)"""
+    transuji = kansuji.translate(_t_knum)
+
+    tempsuji = 0
+    unit = 1
+    result = 0
+    for k in reversed(_p_kunit.findall(transuji)):
+
+        if k not in _TRANSUNIT:
+            tempsuji = int(k)
+            result += tempsuji * unit
+            unit = 1
+        else:
+            unit = unit * _TRANSUNIT[k]
+
+    if unit > 1:
+        result += unit
+
+    return kansuji, str(result)
+
+
+_p_knum = _re.compile('[一二三四五六七八九十壱弐参拾百千〇]+')
+
+
+def _normalize(string):
+    """タイトル文字列を正規化
+
+    先頭と末尾の【.+?】くくりを除去
+    非unicode単語文字を除去(空白文字含む)
+    漢数字をアラビア数字に置き換え
+    連番らしきものがあれば付記
+    """
+    string = sub(_sp_ltbracket, string)
+    string = sub(_sp_nowrdchr, string).upper()
+    string = _unicodedata.normalize('NFKC', string)
+
+    for kn in _p_knum.findall(string):
+        string = string.replace(*_kansuji2arabic(kn))
+
+    serial = extr_num(string)
+    serial = serial[-1] if serial else ''
+
+    return string, serial
+
+
 def _check_omitword(title):
     """タイトル内の除外キーワードチェック"""
     for key in filter(lambda k: k in title, _OMITWORDS):
@@ -1042,41 +1090,18 @@ def _check_omitword(title):
 
 
 _p_omnivals = (
-    # 「20人/名」以上
-    _re.compile(r'(?:[2-9]\d|\d{3,})(?:人[^目]?|名)'),
-    _re.compile(r'(?:[二弐][一二三四五六七八九十〇壱弐参拾百千万億兆]'
-                r'|[三四五六七八九参百千][一二三四五六七八九十〇壱弐参拾百千万億兆]+'
-                r'|[一二三四五六七八九壱弐参百千][一二三四五六七八九十〇壱弐参拾百千万億兆]{2,})'
-                r'(?:人[^目]?|名)'),
-
-    # 「50(連)(発/射|SEX)」以上
-    _re.compile(r'(?:[5-9]\d|\d{3,})(?:連?[発射]|SEX)'),
-    _re.compile(r'(?:[五六七八九][一二三四五六七八九十〇壱弐参拾百千万億兆]'
-                r'|[一二三四五六七八九百千][一二三四五六七八九〇壱弐参拾百千万億兆]{2,})'
-                r'連?[発射]'),
-
-    # 「15本番」以上
-    _re.compile(r'(?:1[5-9]|[2-9]\d|\d{3,})本番'),
-    _re.compile(r'(?:[一十拾][五六七八九〇壱弐参拾百千万億兆]'
-                r'|[二三四五六七八九弐参百][一二三四五六七八九十〇壱弐参拾百千万億兆]'
-                r'|[一二三四五六七八九壱弐参拾百千][一二三四五六七八九〇壱弐参拾百千万億兆]{2,})'
-                r'本番'),
-    # 「4時間」以上
+    # 20人|名 以上
+    _re.compile(r'(?:[2-9]\d|\d{3,})(?:人[^目\d]?|名)'),
+    # 20(連)発(射) 以上
+    _re.compile(r'(?:[2-9]\d|\d{3,})連?[発射]'),
+    # 15本番/SEX 以上
+    _re.compile(r'(?:1[5-9]|[2-9]\d|\d{3,})(?:本番|SEX)', _re.I),
+    # 4時間 以上
     _re.compile(r'(?:[4-9]|\d{2,})時間'),
-    _re.compile(r'(?:[四五六七八九十拾百千]|'
-                r'[一二三四五六七八九十壱弐参拾百千][一二三四五六七八九十〇壱弐参拾百千万億兆]+)'
-                r'時間'),
-
-    # 「240分」以上
+    # 240分 以上
     _re.compile(r'(?:2[4-9]\d|[3-9]\d{2}|\d{4,})分'),
-    _re.compile(r'(?:[二弐][四五六七八九百千万億兆][一二三四五六七八九十〇壱弐参百千万億兆]'
-                r'|[三四五六七八九参百千万億兆][一二三四五六七八九〇壱弐参拾百千万億兆]{2}'
-                r'|[一二三四五六七八九十〇壱弐参拾百千万億兆]{4,})'
-                r'分'),
-
-    # 「(全)(n)タイトル」
+    # 全(n)タイトル
     _re.compile(r'(?:全|\d+)タイトル'),
-    _re.compile(r'(?:全|[一二三四五六七八九十〇壱弐参拾百千万億兆]+)タイトル'),
 )
 
 
@@ -1097,7 +1122,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
 
     def _check_omnivals(title):
         """隠れ総集編チェック(関連数値編)"""
-        title = _ucnormalize(title)
+        title = _normalize(title)[0]
         hit = tuple(_chain.from_iterable(
             p.findall(title) for p in _p_omnivals))
         if len(hit) > 1:
@@ -1184,25 +1209,13 @@ class NotKeyIdYet:
         return self._match(cand)
 
 
-def _uniformize(string):
-    """タイトルから【.+?】と非unicode単語文字を除いて正規化"""
-    string = sub(_sp_ltbracket_h, string)
-    string = sub(_sp_ltbracket_t, string)
-    string = sub(_sp_nowrdchr, string).lower()
-
-    serial = extr_num(string)
-    serial = serial[-1] if serial else ''
-
-    return string, serial
-
-
 def _compare_title(cand, title, ttl_s=None):
     """
     同じタイトルかどうか比較
 
-    title はあらかじめ _uniformize() に通しておくこと
+    title はあらかじめ _normalize() に通しておくこと
     """
-    cand, cand_s = _uniformize(cand.strip())
+    cand, cand_s = _normalize(cand.strip())
     _verbose('cand norm:  {}, {}'.format(cand, cand_s))
 
     is_startsw = title.startswith(cand) or cand.startswith(title)
@@ -1316,7 +1329,7 @@ class _RetrieveTitlePlum:
             _emsg('E', 'プラム公式サイトをうまく開けませんでした。')
 
         title = he.find('.//h2[@id="itemtitle"]').text.strip()
-        title = sub(_sp_ltbracket_h, title)
+        title = sub(_sp_ltbracket, title)
 
         return title
 
@@ -1427,7 +1440,7 @@ class __TrySMM:
 
         # DMM、SMM各タイトルを正規化して比較、一致したらそのページを読み込んで
         # 出演者情報を取得
-        title, title_s = _uniformize(title)
+        title, title_s = _normalize(title)
         _verbose('title norm: {}, {}'.format(title, title_s))
 
         for item in items:
@@ -1547,7 +1560,7 @@ class DMMParser:
 
         title = tmkr or tdmm
         title_dmm = tdmm if not _compare_title(title,
-                                               *_uniformize(tdmm)) else ''
+                                               *_normalize(tdmm)) else ''
 
         return title, title_dmm
 
@@ -1858,7 +1871,7 @@ class DMMParser:
 
             resp, he_rel = open_url(searlurl)
 
-            ttl_nr, ttl_s = _uniformize(self._sm['title'])
+            ttl_nr, ttl_s = _normalize(self._sm['title'])
             _verbose('title norm: ', ttl_nr, ttl_s)
 
             others = filter(lambda t: _compare_title(t.text, ttl_nr, ttl_s),
