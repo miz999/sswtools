@@ -1040,17 +1040,17 @@ def _kansuji2arabic(kansuji):
     """漢数字をアラビア数字に変換簡易版(1万未満まで)"""
     transuji = kansuji.translate(_t_knum)
 
-    tempsuji = 0
     unit = 1
     result = 0
     for k in reversed(_p_kunit.findall(transuji)):
 
         if k not in _TRANSUNIT:
-            tempsuji = int(k)
-            result += tempsuji * unit
+            result += int(k) * unit
             unit = 1
         else:
-            unit = unit * _TRANSUNIT[k]
+            if unit > 1:
+                result += unit
+            unit = _TRANSUNIT[k]
 
     if unit > 1:
         result += unit
@@ -1061,7 +1061,7 @@ def _kansuji2arabic(kansuji):
 _p_knum = _re.compile('[一二三四五六七八九十壱弐参拾百千〇]+')
 
 
-def _normalize(string):
+def _normalize(string, nowrdchr=True):
     """タイトル文字列を正規化
 
     先頭と末尾の【.+?】くくりを除去
@@ -1069,12 +1069,14 @@ def _normalize(string):
     漢数字をアラビア数字に置き換え
     連番らしきものがあれば付記
     """
-    string = sub(_sp_ltbracket, string)
-    string = sub(_sp_nowrdchr, string).upper()
-    string = _unicodedata.normalize('NFKC', string)
+    string = sub(_sp_ltbracket, string).upper()
 
     for kn in _p_knum.findall(string):
         string = string.replace(*_kansuji2arabic(kn))
+
+    if nowrdchr:
+        string = sub(_sp_nowrdchr, string)
+    string = _unicodedata.normalize('NFKC', string)
 
     serial = extr_num(string)
     serial = serial[-1] if serial else ''
@@ -1097,7 +1099,7 @@ _p_omnivals = (
     # 15本番/SEX 以上
     _re.compile(r'(?:1[5-9]|[2-9]\d|\d{3,})(?:本番|SEX)', _re.I),
     # 4時間 以上
-    _re.compile(r'(?:[4-9]|\d{2,})時間'),
+    _re.compile(r'(?:[4-9](?:\.\d+)?|\d{2,}(?:\.\d+)?)時間'),
     # 240分 以上
     _re.compile(r'(?:2[4-9]\d|[3-9]\d{2}|\d{4,})分'),
     # 全(n)タイトル
@@ -1122,7 +1124,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
 
     def _check_omnivals(title):
         """隠れ総集編チェック(関連数値編)"""
-        title = _normalize(title)[0]
+        title = _normalize(title, nowrdchr=False)[0]
         hit = tuple(_chain.from_iterable(
             p.findall(title) for p in _p_omnivals))
         if len(hit) > 1:
