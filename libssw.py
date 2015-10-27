@@ -523,17 +523,17 @@ _CACHEDIR = _Path(_gettempdir()) / 'dmm2ssw_cache'
 _RDRDFILE = 'redirects'
 
 
-p_delim = _re.compile(r'[/／,、]')
-p_inbracket = _re.compile(r'[(（]')
-p_linkpare = _re.compile(r'\[\[(.+?)(?:>(.+?))?\]\]')
-p_hiragana = _re.compile(r'[ぁ-ゞー]')
-p_neghirag = _re.compile(r'[^ぁ-ゞー]')
+re_delim = _re.compile(r'[/／,、]')
+re_inbracket = _re.compile(r'[(（]')
+re_linkpare = _re.compile(r'\[\[(.+?)(?:>(.+?))?\]\]')
+re_hiragana = _re.compile(r'[ぁ-ゞー]')
+re_neghirag = _re.compile(r'[^ぁ-ゞー]')
 
-_p_number = _re.compile(r'\d+')
-_p_interlink = _re.compile(r'(\[\[.+?\]\])')
+_re_number = _re.compile(r'\d+')
+_re_interlink = _re.compile(r'(\[\[.+?\]\])')
 
-_sp_ltbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
-_sp_nowrdchr = (_re.compile(r'\W'), '')
+_sub_ltbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
+_sub_nowrdchr = (_re.compile(r'\W'), '')
 
 
 _DummyResp = _namedtuple('DummyResp', 'status,fromcache')
@@ -727,10 +727,10 @@ class Summary:
         self.merge(otherobj, overwrite=True)
 
 
-def sub(p_list, string, n=False):
+def sub(re_list, string, n=False):
     """re.sub()、re.subn()ラッパー"""
-    return p_list[0].subn(p_list[1], string) if n else \
-        p_list[0].sub(p_list[1], string)
+    return re_list[0].subn(re_list[1], string) if n else \
+        re_list[0].sub(re_list[1], string)
 
 
 def copy2clipboard(string):
@@ -757,25 +757,25 @@ def _clip_pname(url):
     return unquote(url.rsplit('/', 1)[-1])
 
 
-_t_nl = str.maketrans('', '', '\r\n')
+_tt_nl = str.maketrans('', '', '\r\n')
 
 
 def rm_nlcode(string):
     """改行文字を除去"""
-    return string.translate(_t_nl)
+    return string.translate(_tt_nl)
 
 
-_t_pidsep = str.maketrans('', '', '+-')
+_tt_pidsep = str.maketrans('', '', '+-')
 
 
 def rm_hyphen(string):
     """ハイフンを除去"""
-    return string.translate(_t_pidsep)
+    return string.translate(_tt_pidsep)
 
 
 def extr_num(string):
     """文字列から数値だけ抽出"""
-    return _p_number.findall(string)
+    return _re_number.findall(string)
 
 
 def cvt2int(item):
@@ -789,12 +789,12 @@ def inprogress(msg):
         print('{}  '.format(msg), end='\r', file=_sys.stderr, flush=True)
 
 
-p_list_article = _re.compile(r'/article=(.+?)/')
+re_list_article = _re.compile(r'/article=(.+?)/')
 
 
 def get_article(url):
     """DMM URLからarticle=部を抽出"""
-    return p_list_article.findall(url)[0]
+    return re_list_article.findall(url)[0]
 
 
 def le80bytes(string, encoding='euc_jisx0213'):
@@ -802,20 +802,20 @@ def le80bytes(string, encoding='euc_jisx0213'):
     return len(bytes(string, encoding)) <= 80
 
 
-_t_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
+_tt_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
 
 
 def trans_filename(filename):
     """ファイル名に使用できない文字列の置き換え"""
-    return filename.translate(_t_filename)
+    return filename.translate(_tt_filename)
 
 
-_t_wikisyntax = str.maketrans('[]~', '［］～')
+_tt_wikisyntax = str.maketrans('[]~', '［］～')
 
 
 def trans_wikisyntax(wikitext):
     """Wiki構文と衝突する記号の変換"""
-    return wikitext.translate(_t_wikisyntax)
+    return wikitext.translate(_tt_wikisyntax)
 
 
 def files_exists(mode, *files):
@@ -920,7 +920,7 @@ def gen_ntfcols(tname, fsource: 'sequence'):
 
 class __OpenUrl:
     """URLを開いて読み込む"""
-    _p_charset = _re.compile(r'charset=([a-zA-Z0-9_-]+);?')
+    _re_charset = _re.compile(r'charset=([a-zA-Z0-9_-]+);?')
 
     def __init__(self):
         if _VERBOSE > 1:
@@ -940,13 +940,13 @@ class __OpenUrl:
     def _resolve_charset(self, resp, html):
         """文字エンコーディングの解決"""
         # HTTPレスポンスから取得
-        c_type = self._p_charset.findall(resp['content-type'])
+        c_type = self._re_charset.findall(resp['content-type'])
         if c_type:
             _verbose('charset from resp.')
             return c_type[0]
 
         # HTMLヘッダから取得
-        c_type = self._p_charset.findall(_fromstring(html).xpath(
+        c_type = self._re_charset.findall(_fromstring(html).xpath(
             '//meta[@http-equiv="Content-Type"]')[0].get('content', False))
         if c_type:
             _verbose('charset from meta.')
@@ -1028,37 +1028,48 @@ class __OpenUrl:
 open_url = __OpenUrl()
 
 
-_t_knum = str.maketrans('一二三四五六七八九〇壱弐参', '1234567890123')
-_p_kunit = _re.compile(r'[十拾百千]+|\d+')
+_tt_knum = str.maketrans('一二三四五六七八九〇壱弐参', '1234567890123')
+_re_kunit = _re.compile(r'[十拾百千]+|\d+')
+_re_manshin = _re.compile(r'[万億兆]+|[^万億兆]+')
+
 _TRANSUNIT = {'十': 10,
               '拾': 10,
               '百': 100,
               '千': 1000}
+_TRANSMAN = {'万': 10000,
+             '億': 100000000,
+             '兆': 1000000000000}
 
 
-def _kansuji2arabic(kansuji):
-    """漢数字をアラビア数字に変換簡易版(1万未満まで)"""
-    transuji = kansuji.translate(_t_knum)
+def _kansuji2arabic(kansuji: str):
+    """漢数字をアラビア数字に変換"""
+    def _convert(kansuji: str, reobj=_re_kunit, transdic=_TRANSUNIT):
+        unit = 1
+        result = 0
+        for piece in reversed(reobj.findall(kansuji)):
+            if piece.isdecimal():
+                result += int(piece) * unit
+                unit = 1
+            elif piece not in transdic:
+                result += _convert(piece) * unit
+                unit = 1
+            else:
+                if unit > 1:
+                    result += unit
+                unit = transdic[piece]
 
-    unit = 1
-    result = 0
-    for k in reversed(_p_kunit.findall(transuji)):
+        if unit > 1:
+            result += unit
 
-        if k not in _TRANSUNIT:
-            result += int(k) * unit
-            unit = 1
-        else:
-            if unit > 1:
-                result += unit
-            unit = _TRANSUNIT[k]
+        return result
 
-    if unit > 1:
-        result += unit
+    transuji = kansuji.translate(_tt_knum)
+    result = _convert(transuji, _re_manshin, _TRANSMAN)
 
     return kansuji, str(result)
 
 
-_p_knum = _re.compile('[一二三四五六七八九十壱弐参拾百千〇]+')
+_re_knum = _re.compile('[一二三四五六七八九十壱弐参拾百千〇]+')
 
 
 def _normalize(string, nowrdchr=True):
@@ -1069,13 +1080,13 @@ def _normalize(string, nowrdchr=True):
     漢数字をアラビア数字に置き換え
     連番らしきものがあれば付記
     """
-    string = sub(_sp_ltbracket, string).upper()
+    string = sub(_sub_ltbracket, string).upper()
 
-    for kn in _p_knum.findall(string):
+    for kn in _re_knum.findall(string):
         string = string.replace(*_kansuji2arabic(kn))
 
     if nowrdchr:
-        string = sub(_sp_nowrdchr, string)
+        string = sub(_sub_nowrdchr, string)
     string = _unicodedata.normalize('NFKC', string)
 
     serial = extr_num(string)
@@ -1091,8 +1102,8 @@ def _check_omitword(title):
         yield _OMITWORDS[key], key
 
 
-_p_omnivals = (
-    # 20人|名 以上
+_re_omnivals = (
+    # 20人/名 以上
     _re.compile(r'(?:[2-9]\d|\d{3,})(?:人[^目\d]?|名)'),
     # 20(連)発(射) 以上
     _re.compile(r'(?:[2-9]\d|\d{3,})連?[発射]'),
@@ -1107,8 +1118,8 @@ _p_omnivals = (
 )
 
 
-_p_ge4h = _re.compile(r'(?:[4-9]|\d{2,})時間')
-_p_ge200m = _re.compile(r'(?:[2-9]\d{2}|\d{4,})分')
+_re_ge4h = _re.compile(r'(?:[4-9]|\d{2,})時間')
+_re_ge200m = _re.compile(r'(?:[2-9]\d{2}|\d{4,})分')
 
 
 def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
@@ -1126,7 +1137,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
         """隠れ総集編チェック(関連数値編)"""
         title = _normalize(title, nowrdchr=False)[0]
         hit = tuple(_chain.from_iterable(
-            p.findall(title) for p in _p_omnivals))
+            p.findall(title) for p in _re_omnivals))
         if len(hit) > 1:
             return hit
 
@@ -1134,8 +1145,8 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
         """ROOKIE隠れ総集編チェック"""
         if _check_omitprfx(cid, _ROOKIE):
             # ROOKIEチェック
-            hh = _p_ge4h.findall(title)
-            mmm = _p_ge200m.findall(title)
+            hh = _re_ge4h.findall(title)
+            mmm = _re_ge200m.findall(title)
             return hh, mmm
         else:
             return None, None
@@ -1331,7 +1342,7 @@ class _RetrieveTitlePlum:
             _emsg('E', 'プラム公式サイトをうまく開けませんでした。')
 
         title = he.find('.//h2[@id="itemtitle"]').text.strip()
-        title = sub(_sp_ltbracket, title)
+        title = sub(_sub_ltbracket, title)
 
         return title
 
@@ -1413,7 +1424,7 @@ class __TrySMM:
         名前がひらがなのみで4文字以下で既知のひらがな女優名でなければ代用名とみなす
         """
         # if p_neghirag.search(pfmr) or self._is_existent(pfmr):
-        if p_neghirag.search(pfmr) or \
+        if re_neghirag.search(pfmr) or \
            len(pfmr) > 4 or \
            pfmr in self._allhiraganas:
             return (pfmr, '', '')
@@ -1493,8 +1504,8 @@ class DMMParser:
                             # 'h_113se': _ret_plum_se, # 素人援交生中出し(プラム)
     }
 
-    _p_genre = _re.compile(r'/article=keyword/id=(\d+)/')
-    _p_more = _re.compile(r"url: '(.*?)'")
+    _re_genre = _re.compile(r'/article=keyword/id=(\d+)/')
+    _re_more = _re.compile(r"url: '(.*?)'")
 
     def __init__(self, no_omits=gen_no_omits(), patn_pid=None,
                  start_date=None, start_pid_s=None, filter_pid_s=None,
@@ -1694,7 +1705,7 @@ class DMMParser:
             for g in prop.getnext():
                 _verbose('genre: ', g.text)
                 try:
-                    gid = self._p_genre.findall(g.get('href'))[0]
+                    gid = self._re_genre.findall(g.get('href'))[0]
                 except IndexError:
                     continue
 
@@ -1734,7 +1745,7 @@ class DMMParser:
         elif tag == '名前：':
             # 素人動画のタイトルは後でページタイトルと年齢をくっつける
             try:
-                age = _p_age.findall(getnext_text(prop))[0]
+                age = _re_age.findall(getnext_text(prop))[0]
             except IndexError:
                 age = ''
             self._sm['subtitle'] = age
@@ -1774,7 +1785,7 @@ class DMMParser:
             """女優名の調整"""
             name = name.strip()
             if self._autostrip:
-                name = p_inbracket.split(name)[0]
+                name = re_inbracket.split(name)[0]
             return name
 
         def _list_pfmrs(plist):
@@ -1795,11 +1806,11 @@ class DMMParser:
                 more_js = el.getparent().find('script')
 
                 if more_js is not None:
-                    more_path = self._p_more.findall(more_js.text)[0]
+                    more_path = self._re_more.findall(more_js.text)[0]
                 else:
                     # 処理スクリプトがHEAD内にある場合(動画ページ)用
                     for scr in self._he.xpath('head/script/text()'):
-                        more_path = self._p_more.findall(scr)
+                        more_path = self._re_more.findall(scr)
                         if more_path:
                             more_path = more_path[0]
                             break
@@ -2064,7 +2075,7 @@ _othersparser = DMMParser(deeper=False)
 
 class DMMTitleListParser:
     """一覧ページの解析"""
-    _sp_tsuffix = (_re.compile(r' - \S*( - DMM.R18)?$'), '')
+    _sub_tsuffix = (_re.compile(r' - \S*( - DMM.R18)?$'), '')
 
     def __init__(self, no_omits=set(_OMITTYPE), patn_pid=None, show_info=True):
         self._no_omits = no_omits
@@ -2083,7 +2094,7 @@ class DMMTitleListParser:
 
         # wiki構文と衝突する文字列の置き換え
         article = trans_wikisyntax(article)
-        article = sub(self._sp_tsuffix, article)
+        article = sub(self._sub_tsuffix, article)
 
         return article
 
@@ -2130,16 +2141,16 @@ class DMMTitleListParser:
         return self._ret_titles(he.find_class('ttl'))
 
 
-_p_splitpid1 = _re.compile(r'[+-]')
-_p_splitpid2 = _re.compile(r'([a-z]+)(\d+)', _re.I)
+_re_splitpid1 = _re.compile(r'[+-]')
+_re_splitpid2 = _re.compile(r'([a-z]+)(\d+)', _re.I)
 
 
 def split_pid(pid):
     """品番をプレフィクスと連番に分離"""
     try:
-        prefix, serial = _p_splitpid1.split(pid)
+        prefix, serial = _re_splitpid1.split(pid)
     except ValueError:
-        prefix, serial = _p_splitpid2.findall(pid)[0]
+        prefix, serial = _re_splitpid2.findall(pid)[0]
 
     return prefix, serial
 
@@ -2219,7 +2230,7 @@ def from_dmm(listparser, priurls, pages_last=0,
     _verbose('Parsing list pages finished')
 
 
-_p_name = _re.compile(
+_re_name = _re.compile(
     r'(?P<fore>[\w>]*)?(?P<paren>[(（][\w>]*[）)])?(?P<back>[\w>]*)?')
 
 
@@ -2232,7 +2243,7 @@ def parse_names(name):
     _verbose('Parsing name...')
 
     # カッコ括りの付記の分割
-    m = _p_name.search(name)
+    m = _re_name.search(name)
 
     if any(m.groups()):
         shown = m.group('fore') or m.group('back')
@@ -2256,14 +2267,14 @@ def parse_names(name):
     return shown, dest, parened
 
 
-_p_etc = _re.compile(r'ほか\w*?計(\d+)名')
+_re_etc = _re.compile(r'ほか\w*?計(\d+)名')
 
 
 def ret_numofpfmrs(etc):
     """ほか計n名を取得"""
     number = None
 
-    m = _p_etc.findall(etc)
+    m = _re_etc.findall(etc)
 
     if m:
         number = int(m[0])
@@ -2287,7 +2298,7 @@ def from_tsv(files):
 
             # 女優名がある場合分割
             try:
-                actress = p_delim.split(row[3]) if row[3] else []
+                actress = re_delim.split(row[3]) if row[3] else []
             except IndexError:
                 _emsg('E', '正しいインポートファイル形式ではないようです。')
 
@@ -2295,7 +2306,7 @@ def from_tsv(files):
             actress = list(parse_names(a) for a in actress)
             numcols = len(row)
             number = cvt2int(row[4]) if numcols > 4 else 0
-            director = p_delim.split(row[5]) if numcols > 5 else []
+            director = re_delim.split(row[5]) if numcols > 5 else []
             note = row[6] if numcols > 6 else []
 
             yield row[0], Summary(url=row[0],
@@ -2316,7 +2327,7 @@ class _FromWiki:
         """出演者情報の解析(ウィキテキスト)"""
         shown = dest = parened = ''
 
-        for e in filter(None, _p_interlink.split(name)):
+        for e in filter(None, _re_interlink.split(name)):
 
             # いったん丸カッコ括りを解く
             elem = e.strip().strip('()')
@@ -2345,7 +2356,7 @@ class _FromWiki:
                 row = row.strip()
 
                 if row.startswith('*[[') and not self.article:
-                    self.article = p_linkpare.findall(row)
+                    self.article = re_linkpare.findall(row)
                     _verbose('article from wiki: ', self.article)
 
                 if row.startswith('|~NO'):
@@ -2356,7 +2367,7 @@ class _FromWiki:
                 md = Cols(*(c.strip() for c in row.split('|')))
 
                 try:
-                    pid, url = p_linkpare.findall(md.NO)[0]
+                    pid, url = re_linkpare.findall(md.NO)[0]
                 except IndexError:
                     continue
 
@@ -2373,7 +2384,7 @@ class _FromWiki:
                 if md.ACTRESS and '別ページ' not in md.ACTRESS:
                     if rawpfmrs:
                         actress = [(a[0], a[1], '')
-                                   for a in p_linkpare.finditer(md.ACTRESS)]
+                                   for a in re_linkpare.finditer(md.ACTRESS)]
                     else:
                         # 「 ほか～」の切り離し
                         # TODO: もっと賢く
@@ -2381,10 +2392,10 @@ class _FromWiki:
 
                         number = ret_numofpfmrs(s[1]) if len(s) > 1 else 0
 
-                        alist = p_delim.split(s[0])
+                        alist = re_delim.split(s[0])
                         actress = [self._parse_names(a) for a in alist if a]
 
-                note = p_delim.split(md.NOTE)
+                note = re_delim.split(md.NOTE)
                 note = list(n for n in note if 'シリーズ' not in n)
 
                 yield url, Summary(url=url,
@@ -2429,7 +2440,7 @@ class _FromHtml:
                 return
             else:
                 # アンカーあり
-                fores = p_delim.split(foretxt)
+                fores = re_delim.split(foretxt)
                 for ph in filter(None, fores):
                     yield '', '', self._enclose(ph)
 
@@ -2462,7 +2473,7 @@ class _FromHtml:
                 elif self._number is not None:
                     tailtxt = ''
 
-                tails = p_delim.split(tailtxt)
+                tails = re_delim.split(tailtxt)
 
                 # 内部リンクに付随する文字列がないかチェック
                 yield shown, dest, tails.pop(0) if tails[0] else ''
@@ -2729,7 +2740,7 @@ def follow_redirect(page):
 def _search_listpage(url, listname, listtype, pid):
     """実際の一覧ページをWiki内で探してみる"""
     # listname = set((listname,)) | set(
-    #     p_inbracket.split(listname.rstrip(')）')))
+    #     re_inbracket.split(listname.rstrip(')）')))
     _verbose('Searching listpage: listname=', listname, ', pid=', pid)
 
     # DMM作品ページのURLで検索
@@ -2854,13 +2865,13 @@ def stringize_performers(pfmrs, number, follow):
     return pfmrsstr, pnum
 
 
-_p_base_url = _re.compile(r'(.*/)-/')
+_re_base_url = _re.compile(r'(.*/)-/')
 
 
 def resolve_service(url):
     """サービスの決定"""
     _verbose('Resolving service...')
-    base = _p_base_url.findall(url)[0]
+    base = _re_base_url.findall(url)[0]
 
     if not base or base not in _SVC_URL:
         _emsg('E', '未サポートのURLです。')
@@ -2868,24 +2879,25 @@ def resolve_service(url):
         return _SVC_URL[base]
 
 
-_p_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
-_p_id = _re.compile(r'/id=([\d,]+?)/')
+_re_cid = _re.compile(r'/cid=([a-z0-9_]+)/?')
+_re_id = _re.compile(r'/id=([\d,]+?)/')
 
 
 def get_id(url, cid=False, ignore=False):
     """URLからIDを取得"""
     try:
-        return _p_cid.findall(url) if cid else _p_id.findall(url)[0].split(',')
+        return _re_cid.findall(url) if cid \
+            else _re_id.findall(url)[0].split(',')
     except IndexError:
         if ignore:
             return ()
         _emsg('E', 'IDを取得できません: ', url)
 
 
-_sp_pid = (_re.compile(r'^(?:[hn]_)?\d*([a-z]+)(\d+).*', _re.I), r'\1-\2')
+_sub_pid = (_re.compile(r'^(?:[hn]_)?\d*([a-z]+)(\d+).*', _re.I), r'\1-\2')
 
 # 品番変換個別対応
-_sp_pid_indv = (
+_sub_pid_indv = (
     (_re.compile(r'^125ud(\d+).*'), r'ud\1r'),           # LEOのレンタル
     (_re.compile(r'^h_093r18(\d+)'), r'r18-\1'),         # チェリーズの一部レーベル
     (_re.compile(r'^h_066fad(\d+).*'), r'fad\1'),        # FAプロのレンタルの一部
@@ -2911,12 +2923,12 @@ def gen_pid(cid, pattern=None):
         pid, m = sub(pattern, cid, True)
     else:
         # 個別対応パターン
-        for sp in _sp_pid_indv:
+        for sp in _sub_pid_indv:
             pid, m = sub(sp, cid, True)
             if m:
                 break
         else:
-            pid, m = sub(_sp_pid, cid, True)
+            pid, m = sub(_sub_pid, cid, True)
 
     if m:
         pid = pid.upper()
@@ -2930,8 +2942,8 @@ class _InvalidPage(Exception):
 
 class _GetActName:
     """名前の取得"""
-    _p_actname1 = _re.compile(r'[)）][(（]')
-    _p_actname2 = _re.compile(r'[（(、]')
+    _re_actname1 = _re.compile(r'[)）][(（]')
+    _re_actname2 = _re.compile(r'[（(、]')
 
     def __call__(self, elems):
         try:
@@ -2940,16 +2952,16 @@ class _GetActName:
             raise _InvalidPage
 
         # 複数の女優名チェク ('）（' で分割を試みる)
-        named = self._p_actname1.split(data)
+        named = self._re_actname1.split(data)
 
         if len(named) == 1:
             # 分割されなかったら名前は1つのみなのでそのまま名前とよみに分割
-            named = p_inbracket.split(data)
+            named = re_inbracket.split(data)
 
         # 名前を分割
-        name = self._p_actname2.split(named[0])
+        name = self._re_actname2.split(named[0])
         # よみを分割
-        yomi = self._p_actname2.split(named[1].rstrip('）)'))
+        yomi = self._re_actname2.split(named[1].rstrip('）)'))
 
         # 現在の名前の格納
         self.current = name[0]
@@ -3076,9 +3088,9 @@ def open_ssw(*pages):
                 quote(p)))
 
 
-_sp_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
-            (_re.compile(r'Courier'), 'Sans'),
-            (_re.compile(r'nowrap="nowrap"'), ''))
+_sub_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
+             (_re.compile(r'Courier'), 'Sans'),
+             (_re.compile(r'nowrap="nowrap"'), ''))
 
 
 def show_diff(flines, tlines, fdesc, tdesc, context=True):
@@ -3093,7 +3105,7 @@ def show_diff(flines, tlines, fdesc, tdesc, context=True):
                                  fdesc,
                                  tdesc,
                                  context=context)
-    for p in _sp_diff:
+    for p in _sub_diff:
         diff = sub(p, diff)
     dummy, tmpf = _mkstemp(suffix='.html', dir=str(_CACHEDIR))
     with open(tmpf, 'w') as f:

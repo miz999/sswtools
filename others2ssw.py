@@ -37,8 +37,8 @@ BROWSER = False
 
 emsg = libssw.Emsg(OWNNAME)
 
-p_musume_title = re.compile(r'素人アダルト動画　天然むすめ  (.*)')
-p_heyzo_title = re.compile(r'の無修正アダルト動画「(.+)」のご案内')
+re_musume_title = re.compile(r'素人アダルト動画　天然むすめ  (.*)')
+re_heyzo_title = re.compile(r'の無修正アダルト動画「(.+)」のご案内')
 
 
 verbose = None
@@ -55,7 +55,8 @@ def get_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description='無修正系サイトのURLから素人系総合wiki用ウィキテキストを作成する',
         epilog='対応サイト: JAPORN.TV, 一本道, カリビアンコム(含プレミアム), HEYZO, '
-        'HEY動画, Tokyo-Hot(my.tokyo-hot.com), パコパコママ, 天然むすめ, 熟女倶楽部, 人妻パラダイス, 人妻切り')
+        'HEY動画, Tokyo-Hot(my.tokyo-hot.com), パコパコママ, 天然むすめ, '
+        '熟女倶楽部, 人妻パラダイス, 人妻切り')
     argparser.add_argument('url',
                            help='作品ページのURL',
                            nargs='+',
@@ -255,7 +256,7 @@ def heyzo(he, url):
     studio = 'HEYZO'
 
     title = he.xpath('//meta[@name="description"]')[0].get('content')
-    title = p_heyzo_title.findall(title)[0]
+    title = re_heyzo_title.findall(title)[0]
 
     release = libssw.extr_num(
         he.find_class('release-day')[0].getnext().text.strip())
@@ -312,7 +313,7 @@ def pacopacomama(he, url):
 def tenmusume(he, url):
     studio = '天然むすめ'
 
-    title = p_musume_title.findall(he.xpath('//title')[0].text.strip())[0]
+    title = re_musume_title.findall(he.xpath('//title')[0].text.strip())[0]
 
     release = libssw.extr_num(
         he.get_element_by_id('info').xpath('div[1]/ul/li[1]/em')[0].tail)

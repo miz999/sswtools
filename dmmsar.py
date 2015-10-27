@@ -464,9 +464,9 @@ ACTLISTPAGE = 'http://www.dmm.co.jp/mono/dvd/-/list/=/article=actress/id={}/sort
 
 SPLIT_DEFAULT = 200
 
-# sp_sort = (re.compile(r'/sort=(\w+)/'), '/sort=date/')
+# sub_sort = (re.compile(r'/sort=(\w+)/'), '/sort=date/')
 
-p_actdelim = re.compile(r'[（、]')
+re_actdelim = re.compile(r'[（、]')
 
 
 MakeType = namedtuple('MakeType', 'actress,table')
@@ -914,14 +914,14 @@ class ExtractIDs:
 extr_ids = ExtractIDs()
 
 
-def makeproditem(cid, service, sp_pid):
-    pid = libssw.gen_pid(cid, sp_pid)[0]
+def makeproditem(cid, service, sub_pid):
+    pid = libssw.gen_pid(cid, sub_pid)[0]
     verbose('built cid: {}, pid: {}'.format(cid, pid))
     url = libssw.build_produrl(service, cid)
     return url, libssw.Summary(url=url, title='__' + pid, cid=cid, pid=pid)
 
 
-def from_sequence(keywords: tuple, service, sp_pid):
+def from_sequence(keywords: tuple, service, sub_pid):
     """連続した品番の生成ジェネレータ"""
     try:
         base, start, end = keywords[:3]
@@ -936,10 +936,10 @@ def from_sequence(keywords: tuple, service, sp_pid):
     base = re.sub(r'{}', r'{:0>{}}', base)
     for num in range(int(start), int(end) + 1, int(step)):
         cid = base.format(num, digit)
-        yield makeproditem(cid, service, sp_pid)
+        yield makeproditem(cid, service, sub_pid)
 
 
-def make_pgen(args, ids, listparser, sp_pid, key_id, key_type, kidattr):
+def make_pgen(args, ids, listparser, sub_pid, key_id, key_type, kidattr):
     """作品情報作成ジェネレータの作成"""
     if args.from_tsv:
         # TSVファイルから一覧をインポート
@@ -953,10 +953,10 @@ def make_pgen(args, ids, listparser, sp_pid, key_id, key_type, kidattr):
         # 品番指定
         if '{}' in ids[0]:
             # '品番基準' 開始番号 終了番号 ステップ
-            p_gen = from_sequence(ids, args.service, sp_pid)
+            p_gen = from_sequence(ids, args.service, sub_pid)
         else:
             # 各cidからURLを作成
-            p_gen = (makeproditem(c, args.service, sp_pid) for c in ids)
+            p_gen = (makeproditem(c, args.service, sub_pid) for c in ids)
     else:
         # DMMから一覧を検索/取得
         verbose('Call from_dmm()')
@@ -1245,27 +1245,27 @@ def main(argv=None):
     verbose('non omit target: ', no_omits)
 
     # 品番生成用パターンのコンパイル
-    sp_pid = (re.compile(args.pid_regex[0], re.I),
-              args.pid_regex[1]) if args.pid_regex else None
+    sub_pid = (re.compile(args.pid_regex[0], re.I),
+               args.pid_regex[1]) if args.pid_regex else None
     # 副題生成用パターンのコンパイル
-    p_subtitle = (re.compile(args.subtitle_regex[0], re.I),
-                  args.subtitle_regex[1]) if args.subtitle_regex else None
+    re_subtitle = (re.compile(args.subtitle_regex[0], re.I),
+                   args.subtitle_regex[1]) if args.subtitle_regex else None
 
     # フィルター用パターン
     filter_id, fidattr = det_filterpatn(args)
 
-    p_filter_pid_s = args.filter_pid_s and re.compile(args.filter_pid_s, re.I)
-    p_filter_ttl = args.filter_title and re.compile(args.filter_title, re.I)
+    re_filter_pid_s = args.filter_pid_s and re.compile(args.filter_pid_s, re.I)
+    re_filter_ttl = args.filter_title and re.compile(args.filter_title, re.I)
 
     # 作成開始品番
     key_id, key_type, kidattr = det_keyinfo(args)
     not_key_id = libssw.NotKeyIdYet(key_id, key_type, kidattr)
 
-    listparser = libssw.DMMTitleListParser(no_omits=no_omits, patn_pid=sp_pid)
-    seriesparser = libssw.DMMTitleListParser(patn_pid=sp_pid, show_info=False)
+    listparser = libssw.DMMTitleListParser(no_omits=no_omits, patn_pid=sub_pid)
+    seriesparser = libssw.DMMTitleListParser(patn_pid=sub_pid, show_info=False)
 
     # 作品情報取得用イテラブルの作成
-    p_gen = make_pgen(args, ids, listparser, sp_pid,
+    p_gen = make_pgen(args, ids, listparser, sub_pid,
                       key_id, key_type, kidattr)
 
     # 作品情報の取り込み
@@ -1311,10 +1311,10 @@ def main(argv=None):
     before = True if key_id else False
 
     dmmparser = libssw.DMMParser(no_omits=no_omits,
-                                 patn_pid=sp_pid,
+                                 patn_pid=sub_pid,
                                  start_date=args.start_date,
                                  start_pid_s=args.start_pid_s,
-                                 filter_pid_s=p_filter_pid_s,
+                                 filter_pid_s=re_filter_pid_s,
                                  pass_bd=args.pass_bd,
                                  n_i_s=args.n_i_s,
                                  longtitle=args.longtitle,
@@ -1332,7 +1332,7 @@ def main(argv=None):
 
         # 品番の生成
         if not props.pid:
-            props.pid, props.cid = libssw.gen_pid(props.url, sp_pid)
+            props.pid, props.cid = libssw.gen_pid(props.url, sub_pid)
 
         # 開始ID指定処理(--{start,last}-{p,c}id)
         if before:
@@ -1362,7 +1362,7 @@ def main(argv=None):
             continue
 
         # 作品名が指定されたパターンにマッチしないものはスキップ処理(--filter-title)
-        if args.filter_title and not p_filter_ttl.search(props.title):
+        if args.filter_title and not re_filter_ttl.search(props.title):
             emsg('I', '作品を除外しました: title={} (filtered)'.format(
                 props.title))
             omitted += 1
@@ -1394,7 +1394,7 @@ def main(argv=None):
         # 副題の生成
         if args.retrieval == 'series':
             # シリーズ一覧時のカスタムサブタイトル
-            props.subtitle = libssw.sub(p_subtitle, props.title).strip() \
+            props.subtitle = libssw.sub(re_subtitle, props.title).strip() \
                 if args.subtitle_regex else ''
 
         if args.wikitext:

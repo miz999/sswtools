@@ -22,7 +22,7 @@ OWNNAME = libssw.ownname(__file__)
 emsg = libssw.Emsg(OWNNAME)
 
 
-p_label = re.compile(r'\[\[(.+?)>')
+re_label = re.compile(r'\[\[(.+?)>')
 
 
 verbose = None
@@ -91,9 +91,9 @@ def main():
 
     current = body[:]
 
-    labels = p_label.findall(header)
+    labels = re_label.findall(header)
     names = chain.from_iterable(a.split('／') for a in labels)
-    names = tuple(libssw.p_inbracket.split(name)[0] for name in names)
+    names = tuple(libssw.re_inbracket.split(name)[0] for name in names)
     emsg('I', 'names: ', names)
 
     for name in names:

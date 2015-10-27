@@ -100,12 +100,12 @@ SPLIT_DEFAULT = 200
 
 emsg = libssw.Emsg(OWNNAME)
 
-p_cstart = re.compile(r'^// *(\d+.?\d+.?\d+)')
-p_product = re.compile(r'>(http://www.dmm.co.jp/.*/cid=.*?)]]')
-p_actid = re.compile(r'/article=actress/id=([\d,]+?)/')
-p_linkurl = re.compile(r'>(http://.+?)\]\]')
+re_cstart = re.compile(r'^// *(\d+.?\d+.?\d+)')
+re_product = re.compile(r'>(http://www.dmm.co.jp/.*/cid=.*?)]]')
+re_actid = re.compile(r'/article=actress/id=([\d,]+?)/')
+re_linkurl = re.compile(r'>(http://.+?)\]\]')
 
-sp_datedelim = (re.compile(r'-/'), '.')
+sub_datedelim = (re.compile(r'-/'), '.')
 
 
 verbose = None
@@ -220,7 +220,7 @@ def add_actid(g_actid, actids):
     for ai in actids:
         if ai.startswith('http://'):
             for a in chain.from_iterable(i.split(',')
-                                         for i in p_actid.findall(ai)):
+                                         for i in re_actid.findall(ai)):
                 append_id(a)
         else:
             append_id(ai)
@@ -243,15 +243,15 @@ def get_existing(g_actid, files):
         row = row.strip()
 
         # //YYYY.MM.DD の行かどうか
-        m_rd = p_cstart.findall(row)
+        m_rd = re_cstart.findall(row)
 
         if not url:
             # urlがまだ見つかってないときにurlがあるか探す
-            url = p_product.findall(row)
+            url = re_product.findall(row)
 
         if row.startswith('*[['):
             # 必要であれば女優IDを追加
-            add_actid(g_actid, p_linkurl.findall(row))
+            add_actid(g_actid, re_linkurl.findall(row))
 
         if m_rd or not row:
             # 空行かリリース日の行だったら作品情報1個分完了
@@ -265,7 +265,7 @@ def get_existing(g_actid, files):
             if m_rd:
                 # リリース日発見
                 item = [row]
-                rdate = libssw.sub(sp_datedelim, m_rd[0])
+                rdate = libssw.sub(sub_datedelim, m_rd[0])
             else:
                 # 空行発見
                 item = []

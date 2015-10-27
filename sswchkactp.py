@@ -84,7 +84,7 @@ emsg = libssw.Emsg(OWNNAME)
 
 BASEURL_SSW = libssw.BASEURL_SSW
 
-p_ssw = re.compile(r'href="http://sougouwiki.com/d/([^/]+?)"')
+re_ssw = re.compile(r'href="http://sougouwiki.com/d/([^/]+?)"')
 
 
 verbose = None
@@ -201,7 +201,7 @@ def check_actrpage(actr_url, listp, prod_url):
     # 女優ページ内の各行をチェックしDMMの作品ページURLがあればその行を取得
     for line in filter(lambda x: prod_url in x, html.splitlines()):
 
-        link2list = p_ssw.findall(line)
+        link2list = re_ssw.findall(line)
         verbose('link to listpage: ', link2list)
 
         return (True,

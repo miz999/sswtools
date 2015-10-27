@@ -67,8 +67,8 @@ def select_allhiragana(ids, today, path, selfcheck):
     cur = conn.cursor()
 
     if ids:
-        sql = 'select id,current,last_release from main where id in({}) '.format(
-            ','.join('?' * len(ids)))
+        sql = 'select id,current,last_release from main ' \
+              'where id in({}) '.format(','.join('?' * len(ids)))
         ph = [sql, ids]
     else:
         sql = 'select id,current,last_release from main ' \
@@ -84,7 +84,7 @@ def select_allhiragana(ids, today, path, selfcheck):
     print('sql:', sql, ', ph:', ph)
 
     for aid, name, last_release in filter(
-            lambda n: not libssw.p_neghirag.search(n[1]) and len(n[1]) < 5,
+            lambda n: not libssw.re_neghirag.search(n[1]) and len(n[1]) < 5,
             cur.execute(sql, ph)):
         verbose(aid, name)
         print(aid, name + ': ', end='')
@@ -115,7 +115,8 @@ def select_allhiragana(ids, today, path, selfcheck):
 
                 sale = tr[4].find('a')
                 rental = tr[6].find('a')
-                prod_url = sale.get('href') if sale is not None else rental.get('href')
+                prod_url = sale.get('href') if sale is not None \
+                           else rental.get('href')
                 verbose('prod url: ', prod_url)
                 cid = libssw.get_id(prod_url, cid=True)[0]
 
@@ -152,7 +153,8 @@ def select_allhiragana(ids, today, path, selfcheck):
             else:
                 mu = he.get_element_by_id("mu").xpath('table[last()]//a')
                 if len(mu) and mu[-1].text == '次へ':
-                    resp, he = libssw.open_url(BASEURL_ACT + mu[-1].get('href'))
+                    resp, he = libssw.open_url(
+                        BASEURL_ACT + mu[-1].get('href'))
                 else:
                     print('negative')
                     break

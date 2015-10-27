@@ -100,14 +100,12 @@ BASEURL = {
     'switch': 'http://switch1.jp/web/{}',
 }
 
-p_id = {
+re_id = {
     'hunter': re.compile(r'.*value=site(\d+)'),
     'atom': re.compile(r'.*value=site(\d+)'),
     'apache': re.compile(r'.*/detail_(\d+).html'),
     'switch': re.compile(r'(\d+?)$'),
 }
-
-p_cid = re.compile(r'([A-Z]+)-(\d+)')
 
 
 verbose = None
@@ -172,7 +170,7 @@ def gen_urls(site, args):
     """
     def get_value(item):
         """引数がURLだったときURLの数値部を取り出す"""
-        return p_id[site].findall(item)[0] if item.startswith('http://') \
+        return re_id[site].findall(item)[0] if item.startswith('http://') \
             else item
 
     start = get_value(args.start)

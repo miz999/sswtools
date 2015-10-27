@@ -25,7 +25,7 @@ OWNNAME = libssw.ownname(__file__)
 
 VERBOSE = 0
 
-p_url = re.compile(r'^\|\[\[[A-Z0-9-]+>(http:.+?)\]\]')
+re_url = re.compile(r'^\|\[\[[A-Z0-9-]+>(http:.+?)\]\]')
 
 emsg = libssw.Emsg(OWNNAME)
 
@@ -115,7 +115,7 @@ def complement(target, from_d, args):
             yield row
             continue
 
-        url = p_url.findall(row)
+        url = re_url.findall(row)
         if not url:
             yield row
             continue
@@ -174,7 +174,7 @@ def main():
             if not row.startswith('|[['):
                 continue
 
-            url = p_url.findall(row)[0]
+            url = re_url.findall(row)[0]
             from_d[url] = FromCols(*row.split('|'))
 
     result = tuple(complement(target[:], from_d, args))

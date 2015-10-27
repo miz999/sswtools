@@ -350,9 +350,9 @@ _ReturnVal = _namedtuple('ReturnVal',
                           'wktxt_a', 'wktxt_t'))
 _NiS = _namedtuple('n_i_s', 'sid,name')
 
-_p_age = _re.compile(r'(\(\d+?\))$')
+_re_age = _re.compile(r'(\(\d+?\))$')
 
-_sp_heart = (_re.compile(r'（ハート）|◆'), r'♥')
+_sub_heart = (_re.compile(r'（ハート）|◆'), r'♥')
 
 
 _IMG_URL = {'dvd':    'http://pics.dmm.co.jp/mono/movie/adult/',
@@ -560,18 +560,18 @@ def _build_image_url(service, cid):
                              '{0}/{0}{1}.jpg'.format(cid, s)) for s in suffix)
 
 
-_sp_expansion = ((_re.compile('@{media}'), 'media'),
-                 (_re.compile('@{time}'), 'time'),
-                 (_re.compile('@{series}'), 'series'),
-                 (_re.compile('@{maker}'), 'maker'),
-                 (_re.compile('@{label}'), 'label'),
-                 (_re.compile('@{cid}'), 'cid'))
+_sub_expansion = ((_re.compile('@{media}'), 'media'),
+                  (_re.compile('@{time}'), 'time'),
+                  (_re.compile('@{series}'), 'series'),
+                  (_re.compile('@{maker}'), 'maker'),
+                  (_re.compile('@{label}'), 'label'),
+                  (_re.compile('@{cid}'), 'cid'))
 
 
 def _expansion(phrases, summ):
     """予約変数の展開"""
     for ph in phrases:
-        for p, r in _sp_expansion:
+        for p, r in _sub_expansion:
             ph = p.sub(getattr(summ, r), ph)
         yield ph
 
@@ -753,7 +753,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace, dmmparser=None):
                 elif key == 'number':
                     summ[key] = int(data) if data else 0
                 elif key == 'director':
-                    summ[key] = _libssw.p_delim.split(data)
+                    summ[key] = _libssw.re_delim.split(data)
                 elif key == 'note':
                     summ[key].append(data)
                 else:
@@ -767,7 +767,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace, dmmparser=None):
 
         if not summ['actress'] and args.actress:
             actiter = _chain.from_iterable(
-                _libssw.p_delim.split(a) for a in args.actress)
+                _libssw.re_delim.split(a) for a in args.actress)
             summ['actress'] = list(_libssw.parse_names(a) for a in actiter)
 
     else:
@@ -844,7 +844,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace, dmmparser=None):
         return False, resp.status, ('HTTP status', resp.status)
 
     # 構文ミスの修正
-    # html = _libssw.sub(sp_href, html)
+    # html = _libssw.sub(sub_href, html)
 
     # HTMLの解析
     if not dmmparser:
@@ -891,7 +891,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace, dmmparser=None):
     modified = _libssw.trans_wikisyntax(on_dmm)
     if _AUTOMODIFY:
         # ♥の代替文字列の置き換え
-        modified = _libssw.sub(_sp_heart, modified)
+        modified = _libssw.sub(_sub_heart, modified)
 
     summ['title'] = modified
     if not summ['title_dmm'] and modified != on_dmm:
@@ -920,7 +920,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace, dmmparser=None):
     pfmrslk = ()
     if rawpfmrs:
         # ウィキテキスト
-        pfmrslk = _libssw.p_linkpare.findall(rawpfmrs)
+        pfmrslk = _libssw.re_linkpare.findall(rawpfmrs)
         pfmrsstr, pnum = rawpfmrs, len(pfmrslk)
     elif len(summ['actress']) < 2 and not summ['number'] and args.table == 0:
         # 女優ページ用のみ作成で出演者数が1人ならやらない
