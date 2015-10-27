@@ -1029,34 +1029,32 @@ open_url = __OpenUrl()
 
 
 _tt_knum = str.maketrans('一二三四五六七八九〇壱弐参', '1234567890123')
-_re_kunit = _re.compile(r'[十拾百千]+|\d+')
-_re_manshin = _re.compile(r'[万億兆]+|[^万億兆]+')
+_re_kunit = _re.compile(r'[十拾百千]|\d+')
+_re_manshin = _re.compile(r'[万億兆]|[^万億兆]+')
 
 _TRANSUNIT = {'十': 10,
               '拾': 10,
               '百': 100,
               '千': 1000}
-_TRANSMAN = {'万': 10000,
-             '億': 100000000,
-             '兆': 1000000000000}
+_TRANSMANS = {'万': 10000,
+              '億': 100000000,
+              '兆': 1000000000000}
 
 
 def _kansuji2arabic(kansuji: str):
     """漢数字をアラビア数字に変換"""
-    def _convert(kansuji: str, reobj=_re_kunit, transdic=_TRANSUNIT):
+    def _transvalue(tsj, re_obj=_re_kunit, transdic=_TRANSUNIT):
         unit = 1
         result = 0
-        for piece in reversed(reobj.findall(kansuji)):
-            if piece.isdecimal():
-                result += int(piece) * unit
-                unit = 1
-            elif piece not in transdic:
-                result += _convert(piece) * unit
-                unit = 1
-            else:
+        for piece in reversed(re_obj.findall(tsj)):
+            if piece in transdic:
                 if unit > 1:
                     result += unit
                 unit = transdic[piece]
+            else:
+                val = int(piece) if piece.isdecimal() else _transvalue(piece)
+                result += val * unit
+                unit = 1
 
         if unit > 1:
             result += unit
@@ -1064,12 +1062,12 @@ def _kansuji2arabic(kansuji: str):
         return result
 
     transuji = kansuji.translate(_tt_knum)
-    result = _convert(transuji, _re_manshin, _TRANSMAN)
+    result = str(_transvalue(transuji, _re_manshin, _TRANSMANS))
 
-    return kansuji, str(result)
+    return kansuji, result
 
 
-_re_knum = _re.compile('[一二三四五六七八九十壱弐参拾百千〇]+')
+_re_knum = _re.compile('[一二三四五六七八九十壱弐参拾百千万億兆〇\d]+')
 
 
 def _normalize(string, nowrdchr=True):
@@ -1082,7 +1080,7 @@ def _normalize(string, nowrdchr=True):
     """
     string = sub(_sub_ltbracket, string).upper()
 
-    for kn in _re_knum.findall(string):
+    for kn in set(_re_knum.findall(string)):
         string = string.replace(*_kansuji2arabic(kn))
 
     if nowrdchr:
