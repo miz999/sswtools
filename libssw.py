@@ -782,8 +782,7 @@ def cvt2int(item):
 
 def takefirst(pred, seq):
     """最初に真になった値だけを返す"""
-    for s in filter(pred, seq):
-        return s
+    return next(filter(pred, seq))
 
 
 def inprogress(msg):
