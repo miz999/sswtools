@@ -532,9 +532,6 @@ re_neghirag = _re.compile(r'[^ぁ-ゞー]')
 _re_number = _re.compile(r'\d+')
 _re_interlink = _re.compile(r'(\[\[.+?\]\])')
 
-_sub_ltbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
-_sub_nowrdchr = (_re.compile(r'\W'), '')
-
 
 _DummyResp = _namedtuple('DummyResp', 'status,fromcache')
 
@@ -783,6 +780,12 @@ def cvt2int(item):
     return int(extr_num(item)[0]) if item else 0
 
 
+def takefirst(pred, seq):
+    """最初に真になった値だけを返す"""
+    for s in filter(pred, seq):
+        return s
+
+
 def inprogress(msg):
     """「{}中...」メッセージ"""
     if not _VERBOSE:
@@ -1028,7 +1031,8 @@ class __OpenUrl:
 open_url = __OpenUrl()
 
 
-_tt_knum = str.maketrans('一二三四五六七八九〇壱弐参', '1234567890123')
+_tt_knum = str.maketrans('一二三四五六七八九〇壱弐参伍', '12345678901235')
+_re_ksuji = _re.compile('[十拾百千万億兆〇\d]+')
 _re_kunit = _re.compile(r'[十拾百千]|\d+')
 _re_manshin = _re.compile(r'[万億兆]|[^万億兆]+')
 
@@ -1041,12 +1045,12 @@ _TRANSMANS = {'万': 10000,
               '兆': 1000000000000}
 
 
-def _kansuji2arabic(kansuji: str):
-    """漢数字をアラビア数字に変換"""
-    def _transvalue(tsj, re_obj=_re_kunit, transdic=_TRANSUNIT):
+def _corenormalizer(strings):
+
+    def _transvalue(sj, re_obj=_re_kunit, transdic=_TRANSUNIT):
         unit = 1
         result = 0
-        for piece in reversed(re_obj.findall(tsj)):
+        for piece in reversed(re_obj.findall(sj)):
             if piece in transdic:
                 if unit > 1:
                     result += unit
@@ -1059,18 +1063,42 @@ def _kansuji2arabic(kansuji: str):
         if unit > 1:
             result += unit
 
-        return result
+        return str(result)
 
-    transuji = kansuji.translate(_tt_knum)
-    result = str(_transvalue(transuji, _re_manshin, _TRANSMANS))
+    for string in strings:
+        normstr = string.translate(_tt_knum)
+        for suji in sorted(set(_re_ksuji.findall(normstr)),
+                           key=lambda s: len(s),
+                           reverse=True):
+            if not suji.isdecimal():
+                arabic = _transvalue(suji, _re_manshin, _TRANSMANS)
+                normstr = normstr.replace(suji, arabic)
+        normstr = _unicodedata.normalize('NFKC', normstr)
 
-    return kansuji, result
+        yield normstr
 
 
-_re_knum = _re.compile('[一二三四五六七八九十壱弐参拾百千万億兆〇\d]+')
+_re_tailnum = _re.compile(r'(\d+)巻?$')
 
 
-def _normalize(string, nowrdchr=True):
+def _ret_serial(strings):
+    """通番らしきものの採取"""
+    tailnum = takefirst(lambda s: s.isdecimal(), reversed(strings))
+    if tailnum:
+        return tailnum
+
+    tailnum = takefirst(lambda s: _re_tailnum.findall(s), reversed(string))
+    if tailnum:
+        return tailnum[0]
+
+    return None
+
+
+_sub_ltbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
+_sub_nowrdchr = (_re.compile(r'\W'), ' ')
+
+
+def _normalize(string, sep=''):
     """タイトル文字列を正規化
 
     先頭と末尾の【.+?】くくりを除去
@@ -1079,18 +1107,12 @@ def _normalize(string, nowrdchr=True):
     連番らしきものがあれば付記
     """
     string = sub(_sub_ltbracket, string).upper()
+    strings = sub(_sub_nowrdchr, string).split()
+    strings = tuple(_corenormalizer(strings))
 
-    for kn in set(_re_knum.findall(string)):
-        string = string.replace(*_kansuji2arabic(kn))
+    serial = _ret_serial(strings)
 
-    if nowrdchr:
-        string = sub(_sub_nowrdchr, string)
-    string = _unicodedata.normalize('NFKC', string)
-
-    serial = extr_num(string)
-    serial = serial[-1] if serial else ''
-
-    return string, serial
+    return sep.join(strings), serial
 
 
 def _check_omitword(title):
@@ -1133,7 +1155,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
 
     def _check_omnivals(title):
         """隠れ総集編チェック(関連数値編)"""
-        title = _normalize(title, nowrdchr=False)[0]
+        title = _normalize(title, sep=' ')[0]
         hit = tuple(_chain.from_iterable(
             p.findall(title) for p in _re_omnivals))
         if len(hit) > 1:
@@ -1497,8 +1519,8 @@ class OmitTitleException(Exception):
 class DMMParser:
     """DMM作品ページの解析"""
     _TITLE_FROM_OFFICIAL = {'h_701ap': _ret_apache,    # アパッチ
-                            '84scop': _ret_scoop,      # SCOOP
-                            '84scpx': _ret_scoop,      # SCOOP
+                            # '84scop': _ret_scoop,    # SCOOP
+                            # '84scpx': _ret_scoop,    # SCOOP
                             # 'h_113se': _ret_plum_se, # 素人援交生中出し(プラム)
     }
 
