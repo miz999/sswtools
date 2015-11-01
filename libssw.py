@@ -1065,7 +1065,7 @@ def _corenormalizer(strings):
         if unit > 1:
             result += unit
 
-        return str(result)
+        return result
 
     for string in strings:
         normstr = string.translate(_tt_knum)
@@ -1074,7 +1074,7 @@ def _corenormalizer(strings):
                            reverse=True):
             if not suji.isdecimal():
                 arabic = _transvalue(suji, _re_manshin, _TRANSMANS)
-                normstr = normstr.replace(suji, arabic)
+                normstr = normstr.replace(suji, str(arabic))
         normstr = _unicodedata.normalize('NFKC', normstr)
 
         yield normstr
