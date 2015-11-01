@@ -1086,7 +1086,7 @@ def _ret_serial(strings):
     if tailnum:
         return tailnum
 
-    tailnum = takefirst(lambda s: _re_tailnum.findall(s), reversed(string))
+    tailnum = takefirst(lambda s: _re_tailnum.findall(s), reversed(strings))
     if tailnum:
         return tailnum[0]
 
