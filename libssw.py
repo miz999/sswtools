@@ -782,10 +782,7 @@ def cvt2int(item):
 
 def takefirst(pred, seq):
     """最初に真になった値だけを返す"""
-    try:
-        return next(filter(pred, seq))
-    except StopIteration:
-        return None
+    return next(filter(pred, seq))
 
 
 def inprogress(msg):
@@ -1065,7 +1062,7 @@ def _corenormalizer(strings):
         if unit > 1:
             result += unit
 
-        return result
+        return str(result)
 
     for string in strings:
         normstr = string.translate(_tt_knum)
@@ -1089,7 +1086,7 @@ def _ret_serial(strings):
     if tailnum:
         return tailnum
 
-    tailnum = takefirst(lambda s: _re_tailnum.findall(s), reversed(strings))
+    tailnum = takefirst(lambda s: _re_tailnum.findall(s), reversed(string))
     if tailnum:
         return tailnum[0]
 
