@@ -738,18 +738,18 @@ def copy2clipboard(string):
         _emsg('W', 'Python pyperclip モジュールがインストールされていないためクリップボードにはコピーされません。')
 
 
-def quote(string, safe='/', encoding='euc_jisx0213', errors=None):
+def quote(string: str, safe='/', encoding='euc_jisx0213', errors=None):
     """URL埋め込みように文字列をクオート"""
     return _up.quote(string, safe=safe, encoding=encoding,
                      errors=errors).replace('-', '%2d')
 
 
-def unquote(string, encoding='euc_jisx0213', errors='replace'):
+def unquote(string: str, encoding='euc_jisx0213', errors='replace'):
     """文字列をアンクオート"""
     return _up.unquote(string, encoding=encoding, errors=errors)
 
 
-def _clip_pname(url):
+def _clip_pname(url: str):
     """WikiページのURLからページ名を取得"""
     return unquote(url.rsplit('/', 1)[-1])
 
@@ -757,7 +757,7 @@ def _clip_pname(url):
 _tt_nl = str.maketrans('', '', '\r\n')
 
 
-def rm_nlcode(string):
+def rm_nlcode(string: str):
     """改行文字を除去"""
     return string.translate(_tt_nl)
 
@@ -765,27 +765,28 @@ def rm_nlcode(string):
 _tt_pidsep = str.maketrans('', '', '+-')
 
 
-def rm_hyphen(string):
+def rm_hyphen(string: str):
     """ハイフンを除去"""
     return string.translate(_tt_pidsep)
 
 
-def extr_num(string):
+def extr_num(string: str):
     """文字列から数値だけ抽出"""
     return _re_number.findall(string)
 
 
-def cvt2int(item):
-    """数値だけ取り出してintに変換"""
-    return int(extr_num(item)[0]) if item else 0
+def cvt2int(item: str):
+    """数値だけ取り出してintに変換(数値がなければ0を返す)"""
+    num = extr_num(item) or (0,)
+    return int(num[0])
 
 
 def takefirst(pred, seq):
-    """最初に真になった値だけを返す"""
-    try:
-        return next(filter(pred, seq))
-    except StopIteration:
-        return None
+    """最初に真になった値だけを返す
+
+    next() で取って StopIteration を拾うよりはこっち"""
+    for i in filter(pred, seq):
+        return i
 
 
 def inprogress(msg):
@@ -797,12 +798,12 @@ def inprogress(msg):
 re_list_article = _re.compile(r'/article=(.+?)/')
 
 
-def get_article(url):
+def get_article(url: str):
     """DMM URLからarticle=部を抽出"""
     return re_list_article.findall(url)[0]
 
 
-def le80bytes(string, encoding='euc_jisx0213'):
+def le80bytes(string: str, encoding='euc_jisx0213'):
     """Wikiページ名最大長(80バイト)チェック"""
     return len(bytes(string, encoding)) <= 80
 
@@ -810,7 +811,7 @@ def le80bytes(string, encoding='euc_jisx0213'):
 _tt_filename = str.maketrans(r'/:<>?"\*|;', '_' * 10)
 
 
-def trans_filename(filename):
+def trans_filename(filename: str):
     """ファイル名に使用できない文字列の置き換え"""
     return filename.translate(_tt_filename)
 
@@ -818,7 +819,7 @@ def trans_filename(filename):
 _tt_wikisyntax = str.maketrans('[]~', '［］～')
 
 
-def trans_wikisyntax(wikitext):
+def trans_wikisyntax(wikitext: str):
     """Wiki構文と衝突する記号の変換"""
     return wikitext.translate(_tt_wikisyntax)
 
@@ -1100,7 +1101,7 @@ _sub_ltbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
 _sub_nowrdchr = (_re.compile(r'\W'), ' ')
 
 
-def _normalize(string, sep=''):
+def _normalize(string: str, sep=''):
     """タイトル文字列を正規化
 
     先頭と末尾の【.+?】くくりを除去
@@ -1117,7 +1118,7 @@ def _normalize(string, sep=''):
     return sep.join(strings), serial
 
 
-def _check_omitword(title):
+def _check_omitword(title: str):
     """タイトル内の除外キーワードチェック"""
     for key in filter(lambda k: k in title, _OMITWORDS):
         _verbose('omit key, word: {}, {}'.format(key, _OMITWORDS[key]))
