@@ -20,7 +20,7 @@ DMMから女優、シリーズ、メーカー、あるいはレーベルのID(DM
 ・品番のプレフィクスがあらかじめ登録されている総集編のものと一致
 ・ジャンルに総集編がある
 ・タイトルに「総集編」「BEST」などの関連ワードがある
-・タイトルに「20人/名」以上/「15本番/SEX」以上/「20(連)発/射」以上/
+・タイトルに「15人/名」以上/「15本番/SEX」以上/「20(連)発/射」以上/
 「4時間」以上/「240分」以上/「(全)(n)タイトル」のうち2つ以上含まれて
 いる
 ・収録時間が約4時間以上(200分超)なら総集編しかなさそうなメーカーである
@@ -891,29 +891,6 @@ def det_keyinfo(args):
         return None, None, 'pid'
 
 
-class ExtractIDs:
-    """位置引数からIDと検索対象の抽出"""
-    def __call__(self, keywords: tuple, is_cid=False):
-        self.retrieval = None
-
-        for k in keywords:
-
-            if k.startswith('http://'):
-
-                yield from libssw.get_id(k, is_cid, ignore=True)
-
-                if not self.retrieval:
-                    try:
-                        self.retrieval = libssw.get_article(k)
-                    except IndexError:
-                        self.retrieval = 'keyword'
-                    verbose('retrieval(extracted): ', self.retrieval)
-            else:
-                yield k
-
-extr_ids = ExtractIDs()
-
-
 def makeproditem(cid, service, sub_pid):
     pid = libssw.gen_pid(cid, sub_pid)[0]
     verbose('built cid: {}, pid: {}'.format(cid, pid))
@@ -1222,11 +1199,11 @@ def main(argv=None):
     outfile = parse_outfile(args, make)
     verbose('outfile: ', outfile)
 
-    ids = tuple(extr_ids(args.keyword, args.cid))
+    ids = tuple(libssw.extr_ids(args.keyword, args.cid))
     verbose('ids: ', ids)
 
     if not args.retrieval:
-        args.retrieval = extr_ids.retrieval
+        args.retrieval = libssw.extr_ids.retrieval
     emsg('I', '対象: {}'.format(args.retrieval))
 
     # -L, -K , -U 以外では --not-in-series は意味がない

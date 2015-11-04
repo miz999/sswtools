@@ -155,6 +155,7 @@ _OMITGENRE = {'6014': 'イメージビデオ',
 _OMIT_MAKER = {
     '6500': 'BACK DROP',
     '6473': 'CHANGE',
+    '40029': 'アヴァ (レンタル)',
 }
 #   '45810': 'エクストラ'}
 
@@ -169,6 +170,7 @@ _OMIT_SUSS_4H = {
     '5534': 'ABC/妄想族',
     '5665': 'ROOKIE',
     '5699': 'VENUS',
+    '6368': '催眠研究所別館',
     '6413': 'フォーディメンション/エマニエル',
     '6426': '赤い弾丸/エマニエル',
     '6495': 'MANJIRO/エマニエル',
@@ -183,6 +185,7 @@ _OMIT_SUSS_4H = {
     '40077': 'AVS collector’s',
     '40082': 'ラハイナ東海',
     '40160': 'アテナ映像',
+    '45003': 'スタイルアート/妄想族',
     '45016': 'センタービレッジ',
     '45017': 'ドリームステージ',
     '45059': 'デジタルアーク',
@@ -196,7 +199,9 @@ _OMIT_SUSS_4H = {
     '45486': 'プリモ',
     '45532': 'スターゲート',
     '45700': 'バルタン',
-    '45883': 'Mellow Moon（メロウムーン）'}
+    '45737': 'カマタ映像',
+    '45883': 'Mellow Moon（メロウムーン）',
+    '45941': 'MGM'}
 
 # 総集編・再収録専門レーベル
 _OMIT_LABEL = {
@@ -205,8 +210,13 @@ _OMIT_LABEL = {
     '7111':  'CRYSTAL EX',
     '9164':  'オーロラプロジェクト・EX',
     '21231': 'DRAGON（ハヤブサ）',
+    '22721': 'バイキング',
+    '23581': 'K’S BEST',
     '24078': 'REBORN',
     '24230': '美少女（プレステージ）',
+    '24558': '79Au',
+    '24593': '熟肉',
+    '24808': '変態仮面',
     '25025': 'コリーダ'}
 
 # 総集編・再収録専門シリーズ
@@ -226,6 +236,7 @@ _OMIT_SERIES = {
     '208033': '湯あがりぺちゃぱいバスタイム',
     '208077': '美熟女プレイ集',
     '208374': '催眠研究',
+    '208519': '見下し丁寧淫語でございます。',
     '209310': 'ONEDAFULL1年の軌跡全60作品',
     '209360': '○○ism',
     '209413': 'アウトレットDVD5枚組 1980',
@@ -236,6 +247,9 @@ _OMIT_SERIES = {
     '210926': 'どすけべ妻のいやらしいフェラチオ',
     '211184': 'The○○ 美熟女スペシャル',
     '211414': '母乳厳選集',
+    '212454': '実録出版 永久不滅傑作選',
+    '212503': '極・奇譚クラブ',
+    '212638': 'SM獄窓の女たち 囚われの肉魔',
     '213087': 'おませなJKの制服でオクチえっち！',
     '213109': '夫の前で犯される人妻',
     '213295': '麗しき若妻',
@@ -243,6 +257,7 @@ _OMIT_SERIES = {
     '213604': 'ヌキサシバッチリ！！厳選センズリ専用ディルド＆指入れオナニー素材集',
     '213714': '1万人のAVユーザーが選んだ○○',
     '213840': '癒しのじゅるじゅぽフェラCOLLECTION',
+    '214749': 'この神脚、生唾ごっくん…。',
 }
 
 # 品番プレフィクス(URL上のもの)
@@ -528,6 +543,7 @@ re_inbracket = _re.compile(r'[(（]')
 re_linkpare = _re.compile(r'\[\[(.+?)(?:>(.+?))?\]\]')
 re_hiragana = _re.compile(r'[ぁ-ゞー]')
 re_neghirag = _re.compile(r'[^ぁ-ゞー]')
+re_more = _re.compile(r"url: '(.*?)'")
 
 _re_number = _re.compile(r'\d+')
 _re_interlink = _re.compile(r'(\[\[.+?\]\])')
@@ -1126,8 +1142,8 @@ def _check_omitword(title: str):
 
 
 _re_omnivals = (
-    # 20人/名 以上
-    _re.compile(r'(?:[2-9]\d|\d{3,})(?:人[^目\d]?|名)'),
+    # 15人/名 以上
+    _re.compile(r'(?:1[5-9]|[2-9]\d|\d{3,})(?:人[^目\d]?|名)'),
     # 20(連)発(射) 以上
     _re.compile(r'(?:[2-9]\d|\d{3,})連?[発射]'),
     # 15本番/SEX 以上
@@ -1528,7 +1544,6 @@ class DMMParser:
     }
 
     _re_genre = _re.compile(r'/article=keyword/id=(\d+)/')
-    _re_more = _re.compile(r"url: '(.*?)'")
 
     def __init__(self, no_omits=gen_no_omits(), patn_pid=None,
                  start_date=None, start_pid_s=None, filter_pid_s=None,
@@ -1829,11 +1844,11 @@ class DMMParser:
                 more_js = el.getparent().find('script')
 
                 if more_js is not None:
-                    more_path = self._re_more.findall(more_js.text)[0]
+                    more_path = re_more.findall(more_js.text)[0]
                 else:
                     # 処理スクリプトがHEAD内にある場合(動画ページ)用
                     for scr in self._he.xpath('head/script/text()'):
-                        more_path = self._re_more.findall(scr)
+                        more_path = re_more.findall(scr)
                         if more_path:
                             more_path = more_path[0]
                             break
@@ -2957,6 +2972,29 @@ def gen_pid(cid, pattern=None):
         pid = pid.upper()
 
     return pid, cid
+
+
+class _ExtractIDs:
+    """位置引数からIDと検索対象の抽出"""
+    def __call__(self, keywords: tuple, is_cid=False):
+        self.retrieval = None
+
+        for k in keywords:
+
+            if k.startswith('http://'):
+
+                if not self.retrieval:
+                    try:
+                        self.retrieval = get_article(k)
+                    except IndexError:
+                        self.retrieval = 'keyword'
+                    verbose('retrieval(extracted): ', self.retrieval)
+
+                yield from get_id(k, is_cid, ignore=True)
+            else:
+                yield k
+
+extr_ids = _ExtractIDs()
 
 
 class _InvalidPage(Exception):
