@@ -136,6 +136,10 @@ _OMITWORDS = {'総集編':      '総集編',
 #  '大全集'
 #  '全集'
 
+_OMNI_PATTERN_WORDS = {
+    _re.compile(r'(?:全|\d+)タイトル'): '総集編'}
+
+
 _OMITTYPE = ('イメージビデオ', '総集編', 'アウトレット', '復刻盤', '限定盤', 'UMD')
 
 # 除外対象ジャンル
@@ -512,7 +516,7 @@ _OMNI_PREFIX = (
     'h_970kagh015r',  # かぐや姫（メロウムーン）の総集編作品 (レンタル)
 )
 # 品番正規表現
-_OMNI_PATTERN = (
+_OMNI_PATTERN_CID = (
     _re.compile(r'^(?:[hn]_)?\d*aaj'),  # AV30
     _re.compile(r'^(?:837?)?sbb'),      # コレクターズエディション (マルクス兄弟)
 )
@@ -1140,6 +1144,13 @@ def _check_omitword(title: str):
         _verbose('omit key, word: {}, {}'.format(key, _OMITWORDS[key]))
         yield _OMITWORDS[key], key
 
+    for re in _OMNI_PATTERN_WORDS:
+        match = re.findall(title)
+        if match:
+            _verbose('omit match, word: {}, {}'.format(
+                match[0], _OMNI_PATTERN_WORDS[re]))
+            yield _OMNI_PATTERN_WORDS[re], match[0]
+
 
 _re_omnivals = (
     # 15人/名 以上
@@ -1152,8 +1163,6 @@ _re_omnivals = (
     _re.compile(r'(?:[4-9](?:\.\d+)?|\d{2,}(?:\.\d+)?)時間'),
     # 240分 以上
     _re.compile(r'(?:2[4-9]\d|[3-9]\d{2}|\d{4,})分'),
-    # 全(n)タイトル
-    _re.compile(r'(?:全|\d+)タイトル'),
 )
 
 
@@ -1167,7 +1176,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
 
     除外対象なら対象の情報を返す。
     """
-    def _check_omitprfx(cid, prefix=_OMNI_PREFIX, patn=_OMNI_PATTERN):
+    def _check_omitprfx(cid, prefix=_OMNI_PREFIX, patn=_OMNI_PATTERN_CID):
         """隠れ総集編チェック(プレフィクス版)"""
         return any(cid.startswith(p) for p in prefix) or \
             any(p.search(cid) for p in patn)
@@ -2016,6 +2025,7 @@ class DMMParser:
                               self._sm['cid'],
                               self._omit_suss_4h,
                               no_omits=gen_no_omits())
+
         if omitinfo:
             self._mark_omitted(*omitinfo)
 
@@ -2988,7 +2998,7 @@ class _ExtractIDs:
                         self.retrieval = get_article(k)
                     except IndexError:
                         self.retrieval = 'keyword'
-                    verbose('retrieval(extracted): ', self.retrieval)
+                    _verbose('retrieval(extracted): ', self.retrieval)
 
                 yield from get_id(k, is_cid, ignore=True)
             else:
