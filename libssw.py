@@ -3159,9 +3159,8 @@ def open_ssw(*pages):
                 quote(p)))
 
 
-_sub_diff = ((_re.compile(r'ISO-8859-1'), 'utf-8'),
-             (_re.compile(r'Courier'), 'Sans'),
-             (_re.compile(r'nowrap="nowrap"'), ''))
+_rep_diff = (('Courier', 'Sans'),
+             ('nowrap="nowrap"', ''))
 
 
 def show_diff(flines, tlines, fdesc, tdesc, context=True):
@@ -3176,8 +3175,8 @@ def show_diff(flines, tlines, fdesc, tdesc, context=True):
                                  fdesc,
                                  tdesc,
                                  context=context)
-    for p in _sub_diff:
-        diff = sub(p, diff)
+    for p, r in _rep_diff:
+        diff = diff.replace(p, r)
     dummy, tmpf = _mkstemp(suffix='.html', dir=str(_CACHEDIR))
     with open(tmpf, 'w') as f:
         f.writelines(diff)

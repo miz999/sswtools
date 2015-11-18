@@ -559,19 +559,19 @@ def _build_image_url(service, cid):
                              '{0}/{0}{1}.jpg'.format(cid, s)) for s in suffix)
 
 
-_sub_expansion = ((_re.compile('@{media}'), 'media'),
-                  (_re.compile('@{time}'), 'time'),
-                  (_re.compile('@{series}'), 'series'),
-                  (_re.compile('@{maker}'), 'maker'),
-                  (_re.compile('@{label}'), 'label'),
-                  (_re.compile('@{cid}'), 'cid'))
+_rep_expansion = (('@{media}', 'media'),
+                  ('@{time}', 'time'),
+                  ('@{series}', 'series'),
+                  ('@{maker}', 'maker'),
+                  ('@{label}', 'label'),
+                  ('@{cid}', 'cid'))
 
 
 def _expansion(phrases, summ):
     """予約変数の展開"""
     for ph in phrases:
-        for p, r in _sub_expansion:
-            ph = p.sub(getattr(summ, r), ph)
+        for p, r in _rep_expansion:
+            ph = ph.replace(p, getattr(summ, r))
         yield ph
 
 
