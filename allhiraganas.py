@@ -127,7 +127,7 @@ def select_allhiragana(ids, today, path, selfcheck):
                     props=libssw.Summary(url=prod_url),
                     p_args=argparse.Namespace(fastest=True, hide_list=True),
                     dmmparser=dmmparser)
-                if status in ('Omitted', 404):
+                if status in {'Omitted', 404}:
                     verbose('Omitted: status=', status, ', values=', values)
                     continue
                 verbose('return from dmm2ssw: ', values)

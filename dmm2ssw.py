@@ -675,7 +675,7 @@ def _format_wikitext_a(summ, anum, astr):
     # 画像
     wtext += '[[{0[image_sm]}>{0[image_lg]}]]\n'.format(summ)
     # 出演者
-    if anum not in (0, 1):
+    if anum not in {0, 1}:
         wtext += '出演者：{0}\n'.format(astr)
     # 備考
     notes = summ['note'] + summ['others'] if summ['others'] else summ['note']

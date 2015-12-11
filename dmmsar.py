@@ -936,7 +936,7 @@ def make_pgen(args, ids, listparser, sub_pid, key_id, key_type, kidattr):
     else:
         # DMMから一覧を検索/取得
         verbose('Call from_dmm()')
-        if args.retrieval in ('url', 'keyword'):
+        if args.retrieval in {'url', 'keyword'}:
             priurls = args.keyword
         else:
             priurls = libssw.join_priurls(args.retrieval,
@@ -1206,7 +1206,7 @@ def main(argv=None):
     emsg('I', '対象: {}'.format(args.retrieval))
 
     # -L, -K , -U 以外では --not-in-series は意味がない
-    if args.retrieval not in ('label', 'maker', 'url'):
+    if args.retrieval not in {'label', 'maker', 'url'}:
         args.n_i_s = False
         verbose('force disabled n_i_s')
 
@@ -1298,7 +1298,7 @@ def main(argv=None):
                                  check_rltd=args.check_rltd,
                                  check_smm=args.smm)
 
-    if args.retrieval in ('maker', 'label', 'series'):
+    if args.retrieval in {'maker', 'label', 'series'}:
         keyiter = libssw.sort_by_id(products)
     else:
         keyiter = iter(products)
