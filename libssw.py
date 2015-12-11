@@ -1152,6 +1152,13 @@ def _check_omitword(title: str):
             yield _OMNI_PATTERN_WORDS[re], match[0]
 
 
+_re_oroshi = _re.compile(r'撮り(おろ|下ろ|卸)し')
+
+
+def _isnot_torioroshi(genre, title):
+    return genre == '総集編' and not _re_oroshi.search(title)
+
+
 _re_omnivals = (
     # 15人/名 以上
     _re.compile(r'(?:1[5-9]|[2-9]\d|\d{3,})(?:人[^目\d]?|名)'),
@@ -1204,7 +1211,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
                             _check_omitword(title)):
         return key, word
 
-    if '総集編' not in no_omits:
+    if '総集編' not in no_omits and _isnot_torioroshi('総集編', title):
         # 隠れ総集編チェック(タイトル内の数値から)
         omnivals = _check_omnivals(title)
         if omnivals:
@@ -1590,13 +1597,6 @@ class DMMParser:
 
     def _ret_title(self):
         """タイトルの採取 (DMMParser)"""
-        def _det_longtitle_maker():
-            for key in filter(lambda k: self._sm['cid'].startswith(k),
-                              self._TITLE_FROM_OFFICIAL):
-                _verbose('title from maker: ', key)
-                return self._TITLE_FROM_OFFICIAL[key]
-            return False
-
         try:
             tdmm = self._he.find('.//img[@class="tdmm"]').get('alt')
         except AttributeError:
@@ -1604,25 +1604,34 @@ class DMMParser:
 
         _verbose('title dmm: ', tdmm)
 
-        tmkr = ''
-        if self._longtitle:
-            titleparser = _det_longtitle_maker()
-            if titleparser:
-                # Apacheの作品タイトルはメーカー公式から
-                try:
-                    tmkr = titleparser(self._sm['cid'], self._sm['pid'])
-                except _LongTitleError as e:
-                    _emsg(
-                        'W',
-                        'メーカー公式サイトから正しい作品ページを取得できませんでした: ',
-                        e.args)
-        _verbose('title maker: ', tmkr)
-
-        title = tmkr or tdmm
         title_dmm = tdmm if not _compare_title(title,
                                                *_normalize(tdmm)) else ''
 
         return title, title_dmm
+
+    def _chk_longtitle(self):
+        """DMMでは端折られている可能性があるタイトルが長いメーカーチェック"""
+        def _det_longtitle_maker():
+            for key in filter(lambda k: self._sm['cid'].startswith(k),
+                              self._TITLE_FROM_OFFICIAL):
+                _verbose('title from maker: ', key)
+                return self._TITLE_FROM_OFFICIAL[key]
+            return False
+
+        tmkr = ''
+        titleparser = _det_longtitle_maker()
+        if titleparser:
+            # Apacheの作品タイトルはメーカー公式から
+            try:
+                tmkr = titleparser(self._sm['cid'], self._sm['pid'])
+            except _LongTitleError as e:
+                _emsg(
+                    'W',
+                    'メーカー公式サイトから正しい作品ページを取得できませんでした: ',
+                    e.args)
+            _verbose('title maker: ', tmkr)
+
+            self._sm['title'] = tmkr
 
     def _ret_props(self, prop):
         """各種情報"""
@@ -1756,9 +1765,11 @@ class DMMParser:
                 except IndexError:
                     continue
 
+                omitgenre = _OMITGENRE.get(gid, False)
                 # 除外対象ジャンルであれば記録または中止
-                if _OMITGENRE.get(gid, False):
-                    self._mark_omitted(_OMITGENRE[gid], 'genre')
+                if omitgenre and _isnot_torioroshi(omitgenre,
+                                                   self._sm['title']):
+                    self._mark_omitted(omitgenre, 'genre')
 
                 if gid == _GENRE_BD:
                     self._bluray = True
@@ -2012,13 +2023,16 @@ class DMMParser:
         _verbose('Parsing DMM product page: deper=', self._deeper)
         _verbose('self._sm preset: ', self._sm.items())
 
+        # タイトルの取得
+        if not self._sm['title'] or self._sm['title'].startswith('__'):
+            self._sm['title'], self._sm['title_dmm'] = self._ret_title()
+
         # 作品情報の取得
         for prop in self._he.iterfind('.//td[@class="nw"]'):
             self._ret_props(prop)
 
-        # タイトルの取得
-        if not self._sm['title'] or self._sm['title'].startswith('__'):
-            self._sm['title'], self._sm['title_dmm'] = self._ret_title()
+        if self._longtitle:
+            self._chk_longtitle()
 
         # 除外作品チェック
         omitinfo = check_omit(self._sm['title'],
