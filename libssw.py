@@ -52,7 +52,8 @@ ACTURL = BASEURL_ACT + '/-/detail/=/actress_id={}/'
 
 RETLABEL = {'series': 'シリーズ',
             'label':  'レーベル',
-            'maker':  'メーカー'}
+            'maker':  'メーカー',
+            'actress': '女優'}
 
 _BASEURL_DMM = 'http://www.dmm.co.jp'
 _BASEURL_SMM = 'http://supermm.jp'
