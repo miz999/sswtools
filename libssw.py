@@ -847,9 +847,7 @@ def trans_wikisyntax(wikitext: str):
 
 def files_exists(mode, *files):
     """同名のファイルが存在するかどうかチェック"""
-    for f in files:
-        if f in {_sys.stdin, _sys.stdout}:
-            continue
+    for f in filter(lambda x: x not in {_sys.stdin, _sys.stdout}, files):
         _verbose('file: ', f)
         isexist = _os.path.exists(f)
         if mode == 'r' and not isexist:
@@ -1596,20 +1594,6 @@ class DMMParser:
             _verbose('Omit exception ({}, {})'.format(key, hue))
             raise OmitTitleException(key, hue)
 
-    def _ret_title(self):
-        """タイトルの採取 (DMMParser)"""
-        try:
-            tdmm = self._he.find('.//img[@class="tdmm"]').get('alt')
-        except AttributeError:
-            _emsg('E', 'DMM作品ページではないようです。')
-
-        _verbose('title dmm: ', tdmm)
-
-        title_dmm = tdmm if not _compare_title(title,
-                                               *_normalize(tdmm)) else ''
-
-        return title, title_dmm
-
     def _chk_longtitle(self):
         """DMMでは端折られている可能性があるタイトルが長いメーカーチェック"""
         def _det_longtitle_maker():
@@ -1632,7 +1616,25 @@ class DMMParser:
                     e.args)
             _verbose('title maker: ', tmkr)
 
-            self._sm['title'] = tmkr
+            return tmkr
+        else:
+            return None
+
+    def _ret_title(self):
+        """タイトルの採取 (DMMParser)"""
+        try:
+            tdmm = self._he.find('.//img[@class="tdmm"]').get('alt')
+        except AttributeError:
+            _emsg('E', 'DMM作品ページではないようです。')
+
+        _verbose('title dmm: ', tdmm)
+
+        title = self._chk_longtitle() or tdmm
+
+        title_dmm = tdmm if not _compare_title(title,
+                                               *_normalize(tdmm)) else ''
+
+        return title, title_dmm
 
     def _ret_props(self, prop):
         """各種情報"""
@@ -2031,9 +2033,6 @@ class DMMParser:
         # 作品情報の取得
         for prop in self._he.iterfind('.//td[@class="nw"]'):
             self._ret_props(prop)
-
-        if self._longtitle:
-            self._chk_longtitle()
 
         # 除外作品チェック
         omitinfo = check_omit(self._sm['title'],
