@@ -802,12 +802,12 @@ def cvt2int(item: str):
     return int(num[0])
 
 
-def takefirst(pred, seq):
+def takefirst(pred, seq, func=lambda x: x):
     """最初に真になった値だけを返す
 
     next() で取って StopIteration を拾うよりはこっち"""
     for i in filter(pred, seq):
-        return i
+        return func(i)
 
 
 def inprogress(msg):
@@ -1100,7 +1100,7 @@ def _corenormalizer(strings):
         yield normstr
 
 
-_re_tailnum = _re.compile(r'(\d+)巻?$')
+_re_tailnum = _re.compile(r'(?:no|vol|パート|part|第|その)(\d+)巻?$', flags=_re.I)
 
 
 def _ret_serial(strings):
@@ -1109,29 +1109,32 @@ def _ret_serial(strings):
     if tailnum:
         return tailnum
 
-    tailnum = takefirst(lambda s: _re_tailnum.findall(s), reversed(strings))
+    tailnum = takefirst(lambda s: _re_tailnum.findall(s), reversed(strings),
+                        lambda r: r[-1])
     if tailnum:
-        return tailnum[0]
+        return tailnum
 
     return None
 
 
 _sub_ltbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
 _sub_nowrdchr = (_re.compile(r'\W'), ' ')
+_tt_dot = str.maketrans('', '', '.')
 
 
 def _normalize(string: str, sep=''):
-    """タイトル文字列を正規化
+    """タイトル文字列を正規化"""
 
-    先頭と末尾の【.+?】くくりを除去
-    非unicode単語文字を除去(空白文字含む)
-    漢数字をアラビア数字に置き換え
-    連番らしきものがあれば付記
-    """
+    # 先頭と末尾の【.+?】くくりを除去
     string = sub(_sub_ltbracket, string).upper()
+    # 「.」だけは詰める
+    string = string.translate(_tt_dot)
+    # 非unicode単語文字を空白に置き換えて空白文字で分割
     strings = sub(_sub_nowrdchr, string).split()
+    # 漢数字をアラビア数字に置き換え
     strings = tuple(_corenormalizer(strings))
 
+    # 連番らしきものがあれば採取
     serial = _ret_serial(strings)
 
     return sep.join(strings), serial
