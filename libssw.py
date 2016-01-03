@@ -1117,7 +1117,10 @@ def _ret_serial(strings):
     return None
 
 
-_sub_ltbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
+# _sub_blbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
+_sub_blbtag = (_re.compile(r'^【.*?{0}.*?】|【.*?{0}.*?】$'.format(
+    '(限定|アウトレット|予約|[早旧]得|Blu-ray|DM便|メール便|パンツ|ポイント|特価|セール|在庫|セット|今週|GQE)'), flags=_re.I),
+               '')
 _sub_nowrdchr = (_re.compile(r'\W'), ' ')
 _tt_dot = str.maketrans('', '', '.')
 
@@ -1126,12 +1129,12 @@ def _normalize(string: str, sep=''):
     """タイトル文字列を正規化"""
 
     # 先頭と末尾の【.+?】くくりを除去
-    string = sub(_sub_ltbracket, string).upper()
+    string = sub(_sub_blbtag, string).upper()
     # 「.」だけは詰める
     string = string.translate(_tt_dot)
     # 非unicode単語文字を空白に置き換えて空白文字で分割
     strings = sub(_sub_nowrdchr, string).split()
-    # 漢数字をアラビア数字に置き換え
+    # 漢数字をアラビア数字に置き換えてunicode正規化
     strings = tuple(_corenormalizer(strings))
 
     # 連番らしきものがあれば採取
