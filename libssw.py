@@ -802,14 +802,6 @@ def cvt2int(item: str):
     return int(num[0])
 
 
-def takefirst(pred, seq, func=lambda x: x):
-    """最初に真になった値だけを返す
-
-    next() で取って StopIteration を拾うよりはこっち"""
-    for i in filter(pred, seq):
-        return func(i)
-
-
 def inprogress(msg):
     """「{}中...」メッセージ"""
     if not _VERBOSE:
@@ -1110,21 +1102,20 @@ _re_tailnum = _re.compile(r'(?:no|vol|パート|part|第|その|其ノ)(\d+)巻?
 
 def _ret_serial(strings):
     """通番らしきものの採取"""
-    tailnum = takefirst(lambda s: s.isdecimal(), reversed(strings))
-    if tailnum:
+    for tailnum in filter(lambda s: s.isdecimal(), reversed(strings)):
         return tailnum
 
-    tailnum = takefirst(lambda s: _re_tailnum.findall(s), reversed(strings),
-                        lambda r: r[-1])
-    if tailnum:
-        return tailnum
+    for part in reversed(strings):
+        tailnum = _re_tailnum.findall(part)
+        if tailnum:
+            return tailnum[-1]
 
     return None
 
 
 # _sub_blbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
-_sub_blbtag = (_re.compile(r'^{0}|{0}$'.format(
-    '【.*?(限定|アウトレット|予約|[早旧]得|Blu-ray|DM便|メール便|パンツ|ポイント|特価|セール|在庫|セット|今週|GQE).*?】'), flags=_re.I),
+_sub_blbtag = (_re.compile(
+    r'【[^】]*?(限定|アウトレット|予約|[早旧]得|Blu-ray|DM便|メール便|パンツ|ポイント|特価|セール|在庫|セット|今週|GQE).*?】', flags=_re.I),
                '')
 _sub_nowrdchr = (_re.compile(r'\W'), ' ')
 _tt_dot = str.maketrans('', '', '.')
