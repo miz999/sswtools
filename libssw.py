@@ -590,7 +590,7 @@ def def_verbose(vmode, ownname):
             _verbose = _Verbose(_OWNNAME, vv)
         return _Verbose(ownname, vmode)
     else:
-        return lambda *x: None
+        return _verbose
 
 
 class Emsg:
@@ -865,12 +865,14 @@ def save_cache(target, stem):
     _verbose('cache file: ', pkfile)
 
     if lockfile.exists():
+        # ロックファイルの有無と期限のチェック
         now = _time.time()
         mtime = lockfile.stat().st_mtime
         if now - mtime > 180:
             lockfile.unlink()
 
     for i in range(10):
+        # ロックファイルの作成
         try:
             lockfile.touch(exist_ok=False)
         except FileExistsError:
@@ -1068,8 +1070,9 @@ _TRANSMANS = {'万': 10000,
 
 
 def _corenormalizer(strings):
-
+    """漢数字をアラビア数字にしてunicode正規化"""
     def _transvalue(sj, re_obj=_re_kunit, transdic=_TRANSUNIT):
+        """漢数字(位)の解析"""
         unit = 1
         result = 0
         for piece in reversed(re_obj.findall(sj)):
@@ -1088,7 +1091,9 @@ def _corenormalizer(strings):
         return result
 
     for string in strings:
+        # 漢数字(数字)の変換
         normstr = string.translate(_tt_knum)
+        # 数字と漢数字(位)を抽出して位が含まれてたら展開
         for suji in sorted(set(_re_ksuji.findall(normstr)),
                            key=lambda s: len(s),
                            reverse=True):
@@ -1100,7 +1105,7 @@ def _corenormalizer(strings):
         yield normstr
 
 
-_re_tailnum = _re.compile(r'(?:no|vol|パート|part|第|その)(\d+)巻?$', flags=_re.I)
+_re_tailnum = _re.compile(r'(?:no|vol|パート|part|第|その|其ノ)(\d+)巻?$', flags=_re.I)
 
 
 def _ret_serial(strings):
@@ -1118,8 +1123,8 @@ def _ret_serial(strings):
 
 
 # _sub_blbracket = (_re.compile(r'^【.+?】+?|【.+?】+?$'), '')
-_sub_blbtag = (_re.compile(r'^【.*?{0}.*?】|【.*?{0}.*?】$'.format(
-    '(限定|アウトレット|予約|[早旧]得|Blu-ray|DM便|メール便|パンツ|ポイント|特価|セール|在庫|セット|今週|GQE)'), flags=_re.I),
+_sub_blbtag = (_re.compile(r'^{0}|{0}$'.format(
+    '【.*?(限定|アウトレット|予約|[早旧]得|Blu-ray|DM便|メール便|パンツ|ポイント|特価|セール|在庫|セット|今週|GQE).*?】'), flags=_re.I),
                '')
 _sub_nowrdchr = (_re.compile(r'\W'), ' ')
 _tt_dot = str.maketrans('', '', '.')
@@ -1128,9 +1133,9 @@ _tt_dot = str.maketrans('', '', '.')
 def _normalize(string: str, sep=''):
     """タイトル文字列を正規化"""
 
-    # 先頭と末尾の【.+?】くくりを除去
+    # 【.+?】くくりタグ文字列を除去
     string = sub(_sub_blbtag, string).upper()
-    # 「.」だけは詰める
+    # 「.」だけは詰める(No., Vol.)
     string = string.translate(_tt_dot)
     # 非unicode単語文字を空白に置き換えて空白文字で分割
     strings = sub(_sub_nowrdchr, string).split()
@@ -1145,10 +1150,13 @@ def _normalize(string: str, sep=''):
 
 def _check_omitword(title: str):
     """タイトル内の除外キーワードチェック"""
+
+    # タイトル内に除外文字列があればそれとタイプをyield
     for key in filter(lambda k: k in title, _OMITWORDS):
         _verbose('omit key, word: {}, {}'.format(key, _OMITWORDS[key]))
         yield _OMITWORDS[key], key
 
+    # タイトルとマッチする除外文字列パターンがあればそれとタイプをyield
     for re in _OMNI_PATTERN_WORDS:
         match = re.findall(title)
         if match:
@@ -1161,6 +1169,7 @@ _re_oroshi = _re.compile(r'撮り(おろ|下ろ|卸)し')
 
 
 def _isnot_torioroshi(genre, title):
+    """総集編だけどタイトル内に「撮りおろし」とあれば真を返す"""
     return genre == '総集編' and not _re_oroshi.search(title)
 
 
@@ -1216,6 +1225,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
                             _check_omitword(title)):
         return key, word
 
+    # 隠れ総集編チェック
     if '総集編' not in no_omits and _isnot_torioroshi('総集編', title):
         # 隠れ総集編チェック(タイトル内の数値から)
         omnivals = _check_omnivals(title)
@@ -1232,8 +1242,8 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
             if hh or mmm:
                 return '総集編', omit_suss_4h + '(4時間以上)'
 
+    # 隠れIVチェック
     if 'イメージビデオ' not in no_omits:
-        # 隠れIVチェック
         if _check_omitprfx(cid, _IV_PREFIX):
             return 'イメージビデオ', cid
 
