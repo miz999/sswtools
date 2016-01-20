@@ -1192,7 +1192,7 @@ _re_oroshi = _re.compile(r'撮り(おろ|下ろ|卸)し')
 
 
 def _isnot_torioroshi(genre, title):
-    """総集編だけどタイトル内に「撮りおろし」とあれば真を返す"""
+    """総集編でタイトルに「撮りおろし」となければ真を返す"""
     return genre == '総集編' and not _re_oroshi.search(title)
 
 
