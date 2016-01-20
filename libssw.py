@@ -1061,9 +1061,9 @@ _TRANSMANS = {'万': 10000,
               '兆': 1000000000000}
 
 
-def _corenormalizer(strings):
-    """漢数字をアラビア数字にしてunicode正規化"""
-    def _transvalue(sj, re_obj=_re_kunit, transdic=_TRANSUNIT):
+def _kansuji2arabic(string):
+    """漢数字をアラビア数字に正規化"""
+    def _transpowers(sj, re_obj=_re_kunit, transdic=_TRANSUNIT):
         """漢数字(位)の解析"""
         unit = 1
         result = 0
@@ -1073,7 +1073,7 @@ def _corenormalizer(strings):
                     result += unit
                 unit = transdic[piece]
             else:
-                val = int(piece) if piece.isdecimal() else _transvalue(piece)
+                val = int(piece) if piece.isdecimal() else _transpowers(piece)
                 result += val * unit
                 unit = 1
 
@@ -1082,16 +1082,49 @@ def _corenormalizer(strings):
 
         return result
 
+    normstr = string.translate(_tt_knum)
+    # 数字と漢数字(位)を抽出して位が含まれてたら展開
+    for suji in sorted(set(_re_ksuji.findall(normstr)),
+                       key=lambda s: len(s),
+                       reverse=True):
+        if not suji.isdecimal():
+            arabic = _transpowers(suji, _re_manshin, _TRANSMANS)
+            normstr = normstr.replace(suji, str(arabic))
+
+    return normstr
+
+
+_ROMANNUMS = {'M':1000, 'D':500, 'C':100, 'L':50, 'X':10, 'V':5, 'I':1, '0':0}
+_re_roman = _re.compile(
+    r'M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$')
+
+
+def _roman2arabic(string):
+    """ローマ数字をアラビア数字に正規化"""
+    for r in filter(None, reversed(_re_roman.findall(string))):
+        roman = r
+        break
+    else:
+        return string
+
+    result = 0
+    prev = '0'
+    for num in reversed(roman):
+        factor = +1 if _ROMANNUMS[num] >= _ROMANNUMS[prev] else -1
+        result += factor * _ROMANNUMS[num]
+        prev = num
+
+    return _re_roman.sub(str(result), string)
+
+
+def _corenormalizer(strings):
+    """漢数字・ローマ数字をアラビア数字にしてunicode正規化"""
     for string in strings:
         # 漢数字(数字)の変換
-        normstr = string.translate(_tt_knum)
-        # 数字と漢数字(位)を抽出して位が含まれてたら展開
-        for suji in sorted(set(_re_ksuji.findall(normstr)),
-                           key=lambda s: len(s),
-                           reverse=True):
-            if not suji.isdecimal():
-                arabic = _transvalue(suji, _re_manshin, _TRANSMANS)
-                normstr = normstr.replace(suji, str(arabic))
+        normstr = _kansuji2arabic(string)
+        # ローマ数字の変換
+        normstr = _roman2arabic(normstr)
+        # unicode正規化
         normstr = _unicodedata.normalize('NFKC', normstr)
 
         yield normstr
@@ -1106,9 +1139,8 @@ def _ret_serial(strings):
         return tailnum
 
     for part in reversed(strings):
-        tailnum = _re_tailnum.findall(part)
-        if tailnum:
-            return tailnum[-1]
+        for tailnum in filter(None, reversed(_re_tailnum.findall(part))):
+            return tailnum
 
     return None
 
@@ -1130,7 +1162,7 @@ def _normalize(string: str, sep=''):
     string = string.translate(_tt_dot)
     # 非unicode単語文字を空白に置き換えて空白文字で分割
     strings = sub(_sub_nowrdchr, string).split()
-    # 漢数字をアラビア数字に置き換えてunicode正規化
+    # 漢数字・ローマ数字をアラビア数字に置き換えてunicode正規化
     strings = tuple(_corenormalizer(strings))
 
     # 連番らしきものがあれば採取
