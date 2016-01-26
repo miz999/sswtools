@@ -357,7 +357,7 @@ def hitodumagiri(he, url):
 
     title = performer + age + '才'
 
-    qname = '+'.join(libssw.quote(n) for n in performer.split())
+    qname = '+'.join(map(libssw.quote, performer.split()))
     srchurl = 'http://www.c0930.com/search/?q={}&x=0&y=0&category_search_type=and&flag_match_type=0'.format(qname)
 
     release = None

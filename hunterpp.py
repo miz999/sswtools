@@ -101,9 +101,9 @@ BASEURL = {
 }
 
 re_id = {
-    'hunter': re.compile(r'.*value=site(\d+)'),
-    'atom': re.compile(r'.*value=site(\d+)'),
-    'apache': re.compile(r'.*/detail_(\d+).html'),
+    'hunter': re.compile(r'(?<=value=site)\d+'),
+    'atom': re.compile(r'(?<=value=site)\d+'),
+    'apache': re.compile(r'(?<=detail_)\d+'),
     'switch': re.compile(r'(\d+?)$'),
 }
 
@@ -177,7 +177,7 @@ def gen_urls(site, args):
     end = get_value(args.end)
     verbose('start: ', start, ', end: ', end)
 
-    digit = max(len(i) for i in (start, end))
+    digit = max(map(len, (start, end)))
     verbose('digit: ', digit)
 
     if not end:

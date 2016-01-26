@@ -84,7 +84,7 @@ emsg = libssw.Emsg(OWNNAME)
 
 BASEURL_SSW = libssw.BASEURL_SSW
 
-re_ssw = re.compile(r'href="http://sougouwiki.com/d/([^/]+?)"')
+re_ssw = re.compile(r'(?<=href="http://sougouwiki.com/d/)[^/]+')
 
 
 verbose = None

@@ -102,7 +102,7 @@ emsg = libssw.Emsg(OWNNAME)
 
 re_cstart = re.compile(r'^// *(\d+.?\d+.?\d+)')
 re_product = re.compile(r'>(http://www.dmm.co.jp/.*/cid=.*?)]]')
-re_actid = re.compile(r'/article=actress/id=([\d,]+?)/')
+re_actid = re.compile(r'(?<=/article=actress/id=)[\d,]+')
 re_linkurl = re.compile(r'>(http://.+?)\]\]')
 
 sub_datedelim = (re.compile(r'-/'), '.')
@@ -415,8 +415,8 @@ def main():
     if args.diff:
         # 差分の出力
         libssw.show_diff(
-            tuple(contents[k] for k in current),
-            tuple(contents[k] for k in seq),
+            tuple(map(contents, current)),
+            tuple(map(contents, seq)),
             '追加前',
             '追加後')
 

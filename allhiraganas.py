@@ -137,7 +137,7 @@ def select_allhiragana(ids, today, path, selfcheck):
                     print('last_rel is different (db:{} <=> web:{}), '.format(
                         last_release, last_web),
                           end='')
-                datelast = date(*(int(d) for d in last_web.split('-')))
+                datelast = date(*map(int, last_web.split('-')))
 
                 if (today - datelast).days < 366:
 
