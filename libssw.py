@@ -555,6 +555,7 @@ _re_interlink = _re.compile(r'(\[\[.+?\]\])')
 
 
 _DummyResp = _namedtuple('DummyResp', 'status,fromcache')
+_NiS = _namedtuple('n_i_s', 'sid,name')
 
 
 def ownname(path):
@@ -570,7 +571,7 @@ class _Verbose:
         self.verbose = verbose
 
     def __call__(self, *msg):
-        msg = ''.join(str(m) for m in msg)
+        msg = ''.join(map(str, msg))
         print('({0}): >>> {1}'.format(self._ownname, msg),
               file=_sys.stderr, flush=True)
 
@@ -603,7 +604,7 @@ class Emsg:
         self._ownname = ownname
 
     def __call__(self, level, *msg):
-        msg = ''.join(str(m) for m in msg)
+        msg = ''.join(map(str, msg))
         m = '({}:{}) {}'.format(self._ownname, self._msglevel[level], msg)
         if level == 'W':
             m = '\033[1;33m{}\033[0m'.format(m)
@@ -808,7 +809,7 @@ def inprogress(msg):
         print('{}  '.format(msg), end='\r', file=_sys.stderr, flush=True)
 
 
-re_list_article = _re.compile(r'/article=(.+?)/')
+re_list_article = _re.compile(r'(?<=/article=)\w+')
 
 
 def get_article(url: str):
@@ -939,7 +940,7 @@ def gen_ntfcols(tname, fsource: 'sequence'):
 
 class __OpenUrl:
     """URLを開いて読み込む"""
-    _re_charset = _re.compile(r'charset=([a-zA-Z0-9_-]+);?')
+    _re_charset = _re.compile(r'(?<=charset=)[\w-]+')
 
     def __init__(self):
         if _VERBOSE > 1:
@@ -1130,7 +1131,7 @@ def _corenormalizer(strings):
         yield normstr
 
 
-_re_tailnum = _re.compile(r'(?:no|vol|パート|part|第|その|其ノ)(\d+)巻?$', flags=_re.I)
+_re_tailnum = _re.compile(r'(?:no|vol|パート|part|第|その|其[ノ之])(\d+)巻?$', flags=_re.I)
 
 
 def _ret_serial(strings):
@@ -1222,8 +1223,7 @@ def check_omit(title, cid, omit_suss_4h=None, no_omits=set()):
     """
     def _check_omitprfx(cid, prefix=_OMNI_PREFIX, patn=_OMNI_PATTERN_CID):
         """隠れ総集編チェック(プレフィクス版)"""
-        return any(cid.startswith(p) for p in prefix) or \
-            any(p.search(cid) for p in patn)
+        return any(map(cid.startswith, prefix)) or any(p.search(cid) for p in patn)
 
     def _check_omnivals(title):
         """隠れ総集編チェック(関連数値編)"""
@@ -2335,37 +2335,38 @@ _re_name = _re.compile(
     r'(?P<fore>[\w>]*)?(?P<paren>[(（][\w>]*[）)])?(?P<back>[\w>]*)?')
 
 
-def parse_names(name):
+def parse_names(names):
     """
     出演者情報の解析(rawテキスト)
 
     dmm2ssw.py -a オプション渡しとTSVからインポート用
     """
-    _verbose('Parsing name...')
+    _verbose('Parsing name (raw text)...')
 
-    # カッコ括りの付記の分割
-    m = _re_name.search(name)
+    for name in names:
+        # カッコ括りの付記の分割
+        m = _re_name.search(name)
 
-    if any(m.groups()):
-        shown = m.group('fore') or m.group('back')
-        parened = m.group('paren') or ''
-    else:
-        shown = name
-        parened = ''
+        if any(m.groups()):
+            shown = m.group('fore') or m.group('back')
+            parened = m.group('paren') or ''
+        else:
+            shown = name
+            parened = ''
 
-    if shown.endswith('人目') and not parened:
-        # n人目だったときのカッコ内送り
-        parened = '({})'.format(shown)
-        shown = ''
+        if shown.endswith('人目') and not parened:
+            # n人目だったときのカッコ内送り
+            parened = '({})'.format(shown)
+            shown = ''
 
-    # リダイレクト先の取得
-    if '>' in shown:
-        shown, dest = shown.split('>')
-    else:
-        dest = ''
+        # リダイレクト先の取得
+        if '>' in shown:
+            shown, dest = shown.split('>')
+        else:
+            dest = ''
 
-    _verbose('name prepared: {}, {}, {}'.format(shown, dest, parened))
-    return shown, dest, parened
+        _verbose('name prepared: {}, {}, {}'.format(shown, dest, parened))
+        yield shown, dest, parened
 
 
 _re_etc = _re.compile(r'ほか\w*?計(\d+)名')
@@ -2404,7 +2405,7 @@ def from_tsv(files):
                 _emsg('E', '正しいインポートファイル形式ではないようです。')
 
             # 処理用に女優名を要素解析
-            actress = list(parse_names(a) for a in actress)
+            actress = list(parse_names(actress))
             numcols = len(row)
             number = cvt2int(row[4]) if numcols > 4 else 0
             director = re_delim.split(row[5]) if numcols > 5 else []
@@ -2497,7 +2498,7 @@ class _FromWiki:
                         actress = [self._parse_names(a) for a in alist if a]
 
                 note = re_delim.split(md.NOTE)
-                note = list(n for n in note if 'シリーズ' not in n)
+                note = list(filter(lambda n: 'シリーズ' not in n, note))
 
                 yield url, Summary(url=url,
                                    title=md.TITLE,
@@ -2677,8 +2678,10 @@ class _FromHtml:
                                 '__' + pid
                     else:
                         title = '__' + pid
-                    actress = [a for a in self._parse_performers(md.ACTRESS)
-                               if a is not None]
+                    # actress = [a for a in self._parse_performers(md.ACTRESS)
+                    #            if a is not None]
+                    actress = list(filter(lambda a: a is not None,
+                                          self._parse_performers(md.ACTRESS)))
                     note = self._parse_notes(md.NOTE)
                     if 'ORIGINAL' in md._fields:
                         note.extend(self._parse_notes(md.ORIGINAL))

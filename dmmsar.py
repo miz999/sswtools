@@ -465,7 +465,7 @@ ACTLISTPAGE = 'http://www.dmm.co.jp/mono/dvd/-/list/=/article=actress/id={}/sort
 
 SPLIT_DEFAULT = 200
 
-# sub_sort = (re.compile(r'/sort=(\w+)/'), '/sort=date/')
+# sub_sort = (re.compile(r'(?<=/sort=)\w+'), 'date')
 
 re_actdelim = re.compile(r'[（、]')
 
@@ -614,7 +614,7 @@ def get_args(argv):
                          help='作品名がパターン(正規表現)とマッチしたものだけ作成',
                          metavar='PATTERN')
 
-    argparser.add_argument('--not-in-series',
+    argparser.add_argument('--not-in-series', '--n-i-s',
                            help='シリーズに所属していないもののみ作成(-K/-L/-U 指定時)',
                            action='store_true',
                            dest='n_i_s')
@@ -910,7 +910,7 @@ def from_sequence(keywords: tuple, service, sub_pid):
 
     step = keywords[3] if len(keywords) >= 4 else 1
 
-    digit = max(len(n) for n in (start, end))
+    digit = max(map(len, (start, end)))
     base = re.sub(r'{}', r'{:0>{}}', base)
     for num in range(int(start), int(end) + 1, int(step)):
         cid = base.format(num, digit)
@@ -1057,7 +1057,7 @@ def number_header(article, n_i_s, page):
 def build_outname(of, is_table, pagen):
     """指定した出力ファイル名を指定のモードでオープン"""
     stem = of.tbl if is_table else of.actr
-    fname = '.'.join(str(p) for p in (stem, pagen, of.suffix) if p)
+    fname = '.'.join(map(str, filter(None, (stem, pagen, of.suffix))))
     return fname
 
 
@@ -1184,7 +1184,7 @@ def finalize(build_page, row, make, n_i_s, nis_series, outfile):
             fd = open(outf, 'a') if outfile else sys.stdout
 
             print('** 見つかったシリーズ一覧', file=fd)
-            print(*('-[[{}]]'.format(s) for s in sorted(nis_series)),
+            print(*map('-[[{}]]'.format, sorted(nis_series)),
                   sep='\n', file=fd)
             print(file=fd)
 
@@ -1268,7 +1268,7 @@ def main(argv=None):
     if args.existings_html:
         # 既存の一覧ページから既出の作品情報の取得
         verbose('existings html')
-        existings = set(k for k, p in libssw.from_html(args.existings_html,
+        existings = set(k[0] for k in libssw.from_html(args.existings_html,
                                                        service=args.service))
         if not existings:
             emsg('E', '--existings-* オプションで読み込んだデータが0件でした。')
@@ -1418,7 +1418,7 @@ def main(argv=None):
                                                   data[1].sid,
                                                   service=args.service)
                     nis_series_urls.update(
-                        u for u, p in libssw.from_dmm(seriesparser, priurls))
+                        u[0] for u in libssw.from_dmm(seriesparser, priurls))
                 omitted += 1
 
         else:

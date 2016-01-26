@@ -347,7 +347,6 @@ _ReturnVal = _namedtuple('ReturnVal',
                          ('release', 'pid', 'title', 'title_dmm', 'url',
                           'time', 'maker', 'label', 'series',
                           'wktxt_a', 'wktxt_t'))
-_NiS = _namedtuple('n_i_s', 'sid,name')
 
 _re_age = _re.compile(r'(\(\d+?\))$')
 
@@ -382,7 +381,7 @@ def _get_args(argv, p_args):
     argparser.add_argument('-a', '--actress',
                            help='出演者 (DMMページ内のものに追加する)',
                            nargs='+',
-                           default=[])
+                           default=())
     argparser.add_argument('-n', '--number',
                            help='未知の出演者がいる場合の総出演者数 (… ほか計NUMBER名)',
                            type=int,
@@ -647,10 +646,10 @@ def _build_addcols(add_column, summ):
 
 def _check_missings(summ):
     """未取得情報のチェック"""
-    missings = [m for m in ('release', 'title', 'maker', 'label', 'image_sm')
-                if not summ[m]]
-    missings and _emsg(
-        'W', '取得できない情報がありました: ', ",".join(missings))
+    missings = list(filter(lambda m: not summ[m],
+                           ('release', 'title', 'maker', 'label', 'image_sm')))
+    if missings:
+        _emsg('W', '取得できない情報がありました: ', ",".join(missings))
 
 
 def _format_wikitext_a(summ, anum, astr):
@@ -748,7 +747,7 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace, dmmparser=None):
                 if key == 'url':
                     summ[key] = data.split('?')[0]
                 elif key == 'actess':
-                    summ[key] = list(_libssw.parse_names(a) for a in data)
+                    summ[key] = list(_libssw.parse_names(data))
                 elif key == 'number':
                     summ[key] = int(data) if data else 0
                 elif key == 'director':
@@ -765,9 +764,9 @@ def main(props=_libssw.Summary(), p_args=_argparse.Namespace, dmmparser=None):
                 summ[attr] = getattr(args, attr)
 
         if not summ['actress'] and args.actress:
-            actiter = _chain.from_iterable(
-                _libssw.re_delim.split(a) for a in args.actress)
-            summ['actress'] = list(_libssw.parse_names(a) for a in actiter)
+            actiter = _chain.from_iterable(map(_libssw.re_delim.split,
+                                               args.actress))
+            summ['actress'] = list(_libssw.parse_names(actiter))
 
     else:
         _verbose('props: ', props.items())
