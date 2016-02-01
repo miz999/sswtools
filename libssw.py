@@ -1210,6 +1210,8 @@ _re_omnivals = (
     _re.compile(r'(?:2[4-9]\d|[3-9]\d{2}|\d{4,})分'),
     # nn選
     _re.compile(r'\d+選'),
+    # 10組 以上
+    _re.compile(r'(?:1[0-9]|[2-9]\d|\d{3,})組'),
 )
 
 
