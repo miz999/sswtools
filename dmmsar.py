@@ -344,10 +344,9 @@ DMMから女優、シリーズ、メーカー、あるいはレーベルのID(DM
     取得して付加する。
     詳細はdmm2ssw.pyの説明参照。
 
---disable-check-smm
-    デフォルトではDMM上に出演者情報がないときにSMMを検索して
-    出演者情報がないか確認するが、このオプションが与えられると
-    それを行わない。
+--enable-check-smm
+    このオプションが与えられるとDMM上に出演者情報がないときにSMMを検索する。
+    (https://supermediamall.com/ のドメイン移行及び仕様変更のため現在動作未確認)
 
 --check-rental
     レンタル先行メーカーなのにレンタル版以外が指定されていた場合
@@ -720,11 +719,11 @@ def get_args(argv):
                            dest='follow_rdr',
                            action='store_false',
                            default=True)
-    argparser.add_argument('--disable-check-smm',
-                           help='出演者情報がないときにSMMを検索しない',
-                           action='store_false',
+    argparser.add_argument('--enable-check-smm',
+                           help='出演者情報がないときにSMMを検索する',
+                           action='store_true',
                            dest='smm',
-                           default=True)
+                           default=False)
     argparser.add_argument('--check-rental',
                            help='レンタル先行メーカーでレンタル版じゃなかったのとき'
                            'レンタル版のリリースをチェックする',
