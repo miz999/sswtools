@@ -459,8 +459,8 @@ MSGLEVEL = {'E': 'ERROR',
             'W': 'WARN',
             'I': 'INFO'}
 
-ACTINFOPAGE = 'http://actress.dmm.co.jp/-/detail/=/actress_id={}/'
-ACTLISTPAGE = 'http://www.dmm.co.jp/mono/dvd/-/list/=/article=actress/id={}/sort=date/'
+ACTINFOPAGE = 'https://actress.dmm.co.jp/-/detail/=/actress_id={}/'
+ACTLISTPAGE = 'https://www.dmm.co.jp/mono/dvd/-/list/=/article=actress/id={}/sort=date/'
 
 SPLIT_DEFAULT = 200
 

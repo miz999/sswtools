@@ -55,13 +55,13 @@ RETLABEL = {'series': 'シリーズ',
             'maker':  'メーカー',
             'actress': '女優'}
 
-_BASEURL_DMM = 'http://www.dmm.co.jp'
+_BASEURL_DMM = 'https://www.dmm.co.jp'
 _BASEURL_SMM = 'http://supermm.jp'
 
-_SVC_URL = {'www.dmm.co.jp/mono/dvd/':       'dvd',
-            'www.dmm.co.jp/rental/':         'rental',
-            'www.dmm.co.jp/digital/videoa/': 'video',
-            'www.dmm.co.jp/digital/videoc/': 'ama'}
+_SVC_URL = {'https://www.dmm.co.jp/mono/dvd/':       'dvd',
+            'https://www.dmm.co.jp/rental/':         'rental',
+            'https://www.dmm.co.jp/digital/videoa/': 'video',
+            'https://www.dmm.co.jp/digital/videoc/': 'ama'}
 
 _SERVICEDIC = {
     'dvd':    'mono/dvd',
@@ -2981,7 +2981,7 @@ _re_base_url = _re.compile(r'https?://(.*/)-/')
 def resolve_service(url):
     """サービスの決定"""
     _verbose('Resolving service...')
-    base = _re_base_url.findall(url)[0]
+    base = "https://" + _re_base_url.findall(url)[0]
 
     if not base or base not in _SVC_URL:
         _emsg('E', '未サポートのURLです。')
