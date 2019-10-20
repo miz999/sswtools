@@ -1019,16 +1019,18 @@ class __OpenUrl:
             _verbose('http status: ', resp.status)
             _verbose('fromcache: ', resp.fromcache)
 
-            if not resp.fromcache:
-                _verbose('start wait_', site)
-                self.__wait[site] = _Process(target=self.__sleep, daemon=True)
-                self.__wait[site].start()
-
             # HTTPステータスがサーバ/ゲートウェイの一時的な問題でなければ終了
             if resp.status and not 500 <= resp.status <= 504:
                 if resp.status not in {200, 404}:
                     _emsg('W', 'HTTP status: ', resp.status)
                 break
+
+            # Windowsでweakref objectエラーが出るので移動
+            # 上記のifで抜けるとsleepしたインスタンス消滅？
+            if not resp.fromcache:
+                _verbose('start wait_', site)
+                self.__wait[site] = _Process(target=self.__sleep, daemon=True)
+                self.__wait[site].start()
 
         else:
             _verbose('over 5 cnt with status 50x')
