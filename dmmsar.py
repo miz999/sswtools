@@ -1083,7 +1083,7 @@ class BuildPage:
             self._attr = 'wktxt_t'
         else:
             self._attr = 'wktxt_a'
-            self._wikitexts.reverse()
+            # self._wikitexts.reverse()
 
         verbose('wktxt attr: ', self._attr)
 
