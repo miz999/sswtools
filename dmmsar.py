@@ -797,7 +797,7 @@ def get_args(argv):
     # TSVやウィキテキスト入力ならあとで作品情報から判定
     if args.keyword:
         if not args.service:
-            if args.keyword[0].startswith('http://'):
+            if re.match('https?://.+', args.keyword[0]):
                 args.service = libssw.resolve_service(args.keyword[0])
             elif not (args.from_tsv or args.from_wiki):
                 args.service = 'dvd'

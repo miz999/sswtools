@@ -58,10 +58,10 @@ RETLABEL = {'series': 'シリーズ',
 _BASEURL_DMM = 'http://www.dmm.co.jp'
 _BASEURL_SMM = 'http://supermm.jp'
 
-_SVC_URL = {'http://www.dmm.co.jp/mono/dvd/':       'dvd',
-            'http://www.dmm.co.jp/rental/':         'rental',
-            'http://www.dmm.co.jp/digital/videoa/': 'video',
-            'http://www.dmm.co.jp/digital/videoc/': 'ama'}
+_SVC_URL = {'www.dmm.co.jp/mono/dvd/':       'dvd',
+            'www.dmm.co.jp/rental/':         'rental',
+            'www.dmm.co.jp/digital/videoa/': 'video',
+            'www.dmm.co.jp/digital/videoc/': 'ama'}
 
 _SERVICEDIC = {
     'dvd':    'mono/dvd',
@@ -2973,7 +2973,7 @@ def stringize_performers(pfmrs, number, follow):
     return pfmrsstr, pnum
 
 
-_re_base_url = _re.compile(r'(.*/)-/')
+_re_base_url = _re.compile(r'https?://(.*/)-/')
 
 
 def resolve_service(url):
@@ -3051,7 +3051,7 @@ class _ExtractIDs:
 
         for k in keywords:
 
-            if k.startswith('http://'):
+            if _re.match('https?://', k):
 
                 if not self.retrieval:
                     try:
