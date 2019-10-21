@@ -252,9 +252,9 @@ DMM作品ページのURL
     指定・取得した出演者名のwikiページがリダイレクトページかどうか
     チェックしない。
 
---disable-check-smm
-    DMMの作品ページ上に出演者名がない場合にSMMの作品ページに無いか
-    チェックしない。
+--enable-check-smm
+    このオプションが与えられるとDMM上に出演者情報がないときにSMMを検索する。
+    (https://supermediamall.com/ のドメイン移行及び仕様変更のため現在動作未確認)
 
 --disable-check-rental
     レンタル先行レーベルなのにレンタル以外のサービスの作品URLだった
@@ -452,11 +452,11 @@ def _get_args(argv, p_args):
                            dest='follow_rdr',
                            action='store_false',
                            default=getattr(p_args, 'follow_rdr', True))
-    argparser.add_argument('--disable-check-smm',
-                           help='出演者情報がなかったときにSMMを検索しない',
+    argparser.add_argument('--enable-check-smm',
+                           help='出演者情報がないときにSMMを検索する',
+                           action='store_true',
                            dest='smm',
-                           action='store_false',
-                           default=getattr(p_args, 'smm', True))
+                           default=False)
     argparser.add_argument('--disable-check-rental',
                            help='レンタル先行レーベルでもレンタル版のリリースをチェックしない',
                            dest='check_rental',
