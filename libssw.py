@@ -3031,7 +3031,7 @@ _sub_pid_indv = (
 
 def gen_pid(cid, pattern=None):
     """DMMの品番(cid)から正規の品番を生成"""
-    if cid.startswith('http://'):
+    if cid.startswith('https://'):
         cid = get_id(cid, True)[0]
 
     if pattern:
