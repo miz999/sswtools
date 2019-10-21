@@ -2217,7 +2217,12 @@ class DMMTitleListParser:
             t_el = ttl.find('a')
             title = t_el.text
             path = t_el.get('href')
-            url = _up.urljoin(_BASEURL_DMM, path)
+            rx = _re.match("(.+/=/cid=.+/).+", path)
+            # url末尾の余計な /?dmmref=aMonoDvd_List/ を消去
+            if rx:
+                url = _up.urljoin(_BASEURL_DMM, rx[1])
+            else:
+                url = _up.urljoin(_BASEURL_DMM, path)
             pid, cid = gen_pid(url, self._patn_pid)
             # cid = cid.lstrip('79')
 
