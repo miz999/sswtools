@@ -128,7 +128,7 @@ def uncensored(url, release, title, studio, performers, note):
         libssw.open_ssw(*(p[1] or p[0] for p in performers))
 
 
-def censored(url, release, title, studio, performers, img_s, img_l, note):
+def censored(url, release, title, studio, performers, img_s, img_l, note, pno):
     performers = build_pfmrs(performers)
     verbose('release: ', release)
     verbose('title: ', title)
@@ -138,7 +138,8 @@ def censored(url, release, title, studio, performers, img_s, img_l, note):
     wtxt = []
 
     if release:
-        wtxt.append('//{0[0]}.{0[1]:0>2}.{0[2]:0>2}'.format(release))
+        # wtxt.append('//{0[0]}.{0[1]:0>2}.{0[2]:0>2}'.format(release))
+        print('//{0[0]}.{0[1]:0>2}.{0[2]:0>2}'.format(release) + " " + pno)
 
     print('[[{}（{}）>{}]]'.format(title, studio, url))
     print('[[{}>{}]]'.format(img_s, img_l))
@@ -373,6 +374,40 @@ def hitodumagiri(he, url):
 
     uncensored(url, release, title, studio, [performer], '')
 
+class fc2:
+    url = ""
+    release = ""
+    title = ""
+    studio = ""
+    img_s = ""
+    img_l = ""
+    comment = ""
+    fc2_id = ""
+
+    def url2id(self, url):
+        r = re.match(".+id=([0-9]+)", url)
+        if r:
+            return r[1]
+        else:
+            return False
+
+    def parse_contents_market(self, fc2_id):
+        self.studio = 'FC2コンテンツマーケット'
+        self.fc2_id = fc2_id
+
+        self.url = "https://adult.contents.fc2.com/article_search.php?id=" + self.fc2_id
+        resp, he = libssw.open_url(self.url,None)
+
+        self.title = he.find_class('detail')[0].find('h2').text_content()
+        self.release = he.find_class('main_info_block')[0].find('dl').findall('dd')[3].text_content().split("/")
+        # release = he.find_class('main_info_block')[0].find('h2').find('dd')[5].text_content()
+        self.img_s = he.find_class('analyticsLinkClick_mainThum')[0].find('img').get('src')
+        self.img_l = he.find_class('analyticsLinkClick_mainThum')[0].get('href')
+
+        # return {"url":url, "release":release, "title":title, "studio":studio, "img_s":img_s, "img_l":img_l, "comment":'FC2 ' + fc2_id}
+
+    def print_cencered(self):
+        censored(self.url, self.release, self.title, self.studio, (), self.img_s, self.img_l, '', 'FC2 ' + self.fc2_id)
 
 def main():
 
@@ -424,6 +459,12 @@ def main():
 
         elif netloc == 'www.c0930.com':
             hitodumagiri(he, url)
+
+        elif netloc == 'adult.contents.fc2.com':
+            f = fc2()
+            fc2_id = f.url2id(url)
+            f.parse_contents_market(fc2_id)
+            f.print_cencered()
 
         else:
             emsg('E', '未知のサイトです。')
