@@ -391,12 +391,15 @@ class fc2:
         else:
             return False
 
-    def parse_contents_market(self, fc2_id):
-        self.studio = 'FC2コンテンツマーケット'
+    def id2url(self, fc2_id):
         self.fc2_id = fc2_id
-
-        self.url = "https://adult.contents.fc2.com/article_search.php?id=" + self.fc2_id
-        resp, he = libssw.open_url(self.url,None)
+        return "https://adult.contents.fc2.com/article_search.php?id=" + self.fc2_id
+        
+    def parse_contents_market(self, url, he=None):
+        self.studio = 'FC2コンテンツマーケット'
+        self.url = url
+        if he is None:
+            resp, he = libssw.open_url(url,None)
 
         self.title = he.find_class('detail')[0].find('h2').text_content()
         self.release = he.find_class('main_info_block')[0].find('dl').findall('dd')[3].text_content().split("/")
@@ -409,65 +412,121 @@ class fc2:
     def print_cencered(self):
         censored(self.url, self.release, self.title, self.studio, (), self.img_s, self.img_l, '', 'FC2 ' + self.fc2_id)
 
+class mgs:
+    url = ""
+    actress = ""
+    release = ""
+    title = ""
+    studio = ""
+    img_s = ""
+    img_l = ""
+    comment = ""
+
+    def parse(self, url):
+        self.url = url
+        
+        resp, he = libssw.open_url(self.url,set_cookie="adc=1")
+
+        self.title = he.find_class('tag')[0].text_content()
+        # self.title = he.find('h1')
+        self.release = he.xpath('//div[@class="detail_data"]/table[1]')[0].text_content()
+        # self.release = he.find_class('detail_data')[0].findall("table")[1].find("td")
+        return self.title
+        # self.title = he.find_class('tag')[0].find('h1').text_content()
+
+    def parse_by_bs4(self, url):
+        # lxmlではmgstageの不完全なhtmlはパースできない
+        from bs4 import BeautifulSoup
+        import urllib.request
+
+        # url = "https://www.mgstage.com/product/product_detail/" + cid
+        data = {
+            "Cookie": 'adc=1',
+        }
+        req = urllib.request.Request(url, None, data)
+        with urllib.request.urlopen(req) as res:
+            s = res.read()
+        soup = BeautifulSoup(s, "html.parser")
+
+        self.title = soup.find("h1", class_="tag").text.strip()
+        self.actress = soup.find("div", class_="detail_data").findAll("table")
+        self.img_s = soup.find("img", class_="enlarge_image").attrs["src"]
+        self.img_l = soup.find("a", id="EnlargeImage").attrs["href"]
+
+        return
+
+
 def main():
 
     args = get_args()
 
-    urls = ('http://' + u if not u.startswith('http://') else u
+    # urls = ('http://' + u if not u.startswith('http://') else u
+            # for u in args.url)
+
+    urls = ('https://' + u if not re.match('^https?://.+',u) else u
             for u in args.url)
 
     for url in urls:
 
         netloc = urlparse(url).netloc
-        resp, he = libssw.open_url(
-            url,
-            charset='euc_jisx0213' if netloc.endswith('h-paradise.net')
-            else None)
 
-        if netloc in ('www.aventertainments.com',
-                      'www.avfantasy.com',
-                      'www.mediafreakcity.com'):
-            japorn(he, url)
-
-        elif netloc == 'www.1pondo.tv':
-            release, title, studio, performers, note = ipondo(he, url)
-
-        elif netloc in ('www.caribbeancom.com',
-                        'www.caribbeancompr.com'):
-            caribbean(he, netloc, url)
-
-        elif netloc == 'www.heyzo.com':
-            heyzo(he, url)
-
-        elif netloc == 'www.heydouga.com':
-            heydouga(he, url)
-
-        elif netloc == 'my.tokyo-hot.com':
-            tokyohot(he, url)
-
-        elif netloc == 'www.pacopacomama.com':
-            pacopacomama(he, url)
-
-        elif netloc == 'www.10musume.com':
-            tenmusume(he, url)
-
-        elif netloc == 'www.jukujo-club.com':
-            jukujoclub(he, url)
-
-        elif netloc.endswith('h-paradise.net'):
-            h_paradise(he, url)
-
-        elif netloc == 'www.c0930.com':
-            hitodumagiri(he, url)
-
-        elif netloc == 'adult.contents.fc2.com':
-            f = fc2()
-            fc2_id = f.url2id(url)
-            f.parse_contents_market(fc2_id)
-            f.print_cencered()
+        if netloc == 'www.mgstage.com':
+            f = mgs()
+            f.parse_by_bs4(url)
+            # f.parse(url)
+            # f.print_cencered()
 
         else:
-            emsg('E', '未知のサイトです。')
+            resp, he = libssw.open_url(
+                url,
+                charset='euc_jisx0213' if netloc.endswith('h-paradise.net')
+                else None)
+
+            if netloc in ('www.aventertainments.com',
+                        'www.avfantasy.com',
+                        'www.mediafreakcity.com'):
+                japorn(he, url)
+
+            elif netloc == 'www.1pondo.tv':
+                release, title, studio, performers, note = ipondo(he, url)
+
+            elif netloc in ('www.caribbeancom.com',
+                            'www.caribbeancompr.com'):
+                caribbean(he, netloc, url)
+
+            elif netloc == 'www.heyzo.com':
+                heyzo(he, url)
+
+            elif netloc == 'www.heydouga.com':
+                heydouga(he, url)
+
+            elif netloc == 'my.tokyo-hot.com':
+                tokyohot(he, url)
+
+            elif netloc == 'www.pacopacomama.com':
+                pacopacomama(he, url)
+
+            elif netloc == 'www.10musume.com':
+                tenmusume(he, url)
+
+            elif netloc == 'www.jukujo-club.com':
+                jukujoclub(he, url)
+
+            elif netloc.endswith('h-paradise.net'):
+                h_paradise(he, url)
+
+            elif netloc == 'www.c0930.com':
+                hitodumagiri(he, url)
+
+            elif netloc == 'adult.contents.fc2.com':
+                f = fc2()
+                fc2_id = f.url2id(url)
+                f.fc2_id = fc2_id
+                f.parse_contents_market(url, he=he)
+                f.print_cencered()
+
+            else:
+                emsg('E', '未知のサイトです。')
 
 
 if __name__ == '__main__':
