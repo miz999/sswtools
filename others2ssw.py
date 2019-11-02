@@ -495,6 +495,50 @@ class mgs:
         censored(self.url, self.release, self.title, self.series, (), self.img_s, self.img_l, '', 'MGS ' + self.id)
 
 
+class mgs:
+    url = ""
+    actress = ""
+    release = ""
+    title = ""
+    studio = ""
+    img_s = ""
+    img_l = ""
+    comment = ""
+
+    def parse(self, url):
+        self.url = url
+        
+        resp, he = libssw.open_url(self.url,set_cookie="adc=1")
+
+        self.title = he.find_class('tag')[0].text_content()
+        # self.title = he.find('h1')
+        self.release = he.xpath('//div[@class="detail_data"]/table[1]')[0].text_content()
+        # self.release = he.find_class('detail_data')[0].findall("table")[1].find("td")
+        return self.title
+        # self.title = he.find_class('tag')[0].find('h1').text_content()
+
+    def parse_by_bs4(self, url):
+        # lxmlではmgstageの不完全なhtmlはパースできない
+        from bs4 import BeautifulSoup
+        import urllib.request
+
+        # url = "https://www.mgstage.com/product/product_detail/" + cid
+        data = {
+            "Cookie": 'adc=1',
+        }
+        req = urllib.request.Request(url, None, data)
+        with urllib.request.urlopen(req) as res:
+            s = res.read()
+        soup = BeautifulSoup(s, "html.parser")
+
+        self.title = soup.find("h1", class_="tag").text.strip()
+        self.actress = soup.find("div", class_="detail_data").findAll("table")
+        self.img_s = soup.find("img", class_="enlarge_image").attrs["src"]
+        self.img_l = soup.find("a", id="EnlargeImage").attrs["href"]
+
+        return
+
+
 def main():
 
     args = get_args()
