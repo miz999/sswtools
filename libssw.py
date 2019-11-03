@@ -1605,6 +1605,7 @@ class DMMParser:
     }
 
     _re_genre = _re.compile(r'/article=keyword/id=(\d+)/')
+    _re_age = _re.compile(r'(\(\d+?\))$')
 
     def __init__(self, no_omits=gen_no_omits(), patn_pid=None,
                  start_date=None, start_pid_s=None, filter_pid_s=None,
@@ -1852,7 +1853,7 @@ class DMMParser:
         elif tag == '名前：':
             # 素人動画のタイトルは後でページタイトルと年齢をくっつける
             try:
-                age = _re_age.findall(getnext_text(prop))[0]
+                age = self._re_age.findall(getnext_text(prop))[0]
             except IndexError:
                 age = ''
             self._sm['subtitle'] = age

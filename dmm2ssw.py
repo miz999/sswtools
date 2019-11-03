@@ -348,8 +348,6 @@ _ReturnVal = _namedtuple('ReturnVal',
                           'time', 'maker', 'label', 'series',
                           'wktxt_a', 'wktxt_t'))
 
-_re_age = _re.compile(r'(\(\d+?\))$')
-
 _sub_heart = (_re.compile(r'（ハート）|◆'), r'♥')
 
 
