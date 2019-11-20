@@ -2906,18 +2906,18 @@ def check_actuallpage(url, lpage, ltype, pid):
     """
     実際の一覧ページのチェック
 
-    見つかったら_REDIRECTSにキャッシュしておく
+    # 見つかったら_REDIRECTSにキャッシュしておく
     """
-    global _REDIRECTS
+    # global _REDIRECTS
 
     _verbose('check actual list page on ssw...')
 
-    if not RECHECK \
-       and url in _REDIRECTS \
-       and _REDIRECTS[url] != '__NOT_FOUND__':
-        # キャッシュされてたらそれを返す
-        _verbose('list page found on REDIRECTS: ', _REDIRECTS[url])
-        return lpage if _REDIRECTS[url] == '__NON__' else _REDIRECTS[url]
+    # if not RECHECK \
+    #    and url in _REDIRECTS \
+    #    and _REDIRECTS[url] != '__NOT_FOUND__':
+    #     # キャッシュされてたらそれを返す
+    #     _verbose('list page found on REDIRECTS: ', _REDIRECTS[url])
+    #     return lpage if _REDIRECTS[url] == '__NON__' else _REDIRECTS[url]
 
     pages = tuple(_search_listpage(url, lpage, ltype, pid))
     _verbose('list page found: ', pages)
@@ -2939,9 +2939,9 @@ def check_actuallpage(url, lpage, ltype, pid):
         for cand in pages:
             _emsg('I', '⇒ ', cand)
 
-    if result:
-        _REDIRECTS[url] = result
-        save_cache(_REDIRECTS, _RDRDFILE)
+    # if result:
+    #     _REDIRECTS[url] = result
+    #     save_cache(_REDIRECTS, _RDRDFILE)
 
     return result
 
