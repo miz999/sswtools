@@ -2860,10 +2860,10 @@ def _search_listpage(url, listname, listtype, pid):
     #     re_inbracket.split(listname.rstrip(')）')))
     _verbose('Searching listpage: listname=', listname, ', pid=', pid)
 
-    # DMM作品ページのURLで検索
+    # pid(品番)で検索
     resp, he = open_url(
         'http://sougouwiki.com/search?keywords={}'.format(
-            quote(url, safe='')),
+            quote(pid, safe='')),
         cache=False)
 
     searesult = he.find_class('result-box')[0].find('p[1]/strong').tail
