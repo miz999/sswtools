@@ -592,48 +592,48 @@ class _ResolveListpage:
                 elif _libssw.le80bytes(list_page):
                     list_attr = attr
                     list_type = _libssw.RETLABEL[attr]
-                    break
+                    # break
                 else:
                     _emsg('W',
                           _libssw.RETLABEL[attr],
                           '名が80バイトを超えているのでそのページは無いものとします: ',
                           list_page)
+
+                _verbose('List type: {}, List page: {}'.format(list_type, list_page))
+
+                # SCOOP個別対応
+                if list_page == 'SCOOP（スクープ）':
+                    list_page = 'スクープ'
+
+                # wiki構文と衝突する文字列の置き換え
+                list_page = _libssw.trans_wikisyntax(list_page)
+
+                if not args.check_listpage or \
+                (list_attr == retrieval and args.table == 1):
+                    _verbose('pass checking listpage')
+                    return list_type, list_page
+
+                if (list_type, list_page) not in self._unknowns:
+
+                    # Wiki上の実際の一覧ページを探し、見つかったらそれにする。
+                    actuall = _libssw.check_actuallpage(summ['url'],
+                                                        list_page,
+                                                        list_type,
+                                                        summ['pid'])
+                    if actuall:
+                        list_page = actuall
+                        return list_type, list_page
+                    else:
+                        _emsg('W', list_type,
+                            '一覧ページが見つからなくてもDMMのものを採用しません')
+                        _emsg('W', list_type, ': ', list_page)
+                        if __name__ != '__main__':
+                            _emsg('I', 'タイトル: ', summ['title'],
+                                ' ({})'.format(summ['pid']))
+                        self._unknowns.add((list_type, list_page))
         else:
             return '', ''
 
-        _verbose('List type: {}, List page: {}'.format(list_type, list_page))
-
-        # SCOOP個別対応
-        if list_page == 'SCOOP（スクープ）':
-            list_page = 'スクープ'
-
-        # wiki構文と衝突する文字列の置き換え
-        list_page = _libssw.trans_wikisyntax(list_page)
-
-        if not args.check_listpage or \
-           (list_attr == retrieval and args.table == 1):
-            _verbose('pass checking listpage')
-            return list_type, list_page
-
-        if (list_type, list_page) not in self._unknowns:
-
-            # Wiki上の実際の一覧ページを探し、見つかったらそれにする。
-            actuall = _libssw.check_actuallpage(summ['url'],
-                                                list_page,
-                                                list_type,
-                                                summ['pid'])
-            if actuall:
-                list_page = actuall
-            else:
-                _emsg('W', list_type,
-                      '一覧ページが見つからなかったのでDMMのものを採用します。')
-                _emsg('W', list_type, ': ', list_page)
-                if __name__ != '__main__':
-                    _emsg('I', 'タイトル: ', summ['title'],
-                          ' ({})'.format(summ['pid']))
-                self._unknowns.add((list_type, list_page))
-
-        return list_type, list_page
 
 _resolve_listpage = _ResolveListpage()
 
