@@ -2218,6 +2218,9 @@ class DMMTitleListParser:
         for ttl in titles:
             t_el = ttl.find('a')
             title = t_el.text
+            if not title:
+                _emsg("W", "タイトルが空(セール中？)なので除外(HTMLパーサの不具合？)")
+                continue
             path = t_el.get('href')
             rx = _re.match("(.+/=/cid=.+/).+", path)
             # url末尾の余計な /?dmmref=aMonoDvd_List/ を消去
